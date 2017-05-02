@@ -47,14 +47,14 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent)
 
     addNewTabButton = new QPushButton;
     addNewTabButton->setIcon(QIcon(":/res/img/newTab.png"));
-    addNewTabButton->setIconSize(QSize(25,25));
-    addNewTabButton->setFixedSize(30,30);
-    layout->addWidget(addNewTabButton,0,1, Qt::AlignRight);
+    addNewTabButton->setIconSize(QSize(35,35));
+    addNewTabButton->setFixedSize(40,40);
+    layout->addWidget(addNewTabButton,0,3, Qt::AlignRight);
 
     //INIT MAIN TAB CONTAINER
     mainTabContainer = new QTabWidget;
     mainTabContainer->setTabsClosable(true);
-    layout->addWidget(mainTabContainer,1,0, 2, 0);
+    layout->addWidget(mainTabContainer,2,0, 3, 0);
 
     //SET LAYOUT
     this->setLayout(layout);
