@@ -31,3 +31,6 @@ FORMS    +=
 
 RESOURCES += \
     res.qrc
+
+target.path = $${PREFIX}/bin
+INSTALLS += target
