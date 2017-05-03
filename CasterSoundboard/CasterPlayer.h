@@ -68,11 +68,14 @@ protected:
     void dragMoveEvent(QDragMoveEvent *event);
     void dragLeaveEvent(QDragLeaveEvent *event);
     void dropEvent(QDropEvent *event);
-    bool openFiles(const QStringList& pathList);
+    // Choose a file instead of dragging
+    void mousePressEvent(QMouseEvent* event);
+    bool openFiles(const QStringList &pathList);
 
 private:
     //Private Methods
     int getProgressWidth(); //Use to compute width of progress bar
+    bool assignFile(const QString &path);
 
     // Internal state property
     enum State {

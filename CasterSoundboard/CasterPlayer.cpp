@@ -26,6 +26,7 @@
 #include <QSizePolicy>
 #include <QString>
 #include <QFile>
+#include <QFileDialog>
 #include <QFileInfo>
 #include <QMessageBox>
 #include <QMimeData>
@@ -60,7 +61,7 @@ CasterPlayerWidget::CasterPlayerWidget(QWidget* parent) : QWidget(parent)
     volume = 100;
 
     //Set-Up Widget Layout
-    soundNameLabel = new QLabel("<Drop File>");
+    soundNameLabel = new QLabel("<Drop File or click to choose>");
     soundNameLabel->setAlignment(Qt::AlignTop | Qt::AlignLeft);
     QFont sNLF("Georgia",7,-1,false); sNLF.setBold(true);
     soundNameLabel->setFont(sNLF);
@@ -278,6 +279,27 @@ int CasterPlayerWidget::getProgressWidth()
     return (int)(this->progress * (float)(this->width()));
 }
 
+bool CasterPlayerWidget::assignFile(const QString &path)
+{
+    if(openFiles(QStringList(path)))
+    {
+        playSound();
+        return true;
+    }
+    else
+    {
+        QMessageBox msgBox;
+        msgBox.setText("CasterSoundboard does not accept this file type.\nMake sure your system has the necessary codecs installed.\nCasterSoundboard can also play the audio from videos.");
+        msgBox.setInformativeText("Try: (*.mp3), (*.wav), (*.ogg), (*.flac), (*.m4a).\nAnd Try: (*.mp4), (*.mov), (*.ogv), (*.avi), (*.mpg), (*.wmv).");
+        msgBox.setStandardButtons(QMessageBox::Close);
+        msgBox.setDefaultButton(QMessageBox::Close);
+        msgBox.setModal(true);
+        msgBox.exec();
+        return false;
+    }
+
+}
+
 //Public Methods
 //===============Player Methods=================
 void CasterPlayerWidget::playSound()
@@ -312,34 +334,31 @@ void CasterPlayerWidget::dragLeaveEvent(QDragLeaveEvent *event)
 
 void CasterPlayerWidget::dropEvent(QDropEvent *event)
 {
-        const QMimeData* mimeData = event->mimeData();
+    const QMimeData* mimeData = event->mimeData();
 
-        if (mimeData->hasUrls())
-        {
-            QStringList pathList;
-            QList<QUrl> urlList = mimeData->urls();
+    if (mimeData->hasUrls())
+    {
+        QString path = mimeData->urls().at(0).toLocalFile();
+        if (assignFile(path))
+            event->acceptProposedAction();
+    }
+}
 
-            for (int i = 0; i < urlList.size() && i < 32; ++i)
-            {
-                pathList.append(urlList.at(i).toLocalFile());
-            }
+void CasterPlayerWidget::mousePressEvent(QMouseEvent* event)
+{
+    if (event->button() != Qt::LeftButton) {
+        event->ignore();
+        return;
+    }
 
-            if(openFiles(pathList))
-            {
-                event->acceptProposedAction();
-                playSound();
-            }
-            else
-            {
-                 QMessageBox msgBox;
-                 msgBox.setText("CasterSoundboard does not accept this file type.\nMake sure your system has the necessary codecs installed.\nCasterSoundboard can also play the audio from videos.");
-                 msgBox.setInformativeText("Try: (*.mp3), (*.wav), (*.ogg), (*.flac), (*.m4a).\nAnd Try: (*.mp4), (*.mov), (*.ogv), (*.avi), (*.mpg), (*.wmv).");
-                 msgBox.setStandardButtons(QMessageBox::Close);
-                 msgBox.setDefaultButton(QMessageBox::Close);
-                 msgBox.setModal(true);
-                 int ret = msgBox.exec();
-            }
-        }
+    event->accept();
+    QString path = QFileDialog::getOpenFileName(
+        this, "Open audio file", "",
+        "Audio files (*.mp3 *.wav *.ogg *.flac *.m4a);;"
+        "Video files (*.mp4 *.mov *.ogv *.avi *.mpg *.wmv)"
+    );
+    if (!path.isNull())
+        assignFile(path);
 }
 
 bool CasterPlayerWidget::openFiles(const QStringList& pathList)
