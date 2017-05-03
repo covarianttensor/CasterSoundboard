@@ -132,6 +132,7 @@ CasterPlayerWidget::CasterPlayerWidget(QWidget* parent) : QWidget(parent)
     connect(player,SIGNAL(positionChanged(qint64)),this,SLOT(playerPositionChanged(qint64)));
     connect(player,SIGNAL(stateChanged(QMediaPlayer::State)),this,SLOT(playerStateChanged(QMediaPlayer::State)));
     connect(player,SIGNAL(metaDataChanged()),this,SLOT(playerMetaDataChanged()));
+    connect(player,SIGNAL(mediaStatusChanged(QMediaPlayer::MediaStatus)),this,SLOT(playerNewMediaStatus(QMediaPlayer::MediaStatus)));
 }
 
 //Set Properties
@@ -247,6 +248,19 @@ void CasterPlayerWidget::playerMetaDataChanged()
         player->stop();
     }
 
+}
+
+void CasterPlayerWidget::playerNewMediaStatus(QMediaPlayer::MediaStatus status)
+{
+    switch (status) {
+        case QMediaPlayer::LoadingMedia:
+            soundNameLabel->setText("Loading...");
+            soundNameLabel->setStyleSheet("color:darkblue;");
+            break;
+        default:
+            soundNameLabel->setStyleSheet("");
+            break;
+    }
 }
 
 //--------------

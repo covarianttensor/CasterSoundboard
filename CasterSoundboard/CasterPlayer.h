@@ -103,5 +103,6 @@ public slots:
     void playerPositionChanged(qint64 position);
     void playerStateChanged(QMediaPlayer::State state);
     void playerMetaDataChanged();
+    void playerNewMediaStatus(QMediaPlayer::MediaStatus status);
 };
 #endif // CASTERPLAYER_H
