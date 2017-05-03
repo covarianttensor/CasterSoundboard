@@ -25,6 +25,7 @@
 #include "CasterBoardLayout.h"
 #include <QWidget>
 #include <QHash>
+#include <QSettings>
 
 //forward declarations
 class CasterPlayerWidget;
@@ -35,6 +36,9 @@ class CasterBoard : public QWidget //inherit from QWidget
 public:
     //Constructor
     CasterBoard(QWidget* parent = 0); //don't forget to pass the parent
+
+    void saveLayout(QSettings &settings);
+    void restoreLayout(const QSettings &settings);
 
     //Properties
 

@@ -279,11 +279,24 @@ int CasterPlayerWidget::getProgressWidth()
     return (int)(this->progress * (float)(this->width()));
 }
 
+//Public Methods
+//===============Player Methods=================
+void CasterPlayerWidget::playSound()
+{
+    player->setVolume(volume);
+    player->play();
+}
+
+void CasterPlayerWidget::stopSound()
+{
+    player->setVolume(volume);
+    player->stop();
+}
+
 bool CasterPlayerWidget::assignFile(const QString &path)
 {
     if(openFiles(QStringList(path)))
     {
-        playSound();
         return true;
     }
     else
@@ -298,20 +311,6 @@ bool CasterPlayerWidget::assignFile(const QString &path)
         return false;
     }
 
-}
-
-//Public Methods
-//===============Player Methods=================
-void CasterPlayerWidget::playSound()
-{
-    player->setVolume(volume);
-    player->play();
-}
-
-void CasterPlayerWidget::stopSound()
-{
-    player->setVolume(volume);
-    player->stop();
 }
 //==================================================
 
@@ -339,8 +338,10 @@ void CasterPlayerWidget::dropEvent(QDropEvent *event)
     if (mimeData->hasUrls())
     {
         QString path = mimeData->urls().at(0).toLocalFile();
-        if (assignFile(path))
+        if (assignFile(path)) {
+            playSound();
             event->acceptProposedAction();
+        }
     }
 }
 
@@ -357,8 +358,8 @@ void CasterPlayerWidget::mousePressEvent(QMouseEvent* event)
         "Audio files (*.mp3 *.wav *.ogg *.flac *.m4a);;"
         "Video files (*.mp4 *.mov *.ogv *.avi *.mpg *.wmv)"
     );
-    if (!path.isNull())
-        assignFile(path);
+    if (!path.isNull() && assignFile(path))
+        playSound();
 }
 
 bool CasterPlayerWidget::openFiles(const QStringList& pathList)

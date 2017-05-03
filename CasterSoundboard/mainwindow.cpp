@@ -59,11 +59,48 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent)
     //SET LAYOUT
     this->setLayout(layout);
 
+    restoreSettings();
+
     //MAKE CONNECTIONS
     connect(aboutButton,SIGNAL(clicked()),this,SLOT(aboutBox()));
     connect(addNewTabButton,SIGNAL(clicked()),this,SLOT(addNewTab()));
     connect(mainTabContainer,SIGNAL(tabCloseRequested(int)),this,SLOT(mainTabContainerTabClosedRequested(int)));
+}
 
+void MainWindow::closeEvent(QCloseEvent *event)
+{
+    QSettings settings("Jupiter Broadcasting", "CasterSoundboard");
+
+    settings.beginWriteArray("boards");
+
+    for (int i = 0; i < mainTabContainer->count(); ++i) {
+        settings.setArrayIndex(i);
+        settings.setValue("title", mainTabContainer->tabText(i));
+
+        CasterBoard *cb;
+        cb = static_cast<CasterBoard*>(mainTabContainer->widget(i));
+        cb->saveLayout(settings);
+    }
+
+    settings.endArray();
+
+    event->accept();
+}
+
+void MainWindow::restoreSettings()
+{
+    QSettings settings("Jupiter Broadcasting", "CasterSoundboard");
+
+    int size = settings.beginReadArray("boards");
+
+    for (int i = 0; i < size; ++i) {
+        settings.setArrayIndex(i);
+
+        CasterBoard *cb = new CasterBoard;
+        mainTabContainer->addTab(cb, settings.value("title").toString());
+        cb->restoreLayout(settings);
+    }
+    settings.endArray();
 }
 
 //SLOTS

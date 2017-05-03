@@ -51,6 +51,7 @@ public:
     //Player Methhods
     void playSound();//Plays sound
     void stopSound();//Stops sound
+    bool assignFile(const QString &path);
 
     //Properties
     QString *soundFilePath;
@@ -75,7 +76,6 @@ protected:
 private:
     //Private Methods
     int getProgressWidth(); //Use to compute width of progress bar
-    bool assignFile(const QString &path);
 
     // Internal state property
     enum State {

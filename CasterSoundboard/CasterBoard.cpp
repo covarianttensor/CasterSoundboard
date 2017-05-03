@@ -76,6 +76,32 @@ CasterBoard::CasterBoard(QWidget* parent) : QWidget(parent)
     }
 }
 
+void CasterBoard::saveLayout(QSettings &settings)
+{
+    QHash<int, CasterBoardLayout*>::const_iterator i = layout.constBegin();
+
+    while (i != layout.constEnd()) {
+        CasterPlayerWidget *widget = i.value()->widget;
+        QString keystr = QString::number(i.key());
+        if (!widget->soundFilePath->isEmpty())
+            settings.setValue(keystr, *widget->soundFilePath);
+        ++i;
+    }
+}
+
+void CasterBoard::restoreLayout(const QSettings &settings)
+{
+    QHash<int, CasterBoardLayout*>::const_iterator i = layout.constBegin();
+
+    while (i != layout.constEnd()) {
+        CasterPlayerWidget *widget = i.value()->widget;
+        QString keystr = QString::number(i.key());
+        if (settings.contains(keystr))
+            widget->assignFile(settings.value(keystr).toString());
+        ++i;
+    }
+}
+
 void CasterBoard::keyReleaseEvent(QKeyEvent *event)
 {
     //Handles All Hot Key Behavior
