@@ -22,22 +22,12 @@
  */
 #ifndef CASTERBOARD_H
 #define CASTERBOARD_H
+#include "CasterBoardLayout.h"
 #include <QWidget>
 #include <QHash>
 
 //forward declarations
 class CasterPlayerWidget;
-
-class CasterBoardLayout : public QObject
-{
-    Q_OBJECT
-public:
-    CasterBoardLayout(const QString &letter, int posY, int posX);
-
-    QString letter;
-    int posX, posY;
-    CasterPlayerWidget *widget;
-};
 
 class CasterBoard : public QWidget //inherit from QWidget
 {

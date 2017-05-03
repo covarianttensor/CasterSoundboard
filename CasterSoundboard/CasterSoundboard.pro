@@ -16,6 +16,7 @@ TEMPLATE = app
 SOURCES += main.cpp\
     CasterPlayer.cpp \
     CasterBoard.cpp \
+    CasterBoardLayout.cpp \
     MainWindow.cpp \
     CasterLabelColorPicker.cpp \
     CSS.cpp
@@ -23,6 +24,7 @@ SOURCES += main.cpp\
 HEADERS  += \
     CasterPlayer.h \
     CasterBoard.h \
+    CasterBoardLayout.h \
     CSS.h \
     MainWindow.h \
     CasterLabelColorPicker.h

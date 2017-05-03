@@ -24,13 +24,6 @@
 #include "CasterPlayer.h"
 #include <QGridLayout>
 
-CasterBoardLayout::CasterBoardLayout(const QString &letter, int posY, int posX)
-{
-    this->letter = letter;
-    this->posY = posY;
-    this->posX = posX;
-}
-
 //Constructor=============================================
 CasterBoard::CasterBoard(QWidget* parent) : QWidget(parent)
 {
