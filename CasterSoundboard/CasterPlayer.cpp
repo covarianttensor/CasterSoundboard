@@ -51,15 +51,13 @@ CasterPlayerWidget::CasterPlayerWidget(QWidget* parent) : QWidget(parent)
     this->setAcceptDrops(true);
 
     //Init Player
+    state = NoFile;
     player = new QMediaPlayer();
     //Init Properties
     soundFilePath = new QString("");
     hotKeyLetter = new QString("1");
     progress = 0.0;
     volume = 100;
-
-    //Internal Properties
-    newMediaLoaded = false;
 
     //Set-Up Widget Layout
     soundNameLabel = new QLabel("<Drop File>");
@@ -133,6 +131,7 @@ CasterPlayerWidget::CasterPlayerWidget(QWidget* parent) : QWidget(parent)
     connect(player,SIGNAL(stateChanged(QMediaPlayer::State)),this,SLOT(playerStateChanged(QMediaPlayer::State)));
     connect(player,SIGNAL(metaDataChanged()),this,SLOT(playerMetaDataChanged()));
     connect(player,SIGNAL(mediaStatusChanged(QMediaPlayer::MediaStatus)),this,SLOT(playerNewMediaStatus(QMediaPlayer::MediaStatus)));
+    connect(player,SIGNAL(error(QMediaPlayer::Error)),this,SLOT(playerError(QMediaPlayer::Error)));
 }
 
 //Set Properties
@@ -224,43 +223,50 @@ void CasterPlayerWidget::playerStateChanged(QMediaPlayer::State state)
 void CasterPlayerWidget::playerMetaDataChanged()
 {
     //Update Meta Data
-    QFileInfo fi(*soundFilePath);
-    if(player->metaData(QMediaMetaData::Title).toString() != "")
-    {
-        //Use metadata title
-        soundNameLabel->setText(player->metaData(QMediaMetaData::Title).toString());
-    }
-    else
-    {
-        //Use filename as title
-        soundNameLabel->setText(fi.baseName());
-    }
     int timeLeft = player->duration();
     int seconds = (int) (timeLeft / 1000) % 60 ;
     int minutes = (int) ((timeLeft / (1000*60)) % 60);
     QString timeRemaining = "-" + QString("%1").arg(minutes,2,'i',0,'0') + ":" + QString("%1").arg(seconds,2,'i',0,'0');
     timeLabel->setText(timeRemaining);
-
-    //Hack solution to prevent playing when when meadia loaded.
-    if(newMediaLoaded)
-    {
-        newMediaLoaded = false;
-        player->stop();
-    }
-
 }
 
 void CasterPlayerWidget::playerNewMediaStatus(QMediaPlayer::MediaStatus status)
 {
-    switch (status) {
-        case QMediaPlayer::LoadingMedia:
-            soundNameLabel->setText("Loading...");
-            soundNameLabel->setStyleSheet("color:darkblue;");
-            break;
-        default:
-            soundNameLabel->setStyleSheet("");
-            break;
+    // If we are already in Error state, don't try to update the label at all.
+    if (state == Error)
+        return;
+
+    if (status == QMediaPlayer::LoadingMedia) {
+        soundNameLabel->setText("Loading...");
+        soundNameLabel->setStyleSheet("color:darkblue;");
+        player->stop();
+        state = Loading;
+    } else if (status != QMediaPlayer::InvalidMedia) {
+        // We want to change the label on all occasions except if we have
+        // InvalidMedia, where we also get an Error signal which is handled in
+        // playerError().
+        QFileInfo fi(*soundFilePath);
+        QString text;
+        if (player->metaData(QMediaMetaData::Title).toString() != "")
+            //Use metadata title
+            text = player->metaData(QMediaMetaData::Title).toString();
+        else //Use filename as title
+            text = QFileInfo(*soundFilePath).baseName();
+        soundNameLabel->setText(text);
+        soundNameLabel->setStyleSheet("");
+        state = Active;
     }
+}
+
+void CasterPlayerWidget::playerError(QMediaPlayer::Error error)
+{
+    if (error == QMediaPlayer::NoError)
+        return;
+
+    soundNameLabel->setText("Error: " + player->errorString());
+    soundNameLabel->setStyleSheet("color:red;");
+    player->stop();
+    state = Error;
 }
 
 //--------------
@@ -354,9 +360,11 @@ bool CasterPlayerWidget::openFiles(const QStringList& pathList)
             fi.suffix() == "wmv")
     {
         soundFilePath = new QString(pathList[0]);//Sets File Path
+        // Put the state into NoFile here, so that we're not going to be stuck
+        // in the Error state forever.
+        state = NoFile;
         player->setVolume(volume);
         player->setMedia(QUrl::fromLocalFile(soundFilePath->toUtf8().constData()));
-        newMediaLoaded = true;
         return true;
     }
     else

@@ -74,6 +74,16 @@ private:
     //Private Methods
     int getProgressWidth(); //Use to compute width of progress bar
 
+    // Internal state property
+    enum State {
+        NoFile,
+        Loading,
+        Error,
+        Active
+    };
+
+    State state;
+
     //contained widgets:
     QVBoxLayout *mainLayout;
     QHBoxLayout *subMainLayoutH;
@@ -88,9 +98,6 @@ private:
     QPushButton *subMenuButton;
     QSlider *volumeSlider;
 
-    //Internal Properties
-    bool newMediaLoaded;
-
 signals:
     //MyWidget's signals....
 public slots:
@@ -104,5 +111,6 @@ public slots:
     void playerStateChanged(QMediaPlayer::State state);
     void playerMetaDataChanged();
     void playerNewMediaStatus(QMediaPlayer::MediaStatus status);
+    void playerError(QMediaPlayer::Error error);
 };
 #endif // CASTERPLAYER_H
