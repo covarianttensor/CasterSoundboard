@@ -27,78 +27,63 @@
 //Constructor=============================================
 CasterBoard::CasterBoard(QWidget* parent) : QWidget(parent)
 {
-    layout[Qt::Key_1]     = new CasterBoardLayout("1", 0, 0);
-    layout[Qt::Key_2]     = new CasterBoardLayout("2", 0, 1);
-    layout[Qt::Key_3]     = new CasterBoardLayout("3", 0, 2);
-    layout[Qt::Key_4]     = new CasterBoardLayout("4", 0, 3);
-    layout[Qt::Key_5]     = new CasterBoardLayout("5", 0, 4);
-    layout[Qt::Key_6]     = new CasterBoardLayout("6", 0, 5);
-    layout[Qt::Key_7]     = new CasterBoardLayout("7", 0, 6);
-    layout[Qt::Key_8]     = new CasterBoardLayout("8", 0, 7);
+    Qt::Key const keys[] = {
+        Qt::Key_1, Qt::Key_2, Qt::Key_3, Qt::Key_4,
+        Qt::Key_5, Qt::Key_6, Qt::Key_7, Qt::Key_8,
 
-    layout[Qt::Key_Q]     = new CasterBoardLayout("Q", 1, 0);
-    layout[Qt::Key_W]     = new CasterBoardLayout("W", 1, 1);
-    layout[Qt::Key_E]     = new CasterBoardLayout("E", 1, 2);
-    layout[Qt::Key_R]     = new CasterBoardLayout("R", 1, 3);
-    layout[Qt::Key_T]     = new CasterBoardLayout("T", 1, 4);
-    layout[Qt::Key_Y]     = new CasterBoardLayout("Y", 1, 5);
-    layout[Qt::Key_U]     = new CasterBoardLayout("U", 1, 6);
-    layout[Qt::Key_I]     = new CasterBoardLayout("I", 1, 7);
+        Qt::Key_Q, Qt::Key_W, Qt::Key_E, Qt::Key_R,
+        Qt::Key_T, Qt::Key_Y, Qt::Key_U, Qt::Key_I,
 
-    layout[Qt::Key_A]     = new CasterBoardLayout("A", 2, 0);
-    layout[Qt::Key_S]     = new CasterBoardLayout("S", 2, 1);
-    layout[Qt::Key_D]     = new CasterBoardLayout("D", 2, 2);
-    layout[Qt::Key_F]     = new CasterBoardLayout("F", 2, 3);
-    layout[Qt::Key_G]     = new CasterBoardLayout("G", 2, 4);
-    layout[Qt::Key_H]     = new CasterBoardLayout("H", 2, 5);
-    layout[Qt::Key_J]     = new CasterBoardLayout("J", 2, 6);
-    layout[Qt::Key_K]     = new CasterBoardLayout("K", 2, 7);
+        Qt::Key_A, Qt::Key_S, Qt::Key_D, Qt::Key_F,
+        Qt::Key_G, Qt::Key_H, Qt::Key_J, Qt::Key_K,
 
-    layout[Qt::Key_Z]     = new CasterBoardLayout("Z", 3, 0);
-    layout[Qt::Key_X]     = new CasterBoardLayout("X", 3, 1);
-    layout[Qt::Key_C]     = new CasterBoardLayout("C", 3, 2);
-    layout[Qt::Key_V]     = new CasterBoardLayout("V", 3, 3);
-    layout[Qt::Key_B]     = new CasterBoardLayout("B", 3, 4);
-    layout[Qt::Key_N]     = new CasterBoardLayout("N", 3, 5);
-    layout[Qt::Key_M]     = new CasterBoardLayout("M", 3, 6);
-    layout[Qt::Key_Comma] = new CasterBoardLayout(",", 3, 7);
+        Qt::Key_Z, Qt::Key_X, Qt::Key_C, Qt::Key_V,
+        Qt::Key_B, Qt::Key_N, Qt::Key_M, Qt::Key_Comma,
+    };
+
+    QString const letters =
+        "12345678"
+        "QWERTYUI"
+        "ASDFGHJK"
+        "ZXCVBNM,";
+
+    int offset = 0;
+    for (QChar const letter : letters) {
+        int posX = offset / 8;
+        int posY = offset % 8;
+        layout[keys[offset++]] = new CasterBoardLayout(letter, posX, posY);
+    }
 
     QGridLayout *boardLayout = new QGridLayout(this);
 
-    QHash<int, CasterBoardLayout*>::const_iterator i = layout.constBegin();
-
-    while (i != layout.constEnd()) {
+    for (int key : layout.keys()) {
+        CasterBoardLayout *value = layout.value(key);
         CasterPlayerWidget *widget = new CasterPlayerWidget();
-        i.value()->widget = widget;
-        widget->setHotKeyLetter(i.value()->letter);
-        boardLayout->addWidget(widget, i.value()->posY, i.value()->posX);
-        ++i;
+        value->widget = widget;
+        widget->setHotKeyLetter(value->letter);
+        boardLayout->addWidget(widget, value->posY, value->posX);
     }
 }
 
 void CasterBoard::saveLayout(QSettings &settings)
 {
-    QHash<int, CasterBoardLayout*>::const_iterator i = layout.constBegin();
-
-    while (i != layout.constEnd()) {
-        CasterPlayerWidget *widget = i.value()->widget;
-        QString keystr = QString::number(i.key());
+    for (int key : layout.keys()) {
+        CasterBoardLayout *value = layout.value(key);
+        CasterPlayerWidget *widget = value->widget;
+        QString keystr = QString::number(key);
         if (!widget->soundFilePath->isEmpty())
             settings.setValue(keystr, *widget->soundFilePath);
-        ++i;
     }
 }
 
 void CasterBoard::restoreLayout(const QSettings &settings)
 {
-    QHash<int, CasterBoardLayout*>::const_iterator i = layout.constBegin();
-
-    while (i != layout.constEnd()) {
-        CasterPlayerWidget *widget = i.value()->widget;
-        QString keystr = QString::number(i.key());
+    for (int key : layout.keys()) {
+        CasterBoardLayout *value = layout.value(key);
+        CasterPlayerWidget *widget = value->widget;
+        QString keystr = QString::number(key);
         if (settings.contains(keystr))
             widget->assignFile(settings.value(keystr).toString());
-        ++i;
     }
 }
 
