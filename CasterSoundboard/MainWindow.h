@@ -23,6 +23,7 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 #include <QWidget>
+#include <QSettings>
 
 //forward declarations
 class QTabWidget;
@@ -46,6 +47,7 @@ protected:
     //PROPERTIES
 
     //METHODS
+    void closeEvent(QCloseEvent *event) override;
 
     //WIDGETS
 
@@ -53,6 +55,7 @@ private:
     //PROPERTIES
 
     //METHODS
+    void restoreSettings();
 
     //WIDGETS
     QPushButton *addNewTabButton;

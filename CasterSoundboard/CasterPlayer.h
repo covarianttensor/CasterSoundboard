@@ -51,6 +51,7 @@ public:
     //Player Methhods
     void playSound();//Plays sound
     void stopSound();//Stops sound
+    bool assignFile(const QString &path);
 
     //Properties
     QString *soundFilePath;
@@ -68,11 +69,23 @@ protected:
     void dragMoveEvent(QDragMoveEvent *event);
     void dragLeaveEvent(QDragLeaveEvent *event);
     void dropEvent(QDropEvent *event);
-    bool openFiles(const QStringList& pathList);
+    // Choose a file instead of dragging
+    void mousePressEvent(QMouseEvent* event);
+    bool openFiles(const QStringList &pathList);
 
 private:
     //Private Methods
     int getProgressWidth(); //Use to compute width of progress bar
+
+    // Internal state property
+    enum State {
+        NoFile,
+        Loading,
+        Error,
+        Active
+    };
+
+    State state;
 
     //contained widgets:
     QVBoxLayout *mainLayout;
@@ -88,9 +101,6 @@ private:
     QPushButton *subMenuButton;
     QSlider *volumeSlider;
 
-    //Internal Properties
-    bool newMediaLoaded;
-
 signals:
     //MyWidget's signals....
 public slots:
@@ -103,5 +113,7 @@ public slots:
     void playerPositionChanged(qint64 position);
     void playerStateChanged(QMediaPlayer::State state);
     void playerMetaDataChanged();
+    void playerNewMediaStatus(QMediaPlayer::MediaStatus status);
+    void playerError(QMediaPlayer::Error error);
 };
 #endif // CASTERPLAYER_H

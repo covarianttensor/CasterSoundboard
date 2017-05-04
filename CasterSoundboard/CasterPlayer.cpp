@@ -26,6 +26,7 @@
 #include <QSizePolicy>
 #include <QString>
 #include <QFile>
+#include <QFileDialog>
 #include <QFileInfo>
 #include <QMessageBox>
 #include <QMimeData>
@@ -51,6 +52,7 @@ CasterPlayerWidget::CasterPlayerWidget(QWidget* parent) : QWidget(parent)
     this->setAcceptDrops(true);
 
     //Init Player
+    state = NoFile;
     player = new QMediaPlayer();
     //Init Properties
     soundFilePath = new QString("");
@@ -58,11 +60,8 @@ CasterPlayerWidget::CasterPlayerWidget(QWidget* parent) : QWidget(parent)
     progress = 0.0;
     volume = 100;
 
-    //Internal Properties
-    newMediaLoaded = false;
-
     //Set-Up Widget Layout
-    soundNameLabel = new QLabel("<Drop File>");
+    soundNameLabel = new QLabel("<Drop File or click to choose>");
     soundNameLabel->setAlignment(Qt::AlignTop | Qt::AlignLeft);
     QFont sNLF("Georgia",7,-1,false); sNLF.setBold(true);
     soundNameLabel->setFont(sNLF);
@@ -132,6 +131,8 @@ CasterPlayerWidget::CasterPlayerWidget(QWidget* parent) : QWidget(parent)
     connect(player,SIGNAL(positionChanged(qint64)),this,SLOT(playerPositionChanged(qint64)));
     connect(player,SIGNAL(stateChanged(QMediaPlayer::State)),this,SLOT(playerStateChanged(QMediaPlayer::State)));
     connect(player,SIGNAL(metaDataChanged()),this,SLOT(playerMetaDataChanged()));
+    connect(player,SIGNAL(mediaStatusChanged(QMediaPlayer::MediaStatus)),this,SLOT(playerNewMediaStatus(QMediaPlayer::MediaStatus)));
+    connect(player,SIGNAL(error(QMediaPlayer::Error)),this,SLOT(playerError(QMediaPlayer::Error)));
 }
 
 //Set Properties
@@ -223,30 +224,50 @@ void CasterPlayerWidget::playerStateChanged(QMediaPlayer::State state)
 void CasterPlayerWidget::playerMetaDataChanged()
 {
     //Update Meta Data
-    QFileInfo fi(*soundFilePath);
-    if(player->metaData(QMediaMetaData::Title).toString() != "")
-    {
-        //Use metadata title
-        soundNameLabel->setText(player->metaData(QMediaMetaData::Title).toString());
-    }
-    else
-    {
-        //Use filename as title
-        soundNameLabel->setText(fi.baseName());
-    }
     int timeLeft = player->duration();
     int seconds = (int) (timeLeft / 1000) % 60 ;
     int minutes = (int) ((timeLeft / (1000*60)) % 60);
     QString timeRemaining = "-" + QString("%1").arg(minutes,2,'i',0,'0') + ":" + QString("%1").arg(seconds,2,'i',0,'0');
     timeLabel->setText(timeRemaining);
+}
 
-    //Hack solution to prevent playing when when meadia loaded.
-    if(newMediaLoaded)
-    {
-        newMediaLoaded = false;
+void CasterPlayerWidget::playerNewMediaStatus(QMediaPlayer::MediaStatus status)
+{
+    // If we are already in Error state, don't try to update the label at all.
+    if (state == Error)
+        return;
+
+    if (status == QMediaPlayer::LoadingMedia) {
+        soundNameLabel->setText("Loading...");
+        soundNameLabel->setStyleSheet("color:darkblue;");
         player->stop();
+        state = Loading;
+    } else if (status != QMediaPlayer::InvalidMedia) {
+        // We want to change the label on all occasions except if we have
+        // InvalidMedia, where we also get an Error signal which is handled in
+        // playerError().
+        QFileInfo fi(*soundFilePath);
+        QString text;
+        if (player->metaData(QMediaMetaData::Title).toString() != "")
+            //Use metadata title
+            text = player->metaData(QMediaMetaData::Title).toString();
+        else //Use filename as title
+            text = QFileInfo(*soundFilePath).baseName();
+        soundNameLabel->setText(text);
+        soundNameLabel->setStyleSheet("");
+        state = Active;
     }
+}
 
+void CasterPlayerWidget::playerError(QMediaPlayer::Error error)
+{
+    if (error == QMediaPlayer::NoError)
+        return;
+
+    soundNameLabel->setText("Error: " + player->errorString());
+    soundNameLabel->setStyleSheet("color:red;");
+    player->stop();
+    state = Error;
 }
 
 //--------------
@@ -271,6 +292,26 @@ void CasterPlayerWidget::stopSound()
     player->setVolume(volume);
     player->stop();
 }
+
+bool CasterPlayerWidget::assignFile(const QString &path)
+{
+    if(openFiles(QStringList(path)))
+    {
+        return true;
+    }
+    else
+    {
+        QMessageBox msgBox;
+        msgBox.setText("CasterSoundboard does not accept this file type.\nMake sure your system has the necessary codecs installed.\nCasterSoundboard can also play the audio from videos.");
+        msgBox.setInformativeText("Try: (*.mp3), (*.wav), (*.ogg), (*.flac), (*.m4a).\nAnd Try: (*.mp4), (*.mov), (*.ogv), (*.avi), (*.mpg), (*.wmv).");
+        msgBox.setStandardButtons(QMessageBox::Close);
+        msgBox.setDefaultButton(QMessageBox::Close);
+        msgBox.setModal(true);
+        msgBox.exec();
+        return false;
+    }
+
+}
 //==================================================
 
 //Protected Methods
@@ -292,34 +333,33 @@ void CasterPlayerWidget::dragLeaveEvent(QDragLeaveEvent *event)
 
 void CasterPlayerWidget::dropEvent(QDropEvent *event)
 {
-        const QMimeData* mimeData = event->mimeData();
+    const QMimeData* mimeData = event->mimeData();
 
-        if (mimeData->hasUrls())
-        {
-            QStringList pathList;
-            QList<QUrl> urlList = mimeData->urls();
-
-            for (int i = 0; i < urlList.size() && i < 32; ++i)
-            {
-                pathList.append(urlList.at(i).toLocalFile());
-            }
-
-            if(openFiles(pathList))
-            {
-                event->acceptProposedAction();
-                playSound();
-            }
-            else
-            {
-                 QMessageBox msgBox;
-                 msgBox.setText("CasterSoundboard does not accept this file type.\nMake sure your system has the necessary codecs installed.\nCasterSoundboard can also play the audio from videos.");
-                 msgBox.setInformativeText("Try: (*.mp3), (*.wav), (*.ogg), (*.flac), (*.m4a).\nAnd Try: (*.mp4), (*.mov), (*.ogv), (*.avi), (*.mpg), (*.wmv).");
-                 msgBox.setStandardButtons(QMessageBox::Close);
-                 msgBox.setDefaultButton(QMessageBox::Close);
-                 msgBox.setModal(true);
-                 int ret = msgBox.exec();
-            }
+    if (mimeData->hasUrls())
+    {
+        QString path = mimeData->urls().at(0).toLocalFile();
+        if (assignFile(path)) {
+            playSound();
+            event->acceptProposedAction();
         }
+    }
+}
+
+void CasterPlayerWidget::mousePressEvent(QMouseEvent* event)
+{
+    if (event->button() != Qt::LeftButton) {
+        event->ignore();
+        return;
+    }
+
+    event->accept();
+    QString path = QFileDialog::getOpenFileName(
+        this, "Open audio file", "",
+        "Audio files (*.mp3 *.wav *.ogg *.flac *.m4a);;"
+        "Video files (*.mp4 *.mov *.ogv *.avi *.mpg *.wmv)"
+    );
+    if (!path.isNull() && assignFile(path))
+        playSound();
 }
 
 bool CasterPlayerWidget::openFiles(const QStringList& pathList)
@@ -340,9 +380,11 @@ bool CasterPlayerWidget::openFiles(const QStringList& pathList)
             fi.suffix() == "wmv")
     {
         soundFilePath = new QString(pathList[0]);//Sets File Path
+        // Put the state into NoFile here, so that we're not going to be stuck
+        // in the Error state forever.
+        state = NoFile;
         player->setVolume(volume);
         player->setMedia(QUrl::fromLocalFile(soundFilePath->toUtf8().constData()));
-        newMediaLoaded = true;
         return true;
     }
     else

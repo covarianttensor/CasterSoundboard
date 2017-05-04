@@ -22,7 +22,10 @@
  */
 #ifndef CASTERBOARD_H
 #define CASTERBOARD_H
+#include "CasterBoardLayout.h"
 #include <QWidget>
+#include <QHash>
+#include <QSettings>
 
 //forward declarations
 class CasterPlayerWidget;
@@ -34,6 +37,9 @@ public:
     //Constructor
     CasterBoard(QWidget* parent = 0); //don't forget to pass the parent
 
+    void saveLayout(QSettings &settings);
+    void restoreLayout(const QSettings &settings);
+
     //Properties
 
 
@@ -42,44 +48,7 @@ protected:
     void keyReleaseEvent(QKeyEvent *event);//Capture Hot Keys
 
 private:
-    //Private Methods
-
-    //WIDGETS
-    CasterPlayerWidget *player1;
-    CasterPlayerWidget *player2;
-    CasterPlayerWidget *player3;
-    CasterPlayerWidget *player4;
-    CasterPlayerWidget *player5;
-    CasterPlayerWidget *player6;
-    CasterPlayerWidget *player7;
-    CasterPlayerWidget *player8;
-
-    CasterPlayerWidget *playerQ;
-    CasterPlayerWidget *playerW;
-    CasterPlayerWidget *playerE;
-    CasterPlayerWidget *playerR;
-    CasterPlayerWidget *playerT;
-    CasterPlayerWidget *playerY;
-    CasterPlayerWidget *playerU;
-    CasterPlayerWidget *playerI;
-
-    CasterPlayerWidget *playerA;
-    CasterPlayerWidget *playerS;
-    CasterPlayerWidget *playerD;
-    CasterPlayerWidget *playerF;
-    CasterPlayerWidget *playerG;
-    CasterPlayerWidget *playerH;
-    CasterPlayerWidget *playerJ;
-    CasterPlayerWidget *playerK;
-
-    CasterPlayerWidget *playerZ;
-    CasterPlayerWidget *playerX;
-    CasterPlayerWidget *playerC;
-    CasterPlayerWidget *playerV;
-    CasterPlayerWidget *playerB;
-    CasterPlayerWidget *playerN;
-    CasterPlayerWidget *playerM;
-    CasterPlayerWidget *playerCOMMA;
+    QHash<int, CasterBoardLayout*> layout;
 
 signals:
     //SIGNALS
