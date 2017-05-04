@@ -4,3 +4,6 @@
 
 # OSX
 .DS_Store
+
+# Build directories
+build-CasterSoundboard-Desktop_Qt_5_8_0_GCC_64bit-Debug/
