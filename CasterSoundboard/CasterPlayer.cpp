@@ -89,6 +89,20 @@ CasterPlayerWidget::CasterPlayerWidget(QWidget* parent) : QWidget(parent)
     //subMenuButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Expanding);
     volumeSlider = new QSlider(Qt::Vertical);
     volumeSlider->setValue(100);
+    volumeSlider->setStyleSheet("QSlider:vertical {"
+                                "min-width: 30px;"
+                                "}"
+                                "QSlider::groove:vertical { "
+                                "border: 1px solid #999999; "
+                                "background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #d6d6d6, stop:1 #999999); "
+                                "margin: 8px 0; "
+                                "} "
+                                "QSlider::handle:vertical { "
+                                "background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #ffffff, stop:1 #565656); "
+                                "border: 2px solid #000000; "
+                                "height: 40px;"
+                                "margin: -8px 0px; "
+                                "} ");// Style the volume slider (Touch Friendly)
 
     //Place Widgets
     mainLayout = new QVBoxLayout(this);
