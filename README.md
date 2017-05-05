@@ -25,7 +25,7 @@ commands for various platforms are listed below:
 
 *Fedora*
 ```
-# dnf install qt-devel make gcc gcc-c++
+# dnf install qt5-devel make gcc gcc-c++
 ```
 
 *Debian and Ubuntu*
@@ -49,6 +49,12 @@ Now run qmake, this will auto generate a makefile:
 
 ```
 $ qmake
+```
+
+or on Fedora:
+
+```
+$ qmake-qt5
 ```
 
 Then run make to build the project:
