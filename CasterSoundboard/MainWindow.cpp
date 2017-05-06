@@ -24,6 +24,7 @@
 #include "CasterBoard.h"
 #include <QMessageBox>
 #include <QInputDialog>
+#include <QToolBar>
 #include <QPushButton>
 #include <QTableWidget>
 #include <QGridLayout>
@@ -39,17 +40,27 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent)
     QGridLayout *layout = new QGridLayout;
 
     //INIT NEW TAB PUSH BUTTONS
+    //~~About Button~~
     aboutButton = new QPushButton;
     aboutButton->setIcon(QIcon(":/res/img/about.png"));
     aboutButton->setIconSize(QSize(25,25));
     aboutButton->setFixedSize(30,30);
-    layout->addWidget(aboutButton,0,0, Qt::AlignLeft);
+    //layout->addWidget(aboutButton,0,0, Qt::AlignLeft);
 
+    //~~New Tab~~
     addNewTabButton = new QPushButton;
     addNewTabButton->setIcon(QIcon(":/res/img/newTab.png"));
     addNewTabButton->setIconSize(QSize(25,25));
     addNewTabButton->setFixedSize(30,30);
-    layout->addWidget(addNewTabButton,0,1, Qt::AlignRight);
+    //layout->addWidget(addNewTabButton,0,1, Qt::AlignRight);
+
+    //======Main Toolbar=========
+    mainToolbar = new QToolBar;
+    // Add buttons
+    mainToolbar->addWidget(addNewTabButton);
+    mainToolbar->addWidget(aboutButton);
+    // Add toolbar to layout
+    layout->addWidget(mainToolbar, 0, 0, Qt::AlignLeft);
 
     //INIT MAIN TAB CONTAINER
     mainTabContainer = new QTabWidget;

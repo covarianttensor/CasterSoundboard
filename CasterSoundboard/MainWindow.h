@@ -28,6 +28,7 @@
 //forward declarations
 class QTabWidget;
 class QPushButton;
+class QToolBar;
 
 class MainWindow : public QWidget //inherit from QWidget
 {
@@ -58,6 +59,9 @@ private:
     void restoreSettings();
 
     //WIDGETS
+    //Toolbar
+    QToolBar *mainToolbar;
+    // Push Buttons
     QPushButton *addNewTabButton;
     QPushButton *aboutButton;
     QTabWidget *mainTabContainer;
