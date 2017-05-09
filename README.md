@@ -30,7 +30,7 @@ commands for various platforms are listed below:
 
 *Debian and Ubuntu*
 ```
-# apt install qtdeclarative5-dev qt5-default build-essentials
+# apt install qtdeclarative5-dev qt5-default qtmultimedia5-dev build-essential
 ```
 
 *Mac OSX*
