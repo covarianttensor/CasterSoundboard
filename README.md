@@ -71,5 +71,14 @@ And finally run make install to install the app:
 
 Now you're good to go!
 
+### Troubleshooting ###
+Problem: On Ubuntu you get error:
+```
+defaultServiceProvider::requestService(): no service found for - "org.qt-project.qt.mediaplayer"
+```
+Solution: Install missing qt5 multimedia plugins
+```
+sudo apt-get install libqt5multimedia5-plugins
+```
 ### Screenshot ###
 ![Alt text](/docs/img/screenshot.png?raw=true "Running on Ubuntu")
