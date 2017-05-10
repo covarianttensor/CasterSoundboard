@@ -22,6 +22,8 @@
  */
 #include "CasterPlayer.h"
 #include "CasterLabelColorPicker.h"
+#include "CasterCuePicker.h"
+#include "CasterPlayerState.h"
 #include "CSS.h"
 #include <QSizePolicy>
 #include <QString>
@@ -39,10 +41,12 @@
 #include <QWidget>
 #include <QStyleOption>
 #include <QPainter>
+#include <QImage>
 #include <QPainterPath>
 #include <QBrush>
 #include <QLinearGradient>
 #include <QGraphicsDropShadowEffect>
+#include <QFileDialog>
 
 //Constructor
 CasterPlayerWidget::CasterPlayerWidget(QWidget* parent) : QWidget(parent)
@@ -52,41 +56,74 @@ CasterPlayerWidget::CasterPlayerWidget(QWidget* parent) : QWidget(parent)
 
     //Init Player
     player = new QMediaPlayer();
+    playStateImage = new QImage;
+    playStateImage->load(":/res/img/playState_playing.png");
     //Init Properties
     soundFilePath = new QString("");
     hotKeyLetter = new QString("1");
     progress = 0.0;
     volume = 100;
+    trackBarWasChangedByPlayer = false;
+    playerState = new CasterPlayerState;
+
+    //Diag
+    cuePicker = new CasterCuePicker(0, 0);
+    colorPicker = new CasterLabelColorPicker();
 
     //Internal Properties
     newMediaLoaded = false;
+    newMediaLoadedFromProfile = false;
 
     //Set-Up Widget Layout
     soundNameLabel = new QLabel("<Drop File>");
     soundNameLabel->setAlignment(Qt::AlignTop | Qt::AlignLeft);
-    QFont sNLF("Georgia",7,-1,false); sNLF.setBold(true);
+    QFont sNLF("Georgia",10,-1,false); sNLF.setBold(true);
     soundNameLabel->setFont(sNLF);
     soundNameLabel->setWordWrap(true);
+    soundNameLabel->setMaximumWidth(150);
     //soundNameLabel->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Expanding);
     hotKeyLabel = new QLabel(*hotKeyLetter);
     hotKeyLabel->setAlignment(Qt::AlignCenter);
     hotKeyLabel->setFont(QFont("Georgia",13,-1,false));
     hotKeyLabel->setStyleSheet("background:url(:/res/img/Key.png) no-repeat;background-attachment:fixed;background-position:center;color:white;");
     //hotKeyLabel->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Expanding);
-    timeLabel = new QLabel("-00:00");
+    timeLabel = new QLabel("+00:00\n-00:00");
     timeLabel->setAlignment(Qt::AlignHCenter | Qt::AlignRight);
-    QFont tLF("Georgia",8,-1,false); tLF.setBold(true);
+    QFont tLF("Georgia",9,-1,false); tLF.setBold(true);
     timeLabel->setFont(tLF);
+    /* Play Button */
     playStateButton = new QPushButton("");
     playStateButton->setIcon(QIcon(":/res/img/stop.png"));
-    playStateButton->setIconSize(QSize(16,16));
+    playStateButton->setIconSize(QSize(18,18));
     playStateButton->setFlat(true);
     //playStateButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Expanding);
-    subMenuButton = new QPushButton("");
-    subMenuButton->setIcon(QIcon(":/res/img/down.png"));
-    subMenuButton->setIconSize(QSize(16,16));
-    subMenuButton->setFlat(true);
-    //subMenuButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Expanding);
+    /* Open File Button */
+    openFileButton = new QPushButton("");
+    openFileButton->setIcon(QIcon(":/res/img/openMusic.png"));
+    openFileButton->setIconSize(QSize(32,32));
+    openFileButton->setFlat(true);
+    /* Set Cue Button */
+    setCueButton = new QPushButton("");
+    setCueButton->setIcon(QIcon(":/res/img/cue.png"));
+    setCueButton->setIconSize(QSize(32,32));
+    setCueButton->setFlat(true);
+    /* Toggle Loop Button */
+    toggleLoopButton = new QPushButton("");
+    toggleLoopButton->setIcon(QIcon(":/res/img/no_loop"));
+    toggleLoopButton->setIconSize(QSize(32,32));
+    toggleLoopButton->setFlat(true);
+    /* Sub Menu Button */
+    colorPickerButton = new QPushButton("");
+    colorPickerButton->setIcon(QIcon(":/res/img/colorPicker.png"));
+    colorPickerButton->setIconSize(QSize(16,16));
+    colorPickerButton->setFlat(true);
+    //colorPickerButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Expanding);
+    /* Edit Notes Button */
+    editNotesButton = new QPushButton("");
+    editNotesButton->setIcon(QIcon(":/res/img/notes.png"));
+    editNotesButton->setIconSize(QSize(32,32));
+    editNotesButton->setFlat(true);
+    /* Volume Slider */
     volumeSlider = new QSlider(Qt::Vertical);
     volumeSlider->setValue(100);
     volumeSlider->setStyleSheet("QSlider:vertical {"
@@ -103,6 +140,23 @@ CasterPlayerWidget::CasterPlayerWidget(QWidget* parent) : QWidget(parent)
                                 "height: 40px;"
                                 "margin: -8px 0px; "
                                 "} ");// Style the volume slider (Touch Friendly)
+    /* Track Bar */
+    trackBar = new QSlider(Qt::Horizontal);
+    trackBar->setValue(0);
+    trackBar->setStyleSheet("QSlider:horizontal {"
+                                "min-height: 30px;"
+                                "}"
+                                "QSlider::groove:horizontal { "
+                                "border: 1px solid #999999; "
+                                "background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #d6d6d6, stop:1 #999999); "
+                                "margin: 8px 0; "
+                                "} "
+                                "QSlider::handle:horizontal { "
+                                "background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #ffffff, stop:1 #565656); "
+                                "border: 2px solid #000000; "
+                                "width: 40px;"
+                                "margin: -8px 0px; "
+                                "} ");// Style the track bar (Touch Friendly)
 
     //Place Widgets
     mainLayout = new QVBoxLayout(this);
@@ -118,9 +172,20 @@ CasterPlayerWidget::CasterPlayerWidget(QWidget* parent) : QWidget(parent)
     centerLayout = new QHBoxLayout;
     centerLayout->addWidget(soundNameLabel);
 
-    bottomLayout = new QHBoxLayout;
-    bottomLayout->addWidget(playStateButton);
-    bottomLayout->addWidget(subMenuButton);
+    /* Layout: Bottom Player Buttons */
+    bottomLayout_TopButtons = new QHBoxLayout;
+    //bottomLayout_TopButtons->addWidget(playStateButton);
+    bottomLayout_TopButtons->addWidget(openFileButton);
+    bottomLayout_TopButtons->addWidget(setCueButton);
+    bottomLayout_TopButtons->addWidget(toggleLoopButton);
+
+    bottomLayout_BottomButtons = new QHBoxLayout;
+    bottomLayout_BottomButtons->addWidget(colorPickerButton);
+    //bottomLayout_BottomButtons->addWidget(editNotesButton);
+
+    bottomLayout = new QVBoxLayout;
+    bottomLayout->addLayout(bottomLayout_TopButtons);
+    bottomLayout->addLayout(bottomLayout_BottomButtons);
 
 
     subMainLayoutV->addLayout(topLayout);
@@ -131,6 +196,7 @@ CasterPlayerWidget::CasterPlayerWidget(QWidget* parent) : QWidget(parent)
     subMainLayoutH->addWidget(volumeSlider);
 
     mainLayout->addLayout(subMainLayoutH);
+    mainLayout->addWidget(trackBar);
 
     //Widget Styling
     this->setMouseTracking(true);
@@ -142,10 +208,15 @@ CasterPlayerWidget::CasterPlayerWidget(QWidget* parent) : QWidget(parent)
     //Connect Sub-Widget Events
     connect(playStateButton,SIGNAL(clicked()),this,SLOT(playerToggle()));
     connect(volumeSlider,SIGNAL(valueChanged(int)),this,SLOT(volumeChanged(int)));
-    connect(subMenuButton,SIGNAL(clicked()),this,SLOT(openSubMenu()));
-    connect(player,SIGNAL(positionChanged(qint64)),this,SLOT(playerPositionChanged(qint64)));
+    connect(trackBar,SIGNAL(valueChanged(int)),this,SLOT(trackBarChanged(int)));
+    connect(openFileButton,SIGNAL(clicked()),this,SLOT(openFileDiag()));
+    connect(colorPickerButton,SIGNAL(clicked()),this,SLOT(openColorPicker()));
+    connect(setCueButton,SIGNAL(clicked()),this,SLOT(openCuePicker()));
+    connect(toggleLoopButton,SIGNAL(clicked()),this,SLOT(toggleLooping()));
+    connect(player,SIGNAL(positionChanged(qint64)),this,SLOT(playerPositionChanged(qint64)),Qt::QueuedConnection);
     connect(player,SIGNAL(stateChanged(QMediaPlayer::State)),this,SLOT(playerStateChanged(QMediaPlayer::State)));
     connect(player,SIGNAL(metaDataChanged()),this,SLOT(playerMetaDataChanged()));
+    connect(player,SIGNAL(durationChanged(qint64)),this,SLOT(playerDurationChanged(qint64)));
 }
 
 //Set Properties
@@ -163,14 +234,16 @@ void CasterPlayerWidget::playerToggle()
     player->setVolume(volume);
     if(player->state() == QMediaPlayer::PlayingState)
     {
-        player->pause();
+        player->stop();
     }
     else if (player->state() == QMediaPlayer::StoppedState)
     {
+        player->setPosition(playerState->startTime);
         player->play();
     }
     else if(player->state() == QMediaPlayer::PausedState)
     {
+        player->setPosition(playerState->startTime);
         player->play();
     }
 }
@@ -180,16 +253,103 @@ void CasterPlayerWidget::volumeChanged(int value)
     //Update volume change
     volume = value;
     player->setVolume(volume);
+
+    //Update Player Save State
+    playerState->volume = volume;
 }
 
-void CasterPlayerWidget::openSubMenu()
+/* Track Barn Position Changed */
+void CasterPlayerWidget::trackBarChanged(int value)
+{
+    if(!trackBarWasChangedByPlayer)
+    {
+        qint64 position = (qint64)((float)(value) * (float)(player->duration()))/100.0;
+        player->setPosition(position);
+    }
+
+}
+
+/* Load Sound From Dialog */
+void CasterPlayerWidget::openFileDiag()
+{
+    QString _filePath = QFileDialog::getOpenFileName(
+            this, "Open audio file", "",
+            "Audio files (*.mp3 *.wav *.ogg *.flac *.m4a);;"
+            "Video files (*.mp4 *.mov *.ogv *.avi *.mpg *.wmv)");
+
+    if (!_filePath.isNull())
+    {
+        QStringList pathList;
+        pathList.append(_filePath);
+
+        if(!openFiles(pathList))
+        {
+            QMessageBox msgBox;
+            msgBox.setText("CasterSoundboard does not accept this file type.\nMake sure your system has the necessary codecs installed.\nCasterSoundboard can also play the audio from videos.");
+            msgBox.setInformativeText("Try: (*.mp3), (*.wav), (*.ogg), (*.flac), (*.m4a).\nAnd Try: (*.mp4), (*.mov), (*.ogv), (*.avi), (*.mpg), (*.wmv).");
+            msgBox.setStandardButtons(QMessageBox::Close);
+            msgBox.setDefaultButton(QMessageBox::Close);
+            msgBox.setModal(true);
+            msgBox.exec();
+        }
+    }
+}
+
+void CasterPlayerWidget::openColorPicker()
 {
     //OPEN SUB MENU
-    CasterLabelColorPicker colorPicker(this);
-    colorPicker.exec();
-    if(colorPicker.ok)
+    if(playerState->backgroundCSSChanged){
+        colorPicker->set_slider_H_Value(playerState->slider_H_Value);
+        colorPicker->set_slider_S_Value(playerState->slider_S_Value);
+        colorPicker->set_slider_L_Value(playerState->slider_L_Value);
+    }
+
+    colorPicker->exec();
+    if(colorPicker->ok)
     {
-        this->setStyleSheet(colorPicker.currentCSS);
+        this->setStyleSheet(colorPicker->currentCSS);
+        // Update Player State
+        playerState->PlayerBackgroundCSS = &colorPicker->currentCSS;
+        playerState->backgroundCSSChanged = true;
+        playerState->slider_H_Value = colorPicker->slider_H_Value;
+        playerState->slider_S_Value = colorPicker->slider_S_Value;
+        playerState->slider_L_Value = colorPicker->slider_L_Value;
+
+    }
+}
+
+void CasterPlayerWidget::openCuePicker()
+{
+    cuePicker->setFilePath(playerState->filePath, (int)player->duration(), playerState->loop);
+    cuePicker->setVolume(playerState->volume);
+    if(playerState->timeSet){
+        cuePicker->setStartTime(playerState->startTime);
+        cuePicker->setStopTime(playerState->stopTime);
+    } else {
+        cuePicker->setStartTime(playerState->startTime);
+        cuePicker->setStopTime((int)player->duration());
+    }
+
+    cuePicker->exec();
+    if(cuePicker->ok == true)
+    {
+        //Accept Changes
+        playerState->startTime = cuePicker->startTime;
+        playerState->stopTime = cuePicker->stopTime;
+        playerState->timeSet = true;
+        player->setPosition(playerState->startTime);
+    }
+}
+
+/* Toggles Looping */
+void CasterPlayerWidget::toggleLooping()
+{
+    if(playerState->loop == true){
+        toggleLoopButton->setIcon(QIcon(":/res/img/no_loop"));
+        playerState->loop = false;
+    } else {
+        toggleLoopButton->setIcon(QIcon(":/res/img/loop"));
+        playerState->loop = true;
     }
 }
 
@@ -197,15 +357,46 @@ void CasterPlayerWidget::playerPositionChanged(qint64 position)
 {
     if(player->duration() > 0)
     {
+        //Player State Update
+        if(!playerState->timeSet && playerState->stopTime == 0){
+            playerState->stopTime = player->duration();
+        }
+
+        //Current Time
+        int currentTime_seconds = (int) (position / 1000) % 60 ;
+        int currentTime_minutes = (int) ((position / (1000*60)) % 60);
+        QString currentTime = "+" + QString("%1").arg(currentTime_minutes,2,'i',0,'0') + ":" + QString("%1").arg(currentTime_seconds,2,'i',0,'0');
+        //Time Remaining
         progress = (float)(position) / (float)(player->duration());
         int timeLeft = player->duration() - position;
-        int seconds = (int) (timeLeft / 1000) % 60 ;
-        int minutes = (int) ((timeLeft / (1000*60)) % 60);
+        int timeLeft_seconds = (int) (timeLeft / 1000) % 60 ;
+        int timeLeft_minutes = (int) ((timeLeft / (1000*60)) % 60);
         //int hours   = (int) ((timeLeft / (1000*60*60)) % 24);
-        QString timeRemaining = "-" + QString("%1").arg(minutes,2,'i',0,'0') + ":" + QString("%1").arg(seconds,2,'i',0,'0');
-        timeLabel->setText(timeRemaining);
+        QString timeRemaining = "-" + QString("%1").arg(timeLeft_minutes,2,'i',0,'0') + ":" + QString("%1").arg(timeLeft_seconds,2,'i',0,'0');
+        timeLabel->setText(currentTime + "\n" + timeRemaining);// Set Time Remaining Label
+        trackBarWasChangedByPlayer = true;
+        trackBar->setValue((int)(progress * 100));
+        trackBarWasChangedByPlayer = false;
         this->update();
+
+        /* Enforce Start Time And Stop And Looping */
+        if(position >= playerState->stopTime)
+        {
+            if(playerState->loop){
+                player->setPosition(playerState->startTime);
+                player->play();
+            } else {
+                player->stop();//make sure to use Qt::QueuedConnection
+                player->setPosition(playerState->startTime);
+            }
+        }
+        if(position < playerState->startTime)
+        {
+            player->setPosition(playerState->startTime);
+        }
+
     }
+
 }
 
 void CasterPlayerWidget::playerStateChanged(QMediaPlayer::State state)
@@ -227,9 +418,10 @@ void CasterPlayerWidget::playerStateChanged(QMediaPlayer::State state)
         int timeLeft = player->duration();
         int seconds = (int) (timeLeft / 1000) % 60 ;
         int minutes = (int) ((timeLeft / (1000*60)) % 60);
-        QString timeRemaining = "-" + QString("%1").arg(minutes,2,'i',0,'0') + ":" + QString("%1").arg(seconds,2,'i',0,'0');
+        QString timeRemaining = "+00:00\n-" + QString("%1").arg(minutes,2,'i',0,'0') + ":" + QString("%1").arg(seconds,2,'i',0,'0');
         timeLabel->setText(timeRemaining);
         this->update();
+
     }
 
 }
@@ -248,11 +440,6 @@ void CasterPlayerWidget::playerMetaDataChanged()
         //Use filename as title
         soundNameLabel->setText(fi.baseName());
     }
-    int timeLeft = player->duration();
-    int seconds = (int) (timeLeft / 1000) % 60 ;
-    int minutes = (int) ((timeLeft / (1000*60)) % 60);
-    QString timeRemaining = "-" + QString("%1").arg(minutes,2,'i',0,'0') + ":" + QString("%1").arg(seconds,2,'i',0,'0');
-    timeLabel->setText(timeRemaining);
 
     //Hack solution to prevent playing when when meadia loaded.
     if(newMediaLoaded)
@@ -261,6 +448,27 @@ void CasterPlayerWidget::playerMetaDataChanged()
         player->stop();
     }
 
+}
+
+void CasterPlayerWidget::playerDurationChanged(qint64 _duration)
+{
+    if(newMediaLoaded && !newMediaLoadedFromProfile){
+        //reset player state
+        playerState->startTime = 0;
+        playerState->stopTime = _duration;
+        playerState->timeSet = false;
+        player->setPosition(playerState->startTime);
+    } else if (newMediaLoadedFromProfile){
+        cuePicker->setFilePath(playerState->filePath, (int)player->duration(), playerState->loop);
+        cuePicker->setVolume(playerState->volume);
+        if(playerState->timeSet){
+            cuePicker->setStartTime(playerState->startTime);
+            cuePicker->setStopTime(playerState->stopTime);
+        } else {
+            cuePicker->setStartTime(playerState->startTime);
+            cuePicker->setStopTime((int)player->duration());
+        }
+    }
 }
 
 //--------------
@@ -277,6 +485,7 @@ int CasterPlayerWidget::getProgressWidth()
 void CasterPlayerWidget::playSound()
 {
     player->setVolume(volume);
+    player->setPosition(playerState->startTime);
     player->play();
 }
 
@@ -357,11 +566,40 @@ bool CasterPlayerWidget::openFiles(const QStringList& pathList)
         player->setVolume(volume);
         player->setMedia(QUrl::fromLocalFile(soundFilePath->toUtf8().constData()));
         newMediaLoaded = true;
+
+        //Update Player Save State
+        playerState->filePath = soundFilePath; // Save file path to player state
+
         return true;
     }
     else
     {
         return false;
+    }
+}
+
+//=========================================================
+
+//===========Mouse Press/Touch Event===========
+/* When user touches wiget it toggles the player state (Play/Pause/Stop) */
+void CasterPlayerWidget::mousePressEvent(QMouseEvent *event)
+{
+    // Toggle play state
+    // Play/Pause
+    //CURRENT PLAY STATE TOGGLE LOGIC
+    player->setVolume(volume);
+    if(player->state() == QMediaPlayer::PlayingState)
+    {
+        player->pause();
+    }
+    else if (player->state() == QMediaPlayer::StoppedState)
+    {
+        player->setPosition(playerState->startTime);
+        player->play();
+    }
+    else if(player->state() == QMediaPlayer::PausedState)
+    {
+        player->play();
     }
 }
 
@@ -383,9 +621,11 @@ void CasterPlayerWidget::paintEvent(QPaintEvent *event)
     style()->drawPrimitive(QStyle::PE_Widget, &opt, &p, this);
 
 
-    //Draw Progressbar
+    // Set Progressbar Dimensions
     QLinearGradient lgBrush(0,0,0,this->height());
     QRect rec(0,0,this->getProgressWidth(),this->height());
+
+    // Draw Progressbar
     if(player->state() == QMediaPlayer::PlayingState)
     {
         lgBrush.setColorAt(0.0,QColor(184,225,252,255));
@@ -396,6 +636,8 @@ void CasterPlayerWidget::paintEvent(QPaintEvent *event)
         lgBrush.setColorAt(0.51,QColor(107,168,229,255));
         lgBrush.setColorAt(0.83,QColor(162,218,245,255));
         lgBrush.setColorAt(1.0,QColor(189,243,253,255));
+
+        playStateImage->load(":/res/img/playState_playing.png");
     }
     else if(player->state() == QMediaPlayer::PausedState)
     {
@@ -407,6 +649,8 @@ void CasterPlayerWidget::paintEvent(QPaintEvent *event)
         lgBrush.setColorAt(0.51,QColor(200,232,16,255));
         lgBrush.setColorAt(0.83,QColor(246,243,56,255));
         lgBrush.setColorAt(1.0,QColor(253,217,75,255));
+
+        playStateImage->load(":/res/img/playState_paused.png");
     }
     else if (player->state() == QMediaPlayer::StoppedState)
     {
@@ -418,8 +662,39 @@ void CasterPlayerWidget::paintEvent(QPaintEvent *event)
         lgBrush.setColorAt(0.51,QColor(232,27,16,255));
         lgBrush.setColorAt(0.83,QColor(246,56,78,255));
         lgBrush.setColorAt(1.0,QColor(253,75,128,255));
+
+        playStateImage->load(":/res/img/playState_stopped.png");
     }
     p.fillRect(rec,lgBrush);
 
+    // Draw Play State
+    p.drawImage(this->width()/2 - playStateImage->width()/2, this->height()/2 - playStateImage->height()/2, *playStateImage);
+
 }
 //====================================
+
+//==========Reload From Player State==========
+void CasterPlayerWidget::reloadFromPlayerState()
+{
+    /* Reload Colors */
+    colorPicker->set_slider_H_Value(playerState->slider_H_Value);
+    colorPicker->set_slider_S_Value(playerState->slider_S_Value);
+    colorPicker->set_slider_L_Value(playerState->slider_L_Value);
+    if(playerState->PlayerBackgroundCSS->toUtf8() != "")
+    {
+        this->setStyleSheet(playerState->PlayerBackgroundCSS->toUtf8());
+    }
+    /* Reload Loop UI */
+    if(playerState->loop){
+        toggleLoopButton->setIcon(QIcon(":/res/img/loop"));
+    }
+    /* Reload Player Settings */
+    QStringList pathList;
+    pathList.append(playerState->filePath->toUtf8());
+    newMediaLoadedFromProfile = true;
+    openFiles(pathList);
+    player->setVolume(playerState->volume);
+    volumeSlider->setValue(playerState->volume);
+    newMediaLoadedFromProfile = false;
+
+}

@@ -18,14 +18,18 @@ SOURCES += main.cpp\
     CasterBoard.cpp \
     MainWindow.cpp \
     CasterLabelColorPicker.cpp \
-    CSS.cpp
+    CSS.cpp \
+    CasterPlayerState.cpp \
+    CasterCuePicker.cpp
 
 HEADERS  += \
     CasterPlayer.h \
     CasterBoard.h \
     CSS.h \
     MainWindow.h \
-    CasterLabelColorPicker.h
+    CasterLabelColorPicker.h \
+    CasterPlayerState.h \
+    CasterCuePicker.h
 
 FORMS    +=
 

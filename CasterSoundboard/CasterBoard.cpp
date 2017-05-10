@@ -22,12 +22,20 @@
  */
 #include "CasterBoard.h"
 #include "CasterPlayer.h"
+#include "CasterPlayerState.h"
 #include <QGridLayout>
+#include <QFile>
+#include <QDataStream>
+#include <QString>
 
 //Constructor=============================================
 CasterBoard::CasterBoard(QWidget* parent) : QWidget(parent)
 {
     QGridLayout *boardLayout = new QGridLayout(this);
+
+    //Properties
+    soundBoardName = new QString("No Name");
+    profileFilePath = new QString("");
 
     //WIDGETS
     player1 = new CasterPlayerWidget;
@@ -135,7 +143,49 @@ CasterBoard::CasterBoard(QWidget* parent) : QWidget(parent)
     boardLayout->addWidget(playerM, 3,6);
     boardLayout->addWidget(playerCOMMA, 3,7);
 }
+//PUBLIC
+void CasterBoard::stopAllSounds()
+{
+    //WIDGETS
+    player1->stopSound();
+    player2->stopSound();
+    player3->stopSound();
+    player4->stopSound();
+    player5->stopSound();
+    player6->stopSound();
+    player7->stopSound();
+    player8->stopSound();
 
+    playerQ->stopSound();
+    playerW->stopSound();
+    playerE->stopSound();
+    playerR->stopSound();
+    playerT->stopSound();
+    playerY->stopSound();
+    playerU->stopSound();
+    playerI->stopSound();
+
+    playerA->stopSound();
+    playerS->stopSound();
+    playerD->stopSound();
+    playerF->stopSound();
+    playerG->stopSound();
+    playerH->stopSound();
+    playerJ->stopSound();
+    playerK->stopSound();
+
+    playerZ->stopSound();
+    playerX->stopSound();
+    playerC->stopSound();
+    playerV->stopSound();
+    playerB->stopSound();
+    playerN->stopSound();
+    playerM->stopSound();
+    playerCOMMA->stopSound();
+}
+
+
+// PROTECTED
 void CasterBoard::keyReleaseEvent(QKeyEvent *event)
 {
     //Handles All Hot Key Behavior
@@ -623,4 +673,67 @@ void CasterBoard::keyReleaseEvent(QKeyEvent *event)
             playerCOMMA->playSound();
         }
     }
+}
+
+//Public Methods
+void CasterBoard::reloadBoardFromPlayerStates()
+{
+    this->player1->reloadFromPlayerState();
+    this->player2->reloadFromPlayerState();
+    this->player3->reloadFromPlayerState();
+    this->player4->reloadFromPlayerState();
+    this->player5->reloadFromPlayerState();
+    this->player6->reloadFromPlayerState();
+    this->player7->reloadFromPlayerState();
+    this->player8->reloadFromPlayerState();
+
+    this->playerQ->reloadFromPlayerState();
+    this->playerW->reloadFromPlayerState();
+    this->playerE->reloadFromPlayerState();
+    this->playerR->reloadFromPlayerState();
+    this->playerT->reloadFromPlayerState();
+    this->playerY->reloadFromPlayerState();
+    this->playerU->reloadFromPlayerState();
+    this->playerI->reloadFromPlayerState();
+
+    this->playerA->reloadFromPlayerState();
+    this->playerS->reloadFromPlayerState();
+    this->playerD->reloadFromPlayerState();
+    this->playerF->reloadFromPlayerState();
+    this->playerG->reloadFromPlayerState();
+    this->playerH->reloadFromPlayerState();
+    this->playerJ->reloadFromPlayerState();
+    this->playerK->reloadFromPlayerState();
+
+    this->playerZ->reloadFromPlayerState();
+    this->playerX->reloadFromPlayerState();
+    this->playerC->reloadFromPlayerState();
+    this->playerV->reloadFromPlayerState();
+    this->playerB->reloadFromPlayerState();
+    this->playerN->reloadFromPlayerState();
+    this->playerM->reloadFromPlayerState();
+    this->playerCOMMA->reloadFromPlayerState();
+
+    this->update();
+}
+
+
+//Operator Overloading
+QDataStream &operator<<(QDataStream &ds, const CasterBoard &cb)
+{
+    return ds << *cb.soundBoardName
+              << *cb.player1->playerState << *cb.player2->playerState << *cb.player3->playerState << *cb.player4->playerState << *cb.player5->playerState << *cb.player6->playerState << *cb.player7->playerState << *cb.player8->playerState
+              << *cb.playerQ->playerState << *cb.playerW->playerState << *cb.playerE->playerState << *cb.playerR->playerState << *cb.playerT->playerState << *cb.playerY->playerState << *cb.playerU->playerState << *cb.playerI->playerState
+              << *cb.playerA->playerState << *cb.playerS->playerState << *cb.playerD->playerState << *cb.playerF->playerState << *cb.playerG->playerState << *cb.playerH->playerState << *cb.playerJ->playerState << *cb.playerK->playerState
+              << *cb.playerZ->playerState << *cb.playerX->playerState << *cb.playerC->playerState << *cb.playerV->playerState << *cb.playerB->playerState << *cb.playerN->playerState << *cb.playerM->playerState << *cb.playerCOMMA->playerState;
+}
+
+
+QDataStream &operator>>(QDataStream &ds, CasterBoard &cb)
+{
+    return ds >> *cb.soundBoardName
+              >> *cb.player1->playerState >> *cb.player2->playerState >> *cb.player3->playerState >> *cb.player4->playerState >> *cb.player5->playerState >> *cb.player6->playerState >> *cb.player7->playerState >> *cb.player8->playerState
+              >> *cb.playerQ->playerState >> *cb.playerW->playerState >> *cb.playerE->playerState >> *cb.playerR->playerState >> *cb.playerT->playerState >> *cb.playerY->playerState >> *cb.playerU->playerState >> *cb.playerI->playerState
+              >> *cb.playerA->playerState >> *cb.playerS->playerState >> *cb.playerD->playerState >> *cb.playerF->playerState >> *cb.playerG->playerState >> *cb.playerH->playerState >> *cb.playerJ->playerState >> *cb.playerK->playerState
+              >> *cb.playerZ->playerState >> *cb.playerX->playerState >> *cb.playerC->playerState >> *cb.playerV->playerState >> *cb.playerB->playerState >> *cb.playerN->playerState >> *cb.playerM->playerState >> *cb.playerCOMMA->playerState;
 }
