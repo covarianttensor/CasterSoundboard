@@ -23,11 +23,12 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 #include <QWidget>
-#include <QSettings>
 
 //forward declarations
+class CasterBoard;
 class QTabWidget;
 class QPushButton;
+class QToolBar;
 
 class MainWindow : public QWidget //inherit from QWidget
 {
@@ -47,7 +48,6 @@ protected:
     //PROPERTIES
 
     //METHODS
-    void closeEvent(QCloseEvent *event) override;
 
     //WIDGETS
 
@@ -55,11 +55,19 @@ private:
     //PROPERTIES
 
     //METHODS
-    void restoreSettings();
 
     //WIDGETS
+    //Toolbar
+    QToolBar *mainToolbar;
+    // Push Buttons
     QPushButton *addNewTabButton;
+    QPushButton *openTabButton;
+    QPushButton *saveTabButton;
+    QPushButton *saveAsTabButton;
+    QPushButton *stopAllSoundsButton;
+    QPushButton *renameCurrentTabButton;
     QPushButton *aboutButton;
+    //Lower window area
     QTabWidget *mainTabContainer;
 
 
@@ -71,6 +79,11 @@ public slots:
     void aboutBox();
     void addNewTab();
     void mainTabContainerTabClosedRequested(int tabIndex);
+    void saveTab();
+    void saveAsTab();
+    void openProfile();
+    void stopAllSounds();
+    void renameCurrentTab();
 
 };
 

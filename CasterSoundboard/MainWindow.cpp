@@ -22,11 +22,18 @@
  */
 #include "MainWindow.h"
 #include "CasterBoard.h"
+#include "CasterPlayer.h"
+#include "CasterPlayerState.h"
 #include <QMessageBox>
 #include <QInputDialog>
+#include <QToolBar>
 #include <QPushButton>
 #include <QTableWidget>
 #include <QGridLayout>
+#include <QString>
+#include <QFile>
+#include <QDataStream>
+#include <QFileDialog>
 
 //CONSTRUCTOR
 MainWindow::MainWindow(QWidget *parent) : QWidget(parent)
@@ -39,17 +46,60 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent)
     QGridLayout *layout = new QGridLayout;
 
     //INIT NEW TAB PUSH BUTTONS
-    aboutButton = new QPushButton;
-    aboutButton->setIcon(QIcon(":/res/img/about.png"));
-    aboutButton->setIconSize(QSize(25,25));
-    aboutButton->setFixedSize(30,30);
-    layout->addWidget(aboutButton,0,0, Qt::AlignLeft);
-
+    //~~New Tab~~
     addNewTabButton = new QPushButton;
     addNewTabButton->setIcon(QIcon(":/res/img/newTab.png"));
-    addNewTabButton->setIconSize(QSize(25,25));
-    addNewTabButton->setFixedSize(30,30);
-    layout->addWidget(addNewTabButton,0,1, Qt::AlignRight);
+    addNewTabButton->setIconSize(QSize(40,40));
+    //addNewTabButton->setFixedSize(30,30);
+    //layout->addWidget(addNewTabButton,0,2, Qt::AlignRight);
+
+    //~~Open Tab~~
+    openTabButton = new QPushButton;
+    openTabButton->setIcon(QIcon(":/res/img/open.png"));
+    openTabButton->setIconSize(QSize(40,40));
+    //openTabButton->setFixedSize(30,30);
+
+    //~~Save Tab~~
+    saveTabButton = new QPushButton;
+    saveTabButton->setIcon(QIcon(":/res/img/save.png"));
+    saveTabButton->setIconSize(QSize(40,40));
+    //saveTabButton->setFixedSize(30,30);
+
+    //~~Save As Tab~~
+    saveAsTabButton = new QPushButton;
+    saveAsTabButton->setIcon(QIcon(":/res/img/save_as.png"));
+    saveAsTabButton->setIconSize(QSize(40,40));
+    //saveAsTabButton->setFixedSize(40,40);
+
+    //~~Stop ALL Sounds~~
+    stopAllSoundsButton = new QPushButton;
+    stopAllSoundsButton->setIcon(QIcon(":/res/img/stopAll.png"));
+    stopAllSoundsButton->setIconSize(QSize(40,40));
+
+    //~~Rename Tab~~
+    renameCurrentTabButton = new QPushButton;
+    renameCurrentTabButton->setIcon(QIcon(":/res/img/rename.png"));
+    renameCurrentTabButton->setIconSize(QSize(40,40));
+
+    //~~About Button~~
+    aboutButton = new QPushButton;
+    aboutButton->setIcon(QIcon(":/res/img/about.png"));
+    aboutButton->setIconSize(QSize(40,40));
+    //aboutButton->setFixedSize(30,30);
+    //layout->addWidget(aboutButton,0,0, Qt::AlignLeft);
+
+    //======Main Toolbar=========
+    mainToolbar = new QToolBar;
+    // Add buttons
+    mainToolbar->addWidget(addNewTabButton);
+    mainToolbar->addWidget(openTabButton);
+    mainToolbar->addWidget(saveTabButton);
+    mainToolbar->addWidget(saveAsTabButton);
+    mainToolbar->addWidget(renameCurrentTabButton);
+    mainToolbar->addWidget(stopAllSoundsButton);
+    mainToolbar->addWidget(aboutButton);
+    // Add toolbar to layout
+    layout->addWidget(mainToolbar, 0, 0, Qt::AlignLeft);
 
     //INIT MAIN TAB CONTAINER
     mainTabContainer = new QTabWidget;
@@ -59,55 +109,25 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent)
     //SET LAYOUT
     this->setLayout(layout);
 
-    restoreSettings();
-
     //MAKE CONNECTIONS
     connect(aboutButton,SIGNAL(clicked()),this,SLOT(aboutBox()));
     connect(addNewTabButton,SIGNAL(clicked()),this,SLOT(addNewTab()));
     connect(mainTabContainer,SIGNAL(tabCloseRequested(int)),this,SLOT(mainTabContainerTabClosedRequested(int)));
-}
+    connect(saveTabButton,SIGNAL(clicked()),this,SLOT(saveTab()));
+    connect(saveAsTabButton,SIGNAL(clicked()),this,SLOT(saveAsTab()));
+    connect(openTabButton,SIGNAL(clicked()),this,SLOT(openProfile()));
+    connect(renameCurrentTabButton,SIGNAL(clicked()),this,SLOT(renameCurrentTab()));
+    connect(stopAllSoundsButton,SIGNAL(clicked()),this,SLOT(stopAllSounds()));
 
-void MainWindow::closeEvent(QCloseEvent *event)
-{
-    QSettings settings("Jupiter Broadcasting", "CasterSoundboard");
+    // Properties
 
-    settings.beginWriteArray("boards");
-
-    for (int i = 0; i < mainTabContainer->count(); ++i) {
-        settings.setArrayIndex(i);
-        settings.setValue("title", mainTabContainer->tabText(i));
-
-        CasterBoard *cb;
-        cb = static_cast<CasterBoard*>(mainTabContainer->widget(i));
-        cb->saveLayout(settings);
-    }
-
-    settings.endArray();
-
-    event->accept();
-}
-
-void MainWindow::restoreSettings()
-{
-    QSettings settings("Jupiter Broadcasting", "CasterSoundboard");
-
-    int size = settings.beginReadArray("boards");
-
-    for (int i = 0; i < size; ++i) {
-        settings.setArrayIndex(i);
-
-        CasterBoard *cb = new CasterBoard;
-        mainTabContainer->addTab(cb, settings.value("title").toString());
-        cb->restoreLayout(settings);
-    }
-    settings.endArray();
 }
 
 //SLOTS
 void MainWindow::aboutBox()
 {
     QMessageBox msgBox;
-    msgBox.setText("CasterSoundboard (v0.1)\nAuthor: Oscar Cerna\ne-mail: covarianttensor@gmail.com\nLicense: LGPL v3\n© 2013 Oscar Cerna");
+    msgBox.setText("CasterSoundboard (v1.0) BETA\nAuthor: Oscar Cerna\ne-mail: covarianttensor@gmail.com\nLicense: LGPL v3\n© 2013-2017 Oscar Cerna");
     msgBox.setInformativeText("Special Note:\nDeveloped for Chris Fisher & Jupiter Broadcasting, because he's awesome!\nVisit www.jupiterbroadcasting.com.\nNOT AFFILIATED with Chris Fisher or Jupiter Broadcasting.");
     msgBox.setStandardButtons(QMessageBox::Close);
     msgBox.setDefaultButton(QMessageBox::Close);
@@ -134,6 +154,7 @@ void MainWindow::addNewTab()
         CasterBoard *cb = new CasterBoard;
         if(text != "")
         {
+            cb->soundBoardName = new QString(text);
             mainTabContainer->addTab(cb, text);
         }
         else
@@ -159,4 +180,154 @@ void MainWindow::mainTabContainerTabClosedRequested(int tabIndex)
         //CLOSE REQUESTED TAB
         mainTabContainer->removeTab(tabIndex);
     }
+}
+
+void MainWindow::saveTab()
+{
+    if(mainTabContainer->count() > 0)
+    {
+        if(dynamic_cast<CasterBoard*>(mainTabContainer->currentWidget())->profileFilePath->toUtf8() != ""){
+            /* Save */
+            QFile file;
+            QDataStream out;
+
+            file.setFileName(dynamic_cast<CasterBoard*>(mainTabContainer->currentWidget())->profileFilePath->toUtf8());
+            file.open(QIODevice::WriteOnly);
+            out.setDevice(&file);
+            out.setVersion(QDataStream::Qt_5_8);
+            out << *dynamic_cast<CasterBoard*>(mainTabContainer->currentWidget());
+            file.flush();
+            file.close();
+        } else {
+            /* Save As.. */
+            QString _filePath = QFileDialog::getSaveFileName(this, "Save Sound Board Profile As...", "",
+                                                             "Sound Board Profile (*.caster)");
+
+            if (!_filePath.isNull())
+            {
+                /* Save Profile As... */
+                QFile file;
+                QDataStream out;
+
+                file.setFileName(_filePath.toUtf8() + ".caster");
+                file.open(QIODevice::WriteOnly);
+                out.setDevice(&file);
+                out.setVersion(QDataStream::Qt_5_8);
+                out << *dynamic_cast<CasterBoard*>(mainTabContainer->currentWidget());
+                file.flush();
+                file.close();
+
+                //Set Save Path
+                dynamic_cast<CasterBoard*>(mainTabContainer->currentWidget())->profileFilePath = new QString(_filePath.toUtf8() + ".caster");
+            }
+        }
+    }
+
+}
+
+void MainWindow::saveAsTab()
+{
+    //Debug
+    /*
+    QString *temp = dynamic_cast<CasterBoard*>(mainTabContainer->currentWidget())->player1->playerState->filePath;
+    QMessageBox msgBox;
+    msgBox.setText("File Path: " + temp->toUtf8() );
+    msgBox.setStandardButtons(QMessageBox::Close);
+    msgBox.setDefaultButton(QMessageBox::Close);
+    msgBox.setModal(true);
+    msgBox.setWindowTitle("About");
+    msgBox.setWindowIcon(QIcon(":/res/img/about.png"));
+    msgBox.exec();
+    */
+
+    if(mainTabContainer->count() > 0)
+    {
+        QString _filePath = QFileDialog::getSaveFileName(this, "Save Sound Board Profile As...", "",
+                                                         "Sound Board Profile (*.caster)");
+
+        if (!_filePath.isNull())
+        {
+            /* Save Profile As... */
+            QFile file;
+            QDataStream out;
+
+            file.setFileName(_filePath.toUtf8() + ".caster");
+            file.open(QIODevice::WriteOnly);
+            out.setDevice(&file);
+            out.setVersion(QDataStream::Qt_5_8);
+            out << *dynamic_cast<CasterBoard*>(mainTabContainer->currentWidget());
+            file.flush();
+            file.close();
+
+            //Set Save Path
+            dynamic_cast<CasterBoard*>(mainTabContainer->currentWidget())->profileFilePath = new QString(_filePath.toUtf8() + ".caster");
+        }
+    }
+
+
+
+}
+
+void MainWindow::openProfile()
+{
+    //File Diag
+    QString _filePath = QFileDialog::getOpenFileName(
+            this, "Open Sound Board Profile", "",
+            "Sound Board Profile (*.caster)");
+
+    if (!_filePath.isNull())
+    {
+        //Load Profile Data
+        CasterBoard *cb = new CasterBoard(this);
+        QFile file;
+        QDataStream in;
+        file.setFileName(_filePath);
+        file.open(QIODevice::ReadOnly);
+        in.setDevice(&file);
+        in.setVersion(QDataStream::Qt_5_8);
+        in >> *cb;
+        file.close();
+
+        //Set Save Path
+        *cb->profileFilePath = _filePath;
+
+        // Load Profile Into New Board
+        cb->reloadBoardFromPlayerStates();
+        mainTabContainer->addTab(cb, cb->soundBoardName->toUtf8());
+    }
+
+}
+
+void MainWindow::stopAllSounds()
+{
+    for(int i = 0; i < mainTabContainer->count(); i++)
+    {
+        dynamic_cast<CasterBoard*>(mainTabContainer->widget(i))->stopAllSounds();
+    }
+}
+
+void MainWindow::renameCurrentTab()
+{
+    if(mainTabContainer->count() > 0){
+        //ASK FOR SOUNDBOARD TAB
+        bool ok;
+        QString text = QInputDialog::getText(
+                              this,
+                              tr("String"),
+                              tr("Enter a new tab name:"),
+                              QLineEdit::Normal,
+                              tr(""),
+                              &ok );
+        if(ok)
+        {
+            //CREATE REQUESTED TABS
+            if(text != "")
+            {
+                mainTabContainer->setTabText(mainTabContainer->currentIndex(), text);
+                dynamic_cast<CasterBoard*>(mainTabContainer->currentWidget())->soundBoardName = new QString(text);
+            }
+
+        }
+    }
+
 }
