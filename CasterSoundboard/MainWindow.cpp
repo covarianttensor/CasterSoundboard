@@ -194,7 +194,7 @@ void MainWindow::saveTab()
             file.setFileName(dynamic_cast<CasterBoard*>(mainTabContainer->currentWidget())->profileFilePath->toUtf8());
             file.open(QIODevice::WriteOnly);
             out.setDevice(&file);
-            out.setVersion(QDataStream::Qt_5_8);
+            out.setVersion(QDataStream::Qt_DefaultCompiledVersion);
             out << *dynamic_cast<CasterBoard*>(mainTabContainer->currentWidget());
             file.flush();
             file.close();
@@ -212,7 +212,7 @@ void MainWindow::saveTab()
                 file.setFileName(_filePath.toUtf8() + ".caster");
                 file.open(QIODevice::WriteOnly);
                 out.setDevice(&file);
-                out.setVersion(QDataStream::Qt_5_8);
+                out.setVersion(QDataStream::Qt_DefaultCompiledVersion);
                 out << *dynamic_cast<CasterBoard*>(mainTabContainer->currentWidget());
                 file.flush();
                 file.close();
@@ -254,7 +254,7 @@ void MainWindow::saveAsTab()
             file.setFileName(_filePath.toUtf8() + ".caster");
             file.open(QIODevice::WriteOnly);
             out.setDevice(&file);
-            out.setVersion(QDataStream::Qt_5_8);
+            out.setVersion(QDataStream::Qt_DefaultCompiledVersion);
             out << *dynamic_cast<CasterBoard*>(mainTabContainer->currentWidget());
             file.flush();
             file.close();
@@ -284,7 +284,7 @@ void MainWindow::openProfile()
         file.setFileName(_filePath);
         file.open(QIODevice::ReadOnly);
         in.setDevice(&file);
-        in.setVersion(QDataStream::Qt_5_8);
+        in.setVersion(QDataStream::Qt_DefaultCompiledVersion);
         in >> *cb;
         file.close();
 
