@@ -1,0 +1,27 @@
+<RCC>
+    <qresource prefix="/">
+        <file>res/img/Key.png</file>
+        <file>res/img/down.png</file>
+        <file>res/img/app.png</file>
+        <file>res/img/pause.png</file>
+        <file>res/img/play.png</file>
+        <file>res/img/stop.png</file>
+        <file>res/img/newTab.png</file>
+        <file>res/img/about.png</file>
+        <file>res/img/cog.png</file>
+        <file>res/img/save.png</file>
+        <file>res/img/save_as.png</file>
+        <file>res/img/open.png</file>
+        <file>res/img/notes.png</file>
+        <file>res/img/cue.png</file>
+        <file>res/img/colorPicker.png</file>
+        <file>res/img/openMusic.png</file>
+        <file>res/img/playState_playing.png</file>
+        <file>res/img/playState_paused.png</file>
+        <file>res/img/playState_stopped.png</file>
+        <file>res/img/loop.png</file>
+        <file>res/img/no_loop.png</file>
+        <file>res/img/stopAll.png</file>
+        <file>res/img/rename.png</file>
+    </qresource>
+</RCC>
