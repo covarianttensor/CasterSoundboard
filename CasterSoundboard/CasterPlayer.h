@@ -34,6 +34,10 @@ class QLabel;
 class QPushButton;
 class QSlider;
 class QString;
+class QImage;
+class CasterPlayerState;
+class CasterCuePicker;
+class CasterLabelColorPicker;
 
 class CasterPlayerWidget : public QWidget //inherit from QWidget
 {
@@ -47,6 +51,7 @@ public:
 
     //Media Player
     QMediaPlayer *player;
+    QImage *playStateImage;
 
     //Player Methhods
     void playSound();//Plays sound
@@ -57,6 +62,11 @@ public:
     QString *hotKeyLetter;
     float progress;
     int volume;
+    bool trackBarWasChangedByPlayer;// Used to prevent player from tiggering track bar progress changed event
+    CasterPlayerState *playerState;
+
+    //Methods
+    void reloadFromPlayerState();
 
 protected:
     //Focus Event
@@ -69,6 +79,8 @@ protected:
     void dragLeaveEvent(QDragLeaveEvent *event);
     void dropEvent(QDropEvent *event);
     bool openFiles(const QStringList& pathList);
+    // Press/Touch Events
+    void mousePressEvent(QMouseEvent *event);
 
 private:
     //Private Methods
@@ -80,28 +92,43 @@ private:
     QVBoxLayout *subMainLayoutV;
     QHBoxLayout *topLayout;
     QHBoxLayout *centerLayout;
-    QHBoxLayout *bottomLayout;
+    QHBoxLayout *bottomLayout_TopButtons;
+    QHBoxLayout *bottomLayout_BottomButtons;
+    QVBoxLayout *bottomLayout;
     QLabel *soundNameLabel;
     QLabel *hotKeyLabel;
     QLabel *timeLabel;
     QPushButton *playStateButton;
-    QPushButton *subMenuButton;
+    QPushButton *openFileButton;
+    QPushButton *setCueButton;
+    QPushButton *toggleLoopButton;
+    QPushButton *colorPickerButton;
+    QPushButton *editNotesButton;
+    QSlider *trackBar;
     QSlider *volumeSlider;
+
+    // Diag
+    CasterCuePicker *cuePicker;
+    CasterLabelColorPicker *colorPicker;
 
     //Internal Properties
     bool newMediaLoaded;
+    bool newMediaLoadedFromProfile;
 
 signals:
     //MyWidget's signals....
+
 public slots:
-    //MyWidget's slots example:
-    // void firstButtonClicked();
-    //...
     void playerToggle();
     void volumeChanged(int value);
-    void openSubMenu();
+    void trackBarChanged(int value);
+    void openFileDiag();
+    void openColorPicker();
+    void openCuePicker();
+    void toggleLooping();
     void playerPositionChanged(qint64 position);
     void playerStateChanged(QMediaPlayer::State state);
     void playerMetaDataChanged();
+    void playerDurationChanged(qint64 _duration);
 };
 #endif // CASTERPLAYER_H

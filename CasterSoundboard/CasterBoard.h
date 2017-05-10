@@ -23,9 +23,13 @@
 #ifndef CASTERBOARD_H
 #define CASTERBOARD_H
 #include <QWidget>
+#include <QDataStream>
+#include <QString>
 
 //forward declarations
 class CasterPlayerWidget;
+class QString;
+class CasterBoardState;
 
 class CasterBoard : public QWidget //inherit from QWidget
 {
@@ -35,14 +39,8 @@ public:
     CasterBoard(QWidget* parent = 0); //don't forget to pass the parent
 
     //Properties
-
-
-protected:
-    //========
-    void keyReleaseEvent(QKeyEvent *event);//Capture Hot Keys
-
-private:
-    //Private Methods
+    QString *soundBoardName;
+    QString *profileFilePath;
 
     //WIDGETS
     CasterPlayerWidget *player1;
@@ -81,6 +79,18 @@ private:
     CasterPlayerWidget *playerM;
     CasterPlayerWidget *playerCOMMA;
 
+    //Methods
+    void stopAllSounds();
+    void reloadBoardFromPlayerStates();
+
+
+protected:
+    //========
+    void keyReleaseEvent(QKeyEvent *event);//Capture Hot Keys
+
+private:
+    //Private Methods
+
 signals:
     //SIGNALS
 
@@ -88,4 +98,9 @@ public slots:
     //SLOTS
 
 };
+
+//Operator Overloading
+QDataStream &operator<<(QDataStream &ds, const CasterBoard &cb);
+QDataStream &operator>>(QDataStream &ds, CasterBoard &cb);
+
 #endif // CASTERBOARD_H
