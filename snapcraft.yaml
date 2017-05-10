@@ -19,4 +19,3 @@ parts:
       - qt5-default
       - qtmultimedia5-dev
       - build-essential
-    after: [qt57]
