@@ -71,5 +71,5 @@ And finally run make install to install the app:
 
 Now you're good to go!
 
-### Screenhot ###
+### Screenshot ###
 ![Alt text](/docs/img/screenshot.png?raw=true "Running on Ubuntu")
