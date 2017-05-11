@@ -13,7 +13,7 @@ Building from Source for installation instructions.
 
 ## Packages
 ### Arch AUR
-Thanks to git user @j605 for creating a PKGBUILD for people on Arch who want to try this software:
+Thanks to git user [@j605](https://github.com/j605 "Jagannathan Tiruvallur Eachambadi") for creating a PKGBUILD for people on Arch who want to try this software:
 https://aur.archlinux.org/packages/castersoundboard-git
 
 ### Building From Source
