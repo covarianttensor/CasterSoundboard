@@ -11,6 +11,11 @@ CasterSoundboard is written in C++ Qt5.
 CasterSoundboard is not packaged for any platforms at this time see
 Building from Source for installation instructions.
 
+## Packages
+### Arch AUR
+Thanks to git user @j605 for creating a PKGBUILD for people on Arch who want to try this software:
+https://aur.archlinux.org/packages/castersoundboard-git
+
 ### Building From Source
 
 First clone the repository using git, if you don't have git installed
