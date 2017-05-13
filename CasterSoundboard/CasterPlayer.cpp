@@ -59,12 +59,14 @@ CasterPlayerWidget::CasterPlayerWidget(QWidget* parent) : QWidget(parent)
     playStateImage = new QImage;
     playStateImage->load(":/res/img/playState_playing.png");
     //Init Properties
+    playerState = new CasterPlayerState;
     soundFilePath = new QString("");
     hotKeyLetter = new QString("1");
     progress = 0.0;
-    volume = 100;
+    playerState->volume = 100;
     trackBarWasChangedByPlayer = false;
-    playerState = new CasterPlayerState;
+
+    isAudioDucked = false;
 
     //Diag
     cuePicker = new CasterCuePicker(0, 0);
@@ -100,17 +102,17 @@ CasterPlayerWidget::CasterPlayerWidget(QWidget* parent) : QWidget(parent)
     /* Open File Button */
     openFileButton = new QPushButton("");
     openFileButton->setIcon(QIcon(":/res/img/openMusic.png"));
-    openFileButton->setIconSize(QSize(32,32));
+    openFileButton->setIconSize(QSize(28,28));
     openFileButton->setFlat(true);
     /* Set Cue Button */
     setCueButton = new QPushButton("");
     setCueButton->setIcon(QIcon(":/res/img/cue.png"));
-    setCueButton->setIconSize(QSize(32,32));
+    setCueButton->setIconSize(QSize(28,28));
     setCueButton->setFlat(true);
     /* Toggle Loop Button */
     toggleLoopButton = new QPushButton("");
     toggleLoopButton->setIcon(QIcon(":/res/img/no_loop"));
-    toggleLoopButton->setIconSize(QSize(32,32));
+    toggleLoopButton->setIconSize(QSize(28,28));
     toggleLoopButton->setFlat(true);
     /* Sub Menu Button */
     colorPickerButton = new QPushButton("");
@@ -121,7 +123,7 @@ CasterPlayerWidget::CasterPlayerWidget(QWidget* parent) : QWidget(parent)
     /* Edit Notes Button */
     editNotesButton = new QPushButton("");
     editNotesButton->setIcon(QIcon(":/res/img/notes.png"));
-    editNotesButton->setIconSize(QSize(32,32));
+    editNotesButton->setIconSize(QSize(28,28));
     editNotesButton->setFlat(true);
     /* Volume Slider */
     volumeSlider = new QSlider(Qt::Vertical);
@@ -231,7 +233,7 @@ void CasterPlayerWidget::setHotKeyLetter(QString hotKey)
 void CasterPlayerWidget::playerToggle()
 {
     //CURRENT PLAY STATE TOGGLE LOGIC
-    player->setVolume(volume);
+    volumeSlider->setValue(playerState->volume);
     if(player->state() == QMediaPlayer::PlayingState)
     {
         player->stop();
@@ -250,12 +252,12 @@ void CasterPlayerWidget::playerToggle()
 
 void CasterPlayerWidget::volumeChanged(int value)
 {
-    //Update volume change
-    volume = value;
-    player->setVolume(volume);
-
     //Update Player Save State
-    playerState->volume = volume;
+    playerState->volume = value;
+    if(isAudioDucked)
+        player->setVolume(playerState->volume * 0.33);
+    else
+        player->setVolume(playerState->volume);
 }
 
 /* Track Barn Position Changed */
@@ -484,16 +486,46 @@ int CasterPlayerWidget::getProgressWidth()
 //===============Player Methods=================
 void CasterPlayerWidget::playSound()
 {
-    player->setVolume(volume);
+    volumeSlider->setValue(playerState->volume);
     player->setPosition(playerState->startTime);
     player->play();
 }
 
+void CasterPlayerWidget::pauseSound()
+{
+    volumeSlider->setValue(playerState->volume);
+    player->pause();
+}
+
 void CasterPlayerWidget::stopSound()
 {
-    player->setVolume(volume);
+    volumeSlider->setValue(playerState->volume);
     player->stop();
 }
+
+void CasterPlayerWidget::setLoopState(int state)
+{
+    if(state == 0){
+        toggleLoopButton->setIcon(QIcon(":/res/img/no_loop"));
+        playerState->loop = false;
+    } else if(state == 1) {
+        toggleLoopButton->setIcon(QIcon(":/res/img/loop"));
+        playerState->loop = true;
+    }
+}
+
+void CasterPlayerWidget::setAudioDuckState(int state)
+{
+    if(state == 0){
+        isAudioDucked = false;
+        player->setVolume(playerState->volume);
+    } else if(state == 1) {
+       isAudioDucked = true;
+       player->setVolume(playerState->volume * 0.33);
+    }
+    this->update();
+}
+
 //==================================================
 
 //Protected Methods
@@ -563,7 +595,7 @@ bool CasterPlayerWidget::openFiles(const QStringList& pathList)
             fi.suffix() == "wmv")
     {
         soundFilePath = new QString(pathList[0]);//Sets File Path
-        player->setVolume(volume);
+        volumeSlider->setValue(playerState->volume);
         player->setMedia(QUrl::fromLocalFile(soundFilePath->toUtf8().constData()));
         newMediaLoaded = true;
 
@@ -587,7 +619,7 @@ void CasterPlayerWidget::mousePressEvent(QMouseEvent *event)
     // Toggle play state
     // Play/Pause
     //CURRENT PLAY STATE TOGGLE LOGIC
-    player->setVolume(volume);
+    volumeSlider->setValue(playerState->volume);
     if(player->state() == QMediaPlayer::PlayingState)
     {
         player->pause();
@@ -670,6 +702,12 @@ void CasterPlayerWidget::paintEvent(QPaintEvent *event)
     // Draw Play State
     p.drawImage(this->width()/2 - playStateImage->width()/2, this->height()/2 - playStateImage->height()/2, *playStateImage);
 
+    // Draw Audio Ducking Indicator
+    if(isAudioDucked){
+        playStateImage->load(":/res/img/33_percent.png");
+        p.drawImage(this->width()/2 - playStateImage->scaled(64,64).width()/2, this->height()/2 - playStateImage->scaled(64,64).height()/2, playStateImage->scaled(64,64));
+    }
+
 }
 //====================================
 
@@ -693,7 +731,6 @@ void CasterPlayerWidget::reloadFromPlayerState()
     pathList.append(playerState->filePath->toUtf8());
     newMediaLoadedFromProfile = true;
     openFiles(pathList);
-    player->setVolume(playerState->volume);
     volumeSlider->setValue(playerState->volume);
     newMediaLoadedFromProfile = false;
 

@@ -53,15 +53,38 @@ public:
     QMediaPlayer *player;
     QImage *playStateImage;
 
+    //contained widgets:
+    QVBoxLayout *mainLayout;
+    QHBoxLayout *subMainLayoutH;
+    QVBoxLayout *subMainLayoutV;
+    QHBoxLayout *topLayout;
+    QHBoxLayout *centerLayout;
+    QHBoxLayout *bottomLayout_TopButtons;
+    QHBoxLayout *bottomLayout_BottomButtons;
+    QVBoxLayout *bottomLayout;
+    QLabel *soundNameLabel;
+    QLabel *hotKeyLabel;
+    QLabel *timeLabel;
+    QPushButton *playStateButton;
+    QPushButton *openFileButton;
+    QPushButton *setCueButton;
+    QPushButton *toggleLoopButton;
+    QPushButton *colorPickerButton;
+    QPushButton *editNotesButton;
+    QSlider *trackBar;
+    QSlider *volumeSlider;
+
     //Player Methhods
     void playSound();//Plays sound
+    void pauseSound();//Pauses sound
     void stopSound();//Stops sound
+    void setLoopState(int state);//Sets loop state
+    void setAudioDuckState(int state);//Set duck state
 
     //Properties
     QString *soundFilePath;
     QString *hotKeyLetter;
     float progress;
-    int volume;
     bool trackBarWasChangedByPlayer;// Used to prevent player from tiggering track bar progress changed event
     CasterPlayerState *playerState;
 
@@ -83,29 +106,12 @@ protected:
     void mousePressEvent(QMouseEvent *event);
 
 private:
+    //Proeprties
+    bool isAudioDucked;
+
     //Private Methods
     int getProgressWidth(); //Use to compute width of progress bar
 
-    //contained widgets:
-    QVBoxLayout *mainLayout;
-    QHBoxLayout *subMainLayoutH;
-    QVBoxLayout *subMainLayoutV;
-    QHBoxLayout *topLayout;
-    QHBoxLayout *centerLayout;
-    QHBoxLayout *bottomLayout_TopButtons;
-    QHBoxLayout *bottomLayout_BottomButtons;
-    QVBoxLayout *bottomLayout;
-    QLabel *soundNameLabel;
-    QLabel *hotKeyLabel;
-    QLabel *timeLabel;
-    QPushButton *playStateButton;
-    QPushButton *openFileButton;
-    QPushButton *setCueButton;
-    QPushButton *toggleLoopButton;
-    QPushButton *colorPickerButton;
-    QPushButton *editNotesButton;
-    QSlider *trackBar;
-    QSlider *volumeSlider;
 
     // Diag
     CasterCuePicker *cuePicker;

@@ -25,10 +25,13 @@
 #include <QWidget>
 
 //forward declarations
+class QObject;
 class CasterBoard;
 class QTabWidget;
 class QPushButton;
 class QToolBar;
+class QStatusBar;
+class QUdpSocket;
 
 class MainWindow : public QWidget //inherit from QWidget
 {
@@ -48,11 +51,13 @@ protected:
     //PROPERTIES
 
     //METHODS
+    void keyReleaseEvent(QKeyEvent *event);//Capture Hot Keys
 
     //WIDGETS
 
 private:
     //PROPERTIES
+    int audio_duck_state = 0;
 
     //METHODS
 
@@ -64,11 +69,17 @@ private:
     QPushButton *openTabButton;
     QPushButton *saveTabButton;
     QPushButton *saveAsTabButton;
-    QPushButton *stopAllSoundsButton;
     QPushButton *renameCurrentTabButton;
+    QPushButton *stopAllSoundsButton;
+    QPushButton *toggleAudioDuckingButton;
+    QPushButton *openSoundControlButton;
     QPushButton *aboutButton;
     //Lower window area
     QTabWidget *mainTabContainer;
+    // Bottom
+    QStatusBar *main_statusbar;
+    // UDP Server
+    QUdpSocket *socket;
 
 
 signals:
@@ -84,6 +95,10 @@ public slots:
     void openProfile();
     void stopAllSounds();
     void renameCurrentTab();
+    void toggleAudioDucking();
+    //OSC Server
+    void openOSCSettings();
+    void executeOSCCommand();
 
 };
 
