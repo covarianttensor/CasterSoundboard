@@ -23,6 +23,7 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 #include <QWidget>
+#include "libs/osc/composer/OscMessageComposer.h"
 
 //forward declarations
 class QObject;
@@ -32,6 +33,9 @@ class QPushButton;
 class QToolBar;
 class QStatusBar;
 class QUdpSocket;
+class QByteArray;
+class OscMessage;
+class CasterOSCServerConfigPicker;
 
 class MainWindow : public QWidget //inherit from QWidget
 {
@@ -58,8 +62,21 @@ protected:
 private:
     //PROPERTIES
     int audio_duck_state = 0;
+    int previous_tab_index = 0;
+    CasterOSCServerConfigPicker *oscConfigPicker;
+
+    // OSC Server Settings
+    int inbound_port = 5051;
+    QString *outbound_ipv4;
+    int outbound_port = 9000;
 
     //METHODS
+    //OSC Composer Methods
+    OscMessageComposer* writeOSCMessage(QString address, int value);
+    OscMessageComposer* writeOSCMessage(QString address, float value);
+    OscMessageComposer* writeOSCMessage(QString address, QString value);
+    //Utility
+    QString get_local_ip();
 
     //WIDGETS
     //Toolbar
@@ -96,9 +113,21 @@ public slots:
     void stopAllSounds();
     void renameCurrentTab();
     void toggleAudioDucking();
+    // Tab Switching
+    void switchToNextTab();
+    void switchToPrevTab();
+    void currentTabWasChanged(int tabIndex);
+    void updateCurrentOSCTab(int tabIndex);
+    // Board Signal Emissions Handlers
+    void hotKeyExecution(QKeyEvent * event);
+    void handleGlobalHotKeyEventFromCurrentWidget(QKeyEvent *event);
     //OSC Server
     void openOSCSettings();
     void executeOSCCommand();
+    void executeOneWayOSCCommand(OscMessage* msg, QStringList address_params);
+    void executeTwoWayOSCCommand(OscMessage* msg, QStringList address_params);
+    void sendOSCMessageToClient(OscMessageComposer* message);
+    void syncWithOSCClient();
 
 };
 

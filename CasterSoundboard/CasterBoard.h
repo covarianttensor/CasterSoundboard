@@ -26,6 +26,7 @@
 #include <QDataStream>
 #include <QString>
 #include <QMap>
+#include "libs/osc/composer/OscMessageComposer.h"
 
 //forward declarations
 class CasterPlayerWidget;
@@ -40,6 +41,7 @@ public:
     CasterBoard(QWidget* parent = 0); //don't forget to pass the parent
 
     //Properties
+    bool isCurrentBoard = false;
     QString *soundBoardName;
     QString *profileFilePath;
     QMap<int,QString> *int_to_player_key;
@@ -50,6 +52,7 @@ public:
     void stopAllSounds();
     void reloadBoardFromPlayerStates();
     void setAllAudioDuckingStates(int state);
+    void syncWithOSCClient();//Refeshes UI on OSC Client
 
 
 protected:
@@ -58,12 +61,19 @@ protected:
 
 private:
     //Private Methods
+    //OSC Composer Methods
+    OscMessageComposer* writeOSCMessage(QString address, int value);
+    OscMessageComposer* writeOSCMessage(QString address, float value);
+    OscMessageComposer* writeOSCMessage(QString address, QString value);
 
 signals:
     //SIGNALS
+    void globalHotKeyReleasedEvent(QKeyEvent *event);//Use by mainwindow to perform actions on all sound boads. Needed because of how focus works in qt.
+    void _updateOSCClient(OscMessageComposer* message);
 
 public slots:
     //SLOTS
+    void notifyApplicationAboutOSCMessage(OscMessageComposer* message);
 
 };
 

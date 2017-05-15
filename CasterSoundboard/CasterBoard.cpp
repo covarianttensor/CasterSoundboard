@@ -27,6 +27,7 @@
 #include <QFile>
 #include <QDataStream>
 #include <QString>
+#include "libs/osc/composer/OscMessageComposer.h"
 
 //Constructor=============================================
 CasterBoard::CasterBoard(QWidget* parent) : QWidget(parent)
@@ -60,6 +61,9 @@ CasterBoard::CasterBoard(QWidget* parent) : QWidget(parent)
         players->insert(int_to_player_key->value(i), new CasterPlayerWidget);
         players->value(int_to_player_key->value(i))->setHotKeyLetter(int_to_player_key->value(i));
 
+        // Connect OSC Events
+        connect(players->value(int_to_player_key->value(i)),SIGNAL(updateOSCClient(OscMessageComposer*)),this,SLOT(notifyApplicationAboutOSCMessage(OscMessageComposer*)));
+
         // Add to layout
         boardLayout->addWidget(players->value(int_to_player_key->value(i)), _board_row, _board_column);
 
@@ -88,6 +92,22 @@ void CasterBoard::setAllAudioDuckingStates(int state)
     }
 }
 
+void CasterBoard::notifyApplicationAboutOSCMessage(OscMessageComposer* message){
+    if(this->isCurrentBoard)
+        emit this->_updateOSCClient(message);
+}
+
+void CasterBoard::syncWithOSCClient()
+{
+    // Update Tab Name
+    OscMessageComposer* msg = writeOSCMessage("/glo/m/label/tab_name", *soundBoardName);
+    emit this->_updateOSCClient(msg);
+
+    // Iterate through players
+    foreach(QString _letter, players->keys()){
+        players->value(_letter)->syncWithOSCClient();
+    }
+}
 
 // PROTECTED
 void CasterBoard::keyReleaseEvent(QKeyEvent *event)
@@ -103,7 +123,11 @@ void CasterBoard::keyReleaseEvent(QKeyEvent *event)
             else if (players->value(keyboard_key_to_player_key->value(event->key()))->player->state() == QMediaPlayer::StoppedState)
                 players->value(keyboard_key_to_player_key->value(event->key()))->playSound();
         }
+    } else {
+        // Delegates global hotkeys to MainWIndow
+        emit globalHotKeyReleasedEvent(event);
     }
+
 }
 
 //Public Methods
@@ -116,6 +140,31 @@ void CasterBoard::reloadBoardFromPlayerStates()
 
     this->update();
 }
+
+//========================================================
+//==========OSC Composer Methods=====
+OscMessageComposer* CasterBoard::writeOSCMessage(QString address, int value){
+    // Compose OSC Message
+    OscMessageComposer* msg = new OscMessageComposer(address);
+    msg->pushInt32((qint32)value);
+    return msg;
+}
+
+OscMessageComposer* CasterBoard::writeOSCMessage(QString address, float value){
+    // Compose OSC Message
+    OscMessageComposer* msg = new OscMessageComposer(address);
+    msg->pushFloat(value);
+    return msg;
+}
+
+OscMessageComposer* CasterBoard::writeOSCMessage(QString address, QString value){
+    // Compose OSC Message
+    OscMessageComposer* msg = new OscMessageComposer(address);
+    msg->pushString(value.toUtf8());
+    return msg;
+}
+
+//================================================
 
 
 //Operator Overloading

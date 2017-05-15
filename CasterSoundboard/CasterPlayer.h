@@ -25,6 +25,7 @@
 #include <QWidget>
 #include <QDropEvent>
 #include <QtMultimedia/QMediaPlayer>
+#include "libs/osc/composer/OscMessageComposer.h"
 
 //forward declarations
 class QMediaPlayer;
@@ -48,6 +49,7 @@ public:
 
     //Set Properties
     void setHotKeyLetter(QString hotKey);
+    void syncWithOSCClient();
 
     //Media Player
     QMediaPlayer *player;
@@ -76,8 +78,11 @@ public:
 
     //Player Methhods
     void playSound();//Plays sound
+    void resumeSound();//Plays from where it left off sound
     void pauseSound();//Pauses sound
     void stopSound();//Stops sound
+    void play_stop_toggle();
+    void resume_pause_toggle();
     void setLoopState(int state);//Sets loop state
     void setAudioDuckState(int state);//Set duck state
 
@@ -107,6 +112,7 @@ protected:
 
 private:
     //Proeprties
+    QString *id;
     bool isAudioDucked;
 
     //Private Methods
@@ -121,8 +127,15 @@ private:
     bool newMediaLoaded;
     bool newMediaLoadedFromProfile;
 
+    //METHODS
+    //OSC Composer Methods
+    OscMessageComposer* writeOSCMessage(QString address, int value);
+    OscMessageComposer* writeOSCMessage(QString address, float value);
+    OscMessageComposer* writeOSCMessage(QString address, QString value);
+
 signals:
     //MyWidget's signals....
+    void updateOSCClient(OscMessageComposer* message);
 
 public slots:
     void playerToggle();

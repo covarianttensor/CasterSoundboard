@@ -49,10 +49,10 @@ SOURCES += main.cpp\
     libs/osc/reader/OscReader.cpp \
     libs/osc/reader/OscValue.cpp \
     libs/osc/OscPatternMatching.cpp \
-    ColorConversion.cpp \
     libs/tools/ByteBuffer.cpp \
     libs/tools/ByteOrder.cpp \
-    libs/tools/NtpTimestamp.cpp
+    libs/tools/NtpTimestamp.cpp \
+    CasterOSCServerConfigPicker.cpp
 
 HEADERS  += \
     CasterPlayer.h \
@@ -115,14 +115,14 @@ HEADERS  += \
     libs/osc/OscAPI.h \
     libs/osc/OscPatternMatching.h \
     libs/osc/OscVersion.h \
-    ColorConversion.h \
     libs/tools/exceptions/BufferOverflowException.h \
     libs/tools/exceptions/BufferUnderflowException.h \
     libs/tools/exceptions/IllegalArgumentException.h \
     libs/tools/exceptions/IndexOutOfBoundsException.h \
     libs/tools/ByteBuffer.h \
     libs/tools/ByteOrder.h \
-    libs/tools/NtpTimestamp.h
+    libs/tools/NtpTimestamp.h \
+    CasterOSCServerConfigPicker.h
 
 
 FORMS    +=
