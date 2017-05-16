@@ -10,6 +10,14 @@ CasterSoundboard is written in C++ Qt5.
 ### osc-cpp-qt
 https://github.com/MugenSAS/osc-cpp-qt
 
+---
+
+## Guides
+### Control CasterSoundboard with your phone or tablet via a network:
+[Click Here For Guide](https://github.com/JupiterBroadcasting/CasterSoundboard/wiki/Guide:-How-to-Control-CasterSoundboard-Using-Your-Phone-or-Tablet "CasterSoundboard's Wiki")
+
+---
+
 ## How to Install
 
 CasterSoundboard is not packaged for any platforms at this time see
