@@ -6,16 +6,15 @@ A soundboard for hot-keying and playing back sounds. (For podcasting)
 CasterSoundboard is written in C++ Qt5.
 =======
 
-## Libraries Used
-### osc-cpp-qt
-https://github.com/MugenSAS/osc-cpp-qt
-
----
-
 ## Guides
 ### Control CasterSoundboard with your phone or tablet via a network:
 [Click Here For Guide](https://github.com/JupiterBroadcasting/CasterSoundboard/wiki/Guide:-How-to-Control-CasterSoundboard-Using-Your-Phone-or-Tablet "CasterSoundboard's Wiki")
 
+=======
+
+## Libraries Used
+### osc-cpp-qt
+https://github.com/MugenSAS/osc-cpp-qt
 ---
 
 ## How to Install
