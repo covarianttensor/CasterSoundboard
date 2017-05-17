@@ -27,6 +27,13 @@ Building from Source for installation instructions.
 Thanks to git user [@j605](https://github.com/j605 "Jagannathan Tiruvallur Eachambadi") for creating a PKGBUILD for people on Arch who want to try this software:
 https://aur.archlinux.org/packages/castersoundboard-git
 
+### Fedora 25 and newer
+RPM package can be found in the [Copr](https://copr.fedorainfracloud.org/coprs/fszymanski/castersoundboard/) repository:
+```
+# dnf copr enable fszymanski/castersoundboard
+# dnf install castersoundboard
+```
+
 ### Building From Source
 
 First clone the repository using git, if you don't have git installed
