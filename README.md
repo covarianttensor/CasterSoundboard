@@ -89,7 +89,7 @@ $ make
 And finally run make install to install the app:
 
 ```
-# make install
+# make install INSTALL_ROOT=/usr
 ```
 
 Now you're good to go!

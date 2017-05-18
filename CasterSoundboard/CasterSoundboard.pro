@@ -130,5 +130,19 @@ FORMS    +=
 RESOURCES += \
     res.qrc
 
+unix {
+    desktop.files = ../CasterSoundboard.desktop
+    desktop.path = $${PREFIX}/share/applications/
+    INSTALLS += desktop
+
+    appdata.files = ../CasterSoundboard.appdata.xml
+    appdata.path = $${PREFIX}/share/appdata/
+    INSTALLS += appdata
+
+    pixmap.files = ../CasterSoundboard.png
+    pixmap.path = $${PREFIX}/share/pixmaps/
+    INSTALLS += pixmap
+}
+
 target.path = $${PREFIX}/bin
 INSTALLS += target
