@@ -4,7 +4,7 @@ summary: A soundboard for hot-keying and playing back sounds. (For podcasting)
 description: A soundboard for hot-keying and playing back sounds. (For podcasting)
 
 grade: stable
-confinement: devmode
+confinement: strict
 
 parts:
   main:
@@ -22,13 +22,11 @@ parts:
 apps:
   castersoundboard:
     command: bin/desktop-launch $SNAP/bin/CasterSoundboard
-    #command: env TMPDIR=$XDG_RUNTIME_DIR PATH=/usr/local/bin:${PATH} ${SNAP}/bin/desktop-launch $SNAP/usr/share/wpcom/wpcom
     #desktop: usr/share/applications/wpcom.desktop
     plugs:
-      #- gsettings
       - home
       - mount-observe
       - network
+      - network-bind
       - pulseaudio
-      #- unity7
       - x11
