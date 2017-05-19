@@ -1,20 +1,19 @@
-CasterSoundboard
+
+
+CasterSoundboard [![Snap Status](https://build.snapcraft.io/badge/JupiterBroadcasting/CasterSoundboard.svg)](https://build.snapcraft.io/user/JupiterBroadcasting/CasterSoundboard)
 ================
 
 A soundboard for hot-keying and playing back sounds. (For podcasting)
 
 CasterSoundboard is written in C++ Qt5.
-=======
+---
 
 ## Guides
-### Control CasterSoundboard with your phone or tablet via a network:
-[Click Here For Guide](https://github.com/JupiterBroadcasting/CasterSoundboard/wiki/Guide:-How-to-Control-CasterSoundboard-Using-Your-Phone-or-Tablet "CasterSoundboard's Wiki")
-
-=======
++ [Control CasterSoundboard with your phone or tablet via a network](https://github.com/JupiterBroadcasting/CasterSoundboard/wiki/Guide:-How-to-Control-CasterSoundboard-Using-Your-Phone-or-Tablet "CasterSoundboard's Wiki")
+---
 
 ## Libraries Used
-### osc-cpp-qt
-https://github.com/MugenSAS/osc-cpp-qt
++ [osc-cpp-qt](https://github.com/MugenSAS/osc-cpp-qt)
 ---
 
 ## How to Install
@@ -24,8 +23,8 @@ Building from Source for installation instructions.
 
 ## Packages
 ### Arch AUR
-Thanks to git user [@j605](https://github.com/j605 "Jagannathan Tiruvallur Eachambadi") for creating a PKGBUILD for people on Arch who want to try this software:
-https://aur.archlinux.org/packages/castersoundboard-git
+Thanks to [@j605](https://github.com/j605 "Jagannathan Tiruvallur Eachambadi") for creating a PKGBUILD for people on Arch who want to try this software:
++ [CasterSoundboard-git](https://aur.archlinux.org/packages/castersoundboard-git)
 
 ### Building From Source
 
