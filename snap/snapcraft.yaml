@@ -18,6 +18,8 @@ parts:
       - qtdeclarative5-dev
       - qt5-default
       - qtmultimedia5-dev
+    stage-packages:
+      - qml-module-qtmultimedia
 
 apps:
   castersoundboard:
