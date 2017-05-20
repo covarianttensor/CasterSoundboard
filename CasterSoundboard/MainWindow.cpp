@@ -73,6 +73,7 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent)
     addNewTabButton = new QPushButton;
     addNewTabButton->setIcon(QIcon(":/res/img/newTab.png"));
     addNewTabButton->setIconSize(QSize(40,40));
+    addNewTabButton->setToolTip("New Tab");
     //addNewTabButton->setFixedSize(30,30);
     //layout->addWidget(addNewTabButton,0,2, Qt::AlignRight);
 
@@ -80,44 +81,52 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent)
     openTabButton = new QPushButton;
     openTabButton->setIcon(QIcon(":/res/img/open.png"));
     openTabButton->setIconSize(QSize(40,40));
+    openTabButton->setToolTip("Open Tab");
     //openTabButton->setFixedSize(30,30);
 
     //~~Save Tab~~
     saveTabButton = new QPushButton;
     saveTabButton->setIcon(QIcon(":/res/img/save.png"));
     saveTabButton->setIconSize(QSize(40,40));
+    saveTabButton->setToolTip("Save Tab");
     //saveTabButton->setFixedSize(30,30);
 
     //~~Save As Tab~~
     saveAsTabButton = new QPushButton;
     saveAsTabButton->setIcon(QIcon(":/res/img/save_as.png"));
     saveAsTabButton->setIconSize(QSize(40,40));
+    saveAsTabButton->setToolTip("Save Tab As");
     //saveAsTabButton->setFixedSize(40,40);
 
     //~~Stop ALL Sounds~~
     stopAllSoundsButton = new QPushButton;
     stopAllSoundsButton->setIcon(QIcon(":/res/img/stopAll.png"));
     stopAllSoundsButton->setIconSize(QSize(40,40));
+    stopAllSoundsButton->setToolTip("Stop All Sounds");
 
     //~~Toogle Ducking~~
     toggleAudioDuckingButton = new QPushButton;
     toggleAudioDuckingButton->setIcon(QIcon(":/res/img/duck.png"));
     toggleAudioDuckingButton->setIconSize(QSize(40,40));
+    toggleAudioDuckingButton->setToolTip("Toggle Ducking");
 
     //~~Rename Tab~~
     renameCurrentTabButton = new QPushButton;
     renameCurrentTabButton->setIcon(QIcon(":/res/img/rename.png"));
     renameCurrentTabButton->setIconSize(QSize(40,40));
+    renameCurrentTabButton->setToolTip("Rename Tab");
 
     //~~OSC Settings~~
     openSoundControlButton = new QPushButton;
     openSoundControlButton->setIcon(QIcon(":/res/img/open_sound_control.png"));
     openSoundControlButton->setIconSize(QSize(40,40));
+    openSoundControlButton->setToolTip("OSC Settings");
 
     //~~About Button~~
     aboutButton = new QPushButton;
     aboutButton->setIcon(QIcon(":/res/img/about.png"));
     aboutButton->setIconSize(QSize(40,40));
+    aboutButton->setToolTip("About");
     //aboutButton->setFixedSize(30,30);
     //layout->addWidget(aboutButton,0,0, Qt::AlignLeft);
 
