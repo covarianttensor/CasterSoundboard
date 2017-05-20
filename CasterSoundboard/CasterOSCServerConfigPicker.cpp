@@ -123,7 +123,7 @@ void CasterOSCServerConfigPicker::button_ToggleServer_Clicked(){
             button_ToggleServer->setText("Stop");
             this->close();
         } else {
-            QString *temp = new QString("IP and Port numbers can not be emtpy!");
+            QString *temp = new QString("IP and Port numbers can not be empty!");
             QMessageBox msgBox;
             msgBox.setText(temp->toUtf8() + "\n");
             msgBox.setStandardButtons(QMessageBox::Close);
