@@ -131,15 +131,15 @@ RESOURCES += \
     res.qrc
 
 unix {
-    desktop.files = ../CasterSoundboard.desktop
+    desktop.files = ../xdg/CasterSoundboard.desktop
     desktop.path = $${PREFIX}/share/applications/
     INSTALLS += desktop
 
-    appdata.files = ../CasterSoundboard.appdata.xml
+    appdata.files = ../xdg/CasterSoundboard.appdata.xml
     appdata.path = $${PREFIX}/share/appdata/
     INSTALLS += appdata
 
-    pixmap.files = ../CasterSoundboard.png
+    pixmap.files = ../xdg/CasterSoundboard.png
     pixmap.path = $${PREFIX}/share/pixmaps/
     INSTALLS += pixmap
 }
