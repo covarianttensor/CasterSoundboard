@@ -227,7 +227,7 @@ void MainWindow::aboutBox()
 {
     QMessageBox msgBox;
     msgBox.setText("CasterSoundboard (v1.0) BETA<br>Author: Oscar Cerna<br>e-mail: covarianttensor@gmail.com<br>License: LGPL v3<br>© 2013-2017 Oscar Cerna");
-    msgBox.setInformativeText("Special Note:<br>Developed for Chris Fisher & Jupiter Broadcasting, because he's awesome!<br>Visit www.jupiterbroadcasting.com.<br>NOT AFFILIATED with Chris Fisher or Jupiter Broadcasting.");
+    msgBox.setInformativeText("Special Note:<br>Developed for Chris Fisher & Jupiter Broadcasting, because he's awesome!<br>Visit <a href=""http://www.jupiterbroadcasting.com"">jupiterbroadcasting.com</a>.<br>NOT AFFILIATED with Chris Fisher or Jupiter Broadcasting.");
     msgBox.setStandardButtons(QMessageBox::Close);
     msgBox.setDefaultButton(QMessageBox::Close);
     msgBox.setModal(true);
