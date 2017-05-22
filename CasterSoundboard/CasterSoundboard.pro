@@ -4,14 +4,18 @@
 #
 #-------------------------------------------------
 
+isEmpty(PREFIX) {
+    PREFIX = /usr/local
+}
+BINDIR = $$PREFIX/bin
+DATADIR = $$PREFIX/share
 
-QT       += core gui multimedia network
+QT += core gui multimedia network
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 TARGET = CasterSoundboard
 TEMPLATE = app
-
 
 SOURCES += main.cpp\
     CasterPlayer.cpp \
@@ -124,25 +128,20 @@ HEADERS  += \
     libs/tools/NtpTimestamp.h \
     CasterOSCServerConfigPicker.h
 
+RESOURCES += res.qrc
 
-FORMS    +=
+linux {
+    appdata.files = ../dist/linux/CasterSoundboard.appdata.xml
+    appdata.path = $$DATADIR/appdata/
 
-RESOURCES += \
-    res.qrc
+    desktop.files = ../dist/linux/CasterSoundboard.desktop
+    desktop.path = $$DATADIR/applications/
 
-unix {
-    desktop.files = ../xdg/CasterSoundboard.desktop
-    desktop.path = $${PREFIX}/share/applications/
-    INSTALLS += desktop
+    pixmap.files = ../dist/linux/CasterSoundboard.png
+    pixmap.path = $$DATADIR/pixmaps/
 
-    appdata.files = ../xdg/CasterSoundboard.appdata.xml
-    appdata.path = $${PREFIX}/share/appdata/
-    INSTALLS += appdata
-
-    pixmap.files = ../xdg/CasterSoundboard.png
-    pixmap.path = $${PREFIX}/share/pixmaps/
-    INSTALLS += pixmap
+    INSTALLS += appdata desktop pixmap
 }
 
-target.path = $${PREFIX}/bin
+target.path = $$BINDIR
 INSTALLS += target

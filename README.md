@@ -63,35 +63,36 @@ commands for various platforms are listed below:
 # brew install qt
 ```
 
-You should then have access to qmake, make, and the qt5 development
-libraries. Next cd into the project folder inside the repo:
+You should then have access to `qmake`, make, and the qt5 development
+libraries. Next `cd` into the project folder inside the repo:
 
 ```
 $ cd CasterSoundboard/CasterSoundboard
 ```
 
-Now run qmake, this will auto generate a makefile:
+You can specify the target directory using the `PREFIX` `qmake` variable (default: `/usr/local`).
+Now run `qmake`, this will auto generate a makefile:
 
 ```
-$ qmake
+$ qmake PREFIX=/usr
 ```
 
 or on Fedora:
 
 ```
-$ qmake-qt5
+$ qmake-qt5 PREFIX=/usr
 ```
 
-Then run make to build the project:
+Then run `make` to build the project:
 
 ```
 $ make
 ```
 
-And finally run make install to install the app:
+And finally run `make install` to install the app:
 
 ```
-# make install INSTALL_ROOT=/usr
+# make install
 ```
 
 Now you're good to go!
