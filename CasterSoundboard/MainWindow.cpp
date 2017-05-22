@@ -226,8 +226,8 @@ void MainWindow::updateCurrentOSCTab(int tabIndex)
 void MainWindow::aboutBox()
 {
     QMessageBox msgBox;
-    msgBox.setText("CasterSoundboard (v1.0) BETA\nAuthor: Oscar Cerna\ne-mail: covarianttensor@gmail.com\nLicense: LGPL v3\n© 2013-2017 Oscar Cerna");
-    msgBox.setInformativeText("Special Note:\nDeveloped for Chris Fisher & Jupiter Broadcasting, because he's awesome!\nVisit www.jupiterbroadcasting.com.\nNOT AFFILIATED with Chris Fisher or Jupiter Broadcasting.");
+    msgBox.setText("CasterSoundboard (v1.0) BETA<br>Author: <a href=""https://github.com/covarianttensor"">Oscar Cerna</a><br>e-mail: <a href=mailto:covarianttensor@gmail.com>covarianttensor@gmail.com</a><br>License: <a href=""https://github.com/JupiterBroadcasting/CasterSoundboard/blob/master/LICENSE"">LGPL v3</a><br>© 2013-2017 Oscar Cerna");
+    msgBox.setInformativeText("Special Note:<br>Developed for Chris Fisher & Jupiter Broadcasting, because he's awesome!<br>Visit <a href=""http://www.jupiterbroadcasting.com"">jupiterbroadcasting.com</a>.<br>NOT AFFILIATED with Chris Fisher or Jupiter Broadcasting.");
     msgBox.setStandardButtons(QMessageBox::Close);
     msgBox.setDefaultButton(QMessageBox::Close);
     msgBox.setModal(true);
