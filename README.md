@@ -26,7 +26,7 @@ Building from Source for installation instructions.
 
 ## Packages
 ### Arch AUR
-Thanks to [@j605](https://github.com/j605 "Jagannathan Tiruvallur Eachambadi") for creating a PKGBUILD for people on Arch who want to try this software:
+Thanks to [@j605](https://github.com/j605 "Jagannathan Tiruvallur Eachambadi") for creating a `PKGBUILD` for people on Arch who want to try this software:
 + [CasterSoundboard-git](https://aur.archlinux.org/packages/castersoundboard-git)
 
 ### Fedora 25 and newer
@@ -38,7 +38,7 @@ RPM package can be found in the [Copr](https://copr.fedorainfracloud.org/coprs/f
 
 ### Building From Source
 
-First clone the repository using git, if you don't have git installed
+First clone the repository using `git`, if you don't have `git` installed
 you can find installation instructions [here](https://git-scm.com)
 
 ```
@@ -63,7 +63,7 @@ commands for various platforms are listed below:
 # brew install qt
 ```
 
-You should then have access to `qmake`, make, and the qt5 development
+You should then have access to `qmake`, `make`, and the qt5 development
 libraries. Next `cd` into the project folder inside the repo:
 
 ```
