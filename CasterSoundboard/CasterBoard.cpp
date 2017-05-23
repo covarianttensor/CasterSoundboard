@@ -40,17 +40,21 @@ CasterBoard::CasterBoard(QWidget* parent) : QWidget(parent)
 
     // MAPs
     // int_to_player_key
-    int_to_player_key = new QMap<int,QString>();
-    int_to_player_key->insert(0, "1"); int_to_player_key->insert(1, "2"); int_to_player_key->insert(2, "3"); int_to_player_key->insert(3, "4"); int_to_player_key->insert(4, "5"); int_to_player_key->insert(5, "6"); int_to_player_key->insert(6, "7"); int_to_player_key->insert(7, "8");
-    int_to_player_key->insert(8, "Q"); int_to_player_key->insert(9, "W"); int_to_player_key->insert(10, "E"); int_to_player_key->insert(11, "R"); int_to_player_key->insert(12, "T"); int_to_player_key->insert(13, "Y"); int_to_player_key->insert(14, "U"); int_to_player_key->insert(15, "I");
-    int_to_player_key->insert(16, "A"); int_to_player_key->insert(17, "S"); int_to_player_key->insert(18, "D"); int_to_player_key->insert(19, "F"); int_to_player_key->insert(20, "G"); int_to_player_key->insert(21, "H"); int_to_player_key->insert(22, "J"); int_to_player_key->insert(23, "K");
-    int_to_player_key->insert(24, "Z"); int_to_player_key->insert(25, "X"); int_to_player_key->insert(26, "C"); int_to_player_key->insert(27, "V"); int_to_player_key->insert(28, "B"); int_to_player_key->insert(29, "N"); int_to_player_key->insert(30, "M"); int_to_player_key->insert(31, ",");
+    int_to_player_key = new QMap<int,QString>
+    {
+        {0, "1"},{1,"2"},{2,"3"},{3,"4"},{4,"5"},{5,"6"},{6,"7"},{7,"8"},
+        {8, "Q"},{9,"W"},{10,"E"},{11,"R"},{12,"T"},{13,"Y"},{14,"U"},{15,"I"},
+        {16,"A"},{17,"S"},{18,"D"},{19,"F"},{20,"G"},{21,"H"},{22,"J"},{23,"K"},
+        {24,"Z"},{25,"X"},{26,"C"},{27,"V"},{28,"B"},{29,"N"},{30,"M"},{31,","}
+    };
     // keyboard_key_to_player_key
-    keyboard_key_to_player_key = new QMap<int,QString>();
-    keyboard_key_to_player_key->insert(Qt::Key_1, "1"); keyboard_key_to_player_key->insert(Qt::Key_2, "2"); keyboard_key_to_player_key->insert(Qt::Key_3, "3"); keyboard_key_to_player_key->insert(Qt::Key_4, "4"); keyboard_key_to_player_key->insert(Qt::Key_5, "5"); keyboard_key_to_player_key->insert(Qt::Key_6, "6"); keyboard_key_to_player_key->insert(Qt::Key_7, "7"); keyboard_key_to_player_key->insert(Qt::Key_8, "8");
-    keyboard_key_to_player_key->insert(Qt::Key_Q, "Q"); keyboard_key_to_player_key->insert(Qt::Key_W, "W"); keyboard_key_to_player_key->insert(Qt::Key_E, "E"); keyboard_key_to_player_key->insert(Qt::Key_R, "R"); keyboard_key_to_player_key->insert(Qt::Key_T, "T"); keyboard_key_to_player_key->insert(Qt::Key_Y, "Y"); keyboard_key_to_player_key->insert(Qt::Key_U, "U"); keyboard_key_to_player_key->insert(Qt::Key_I, "I");
-    keyboard_key_to_player_key->insert(Qt::Key_A, "A"); keyboard_key_to_player_key->insert(Qt::Key_S, "S"); keyboard_key_to_player_key->insert(Qt::Key_D, "D"); keyboard_key_to_player_key->insert(Qt::Key_F, "F"); keyboard_key_to_player_key->insert(Qt::Key_G, "G"); keyboard_key_to_player_key->insert(Qt::Key_H, "H"); keyboard_key_to_player_key->insert(Qt::Key_J, "J"); keyboard_key_to_player_key->insert(Qt::Key_K, "K");
-    keyboard_key_to_player_key->insert(Qt::Key_Z, "Z"); keyboard_key_to_player_key->insert(Qt::Key_X, "X"); keyboard_key_to_player_key->insert(Qt::Key_C, "C"); keyboard_key_to_player_key->insert(Qt::Key_V, "V"); keyboard_key_to_player_key->insert(Qt::Key_B, "B"); keyboard_key_to_player_key->insert(Qt::Key_N, "N"); keyboard_key_to_player_key->insert(Qt::Key_M, "M"); keyboard_key_to_player_key->insert(Qt::Key_Comma, ",");
+    keyboard_key_to_player_key = new QMap<int,QString>
+    {
+        {Qt::Key_1,"1"},{Qt::Key_2,"2"},{Qt::Key_3,"3"},{Qt::Key_4,"4"},{Qt::Key_5,"5"},{Qt::Key_6,"6"},{Qt::Key_7,"7"},{Qt::Key_8,"8"},
+        {Qt::Key_Q, "Q"},{Qt::Key_W,"W"},{Qt::Key_E,"E"},{Qt::Key_R,"R"},{Qt::Key_T,"T"},{Qt::Key_Y,"Y"},{Qt::Key_U,"U"},{Qt::Key_I,"I"},
+        {Qt::Key_A,"A"},{Qt::Key_S,"S"},{Qt::Key_D,"D"},{Qt::Key_F,"F"},{Qt::Key_G,"G"},{Qt::Key_H,"H"},{Qt::Key_J,"J"},{Qt::Key_K,"K"},
+        {Qt::Key_Z,"Z"},{Qt::Key_X,"X"},{Qt::Key_C,"C"},{Qt::Key_V,"V"},{Qt::Key_B,"B"},{Qt::Key_N,"N"},{Qt::Key_M,"M"},{Qt::Key_Comma,","}
+    };
     // players
     players = new QMap<QString, CasterPlayerWidget*>();
 

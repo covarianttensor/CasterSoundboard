@@ -10,6 +10,7 @@ isEmpty(PREFIX) {
 BINDIR = $$PREFIX/bin
 DATADIR = $$PREFIX/share
 
+CONFIG += c++11
 QT += core gui multimedia network
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
