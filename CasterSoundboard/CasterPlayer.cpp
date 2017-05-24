@@ -706,6 +706,7 @@ void CasterPlayerWidget::dropEvent(QDropEvent *event)
                  msgBox.setDefaultButton(QMessageBox::Close);
                  msgBox.setModal(true);
                  int ret = msgBox.exec();
+                 Q_UNUSED(ret);
             }
         }
 }
@@ -749,6 +750,7 @@ bool CasterPlayerWidget::openFiles(const QStringList& pathList)
 /* When user touches wiget it toggles the player state (Play/Pause/Stop) */
 void CasterPlayerWidget::mousePressEvent(QMouseEvent *event)
 {
+    Q_UNUSED(event);
     // Toggle play state
     // Play/Pause
     //CURRENT PLAY STATE TOGGLE LOGIC
@@ -773,12 +775,14 @@ void CasterPlayerWidget::mousePressEvent(QMouseEvent *event)
 //===========Focus Event===========
 void CasterPlayerWidget::mouseMoveEvent(QMouseEvent *event)
 {
+    Q_UNUSED(event);
     this->setFocus();
 }
 
 //===========Paint Event===========
 void CasterPlayerWidget::paintEvent(QPaintEvent *event)
 {
+    Q_UNUSED(event);
     //Make widget render it's own style sheet.
     QStyleOption opt;
     opt.init(this);

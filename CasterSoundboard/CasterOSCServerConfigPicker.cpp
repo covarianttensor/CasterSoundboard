@@ -93,7 +93,7 @@ CasterOSCServerConfigPicker::CasterOSCServerConfigPicker(QString _inbound_ipv4, 
 //=======Protected=======
 void CasterOSCServerConfigPicker::closeEvent(QCloseEvent *event)
 {
-
+    Q_UNUSED(event);
 }
 
 //======Public Slots======
