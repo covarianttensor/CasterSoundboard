@@ -4,11 +4,21 @@
 #
 #-------------------------------------------------
 
-isEmpty(PREFIX) {
-    PREFIX = /usr/local
+linux {
+    isEmpty(PREFIX) {
+        PREFIX = /usr/local
+    }
+    BINDIR = $$PREFIX/bin
+    DATADIR = $$PREFIX/share
 }
-BINDIR = $$PREFIX/bin
-DATADIR = $$PREFIX/share
+
+macx {
+    isEmpty(PREFIX) {
+        PREFIX = ~
+    }
+    BINDIR = $$PREFIX/Applications
+    DATADIR = $$PREFIX/Library/Application\ Support/CasterSoundboard
+}
 
 CONFIG += c++11
 QT += core gui multimedia network
@@ -142,6 +152,10 @@ linux {
     pixmap.path = $$DATADIR/pixmaps/
 
     INSTALLS += appdata desktop pixmap
+}
+
+macx {
+    ICON = ../dist/macos/CasterSoundboard.icns
 }
 
 target.path = $$BINDIR
