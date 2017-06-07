@@ -187,10 +187,14 @@ void MainWindow::mainTabContainerTabClosedRequested(int tabIndex)
     msgBox.setModal(true);
     if(msgBox.exec() == QMessageBox::Yes)
     {
+        CasterBoard *toBeDeleted = dynamic_cast<CasterBoard*>(mainTabContainer->widget(tabIndex));
         //CLOSE REQUESTED TAB
-        disconnect(dynamic_cast<CasterBoard*>(mainTabContainer->widget(tabIndex)), SIGNAL(globalHotKeyReleasedEvent(QKeyEvent*)),this,SLOT(handleGlobalHotKeyEventFromCurrentWidget(QKeyEvent*)));
-        disconnect(dynamic_cast<CasterBoard*>(mainTabContainer->widget(tabIndex)), SIGNAL(_updateOSCClient(OscMessageComposer)),this,SLOT(sendOSCMessageToClient(OscMessageComposer)));
+        disconnect(toBeDeleted, SIGNAL(globalHotKeyReleasedEvent(QKeyEvent*)),this,SLOT(handleGlobalHotKeyEventFromCurrentWidget(QKeyEvent*)));
+        disconnect(toBeDeleted, SIGNAL(_updateOSCClient(OscMessageComposer)),this,SLOT(sendOSCMessageToClient(OscMessageComposer)));
         mainTabContainer->removeTab(tabIndex);
+        if(toBeDeleted) {
+            delete toBeDeleted;
+        }
     }
 }
 

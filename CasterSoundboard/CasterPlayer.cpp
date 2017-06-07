@@ -224,6 +224,10 @@ CasterPlayerWidget::CasterPlayerWidget(QWidget* parent) : QWidget(parent)
     connect(player,SIGNAL(metaDataChanged()),this,SLOT(playerMetaDataChanged()));
     connect(player,SIGNAL(durationChanged(qint64)),this,SLOT(playerDurationChanged(qint64)));
 }
+CasterPlayerWidget::~CasterPlayerWidget(void)
+{
+    delete player;
+}
 
 //Set Properties
 void CasterPlayerWidget::setHotKeyLetter(QString hotKey)
