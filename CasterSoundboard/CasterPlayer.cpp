@@ -59,7 +59,7 @@ CasterPlayerWidget::CasterPlayerWidget(QWidget* parent) : QWidget(parent)
     this->setAcceptDrops(true);
 
     //Init Player
-    player = new QMediaPlayer();
+    player = new QMediaPlayer(this);
     playStateImage = new QImage;
     playStateImage->load(":/res/img/playState_playing.png");
     //Init Properties
@@ -223,10 +223,6 @@ CasterPlayerWidget::CasterPlayerWidget(QWidget* parent) : QWidget(parent)
     connect(player,SIGNAL(stateChanged(QMediaPlayer::State)),this,SLOT(playerStateChanged(QMediaPlayer::State)));
     connect(player,SIGNAL(metaDataChanged()),this,SLOT(playerMetaDataChanged()));
     connect(player,SIGNAL(durationChanged(qint64)),this,SLOT(playerDurationChanged(qint64)));
-}
-CasterPlayerWidget::~CasterPlayerWidget(void)
-{
-    delete player;
 }
 
 //Set Properties

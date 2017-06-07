@@ -46,7 +46,6 @@ class CasterPlayerWidget : public QWidget //inherit from QWidget
 public:
     //Constructor
     CasterPlayerWidget(QWidget* parent = 0); //don't forget to pass the parent
-    ~CasterPlayerWidget();
 
     //Set Properties
     void setHotKeyLetter(QString hotKey);
