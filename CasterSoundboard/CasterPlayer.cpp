@@ -59,7 +59,7 @@ CasterPlayerWidget::CasterPlayerWidget(QWidget* parent) : QWidget(parent)
     this->setAcceptDrops(true);
 
     //Init Player
-    player = new QMediaPlayer();
+    player = new QMediaPlayer(this);
     playStateImage = new QImage;
     playStateImage->load(":/res/img/playState_playing.png");
     //Init Properties
