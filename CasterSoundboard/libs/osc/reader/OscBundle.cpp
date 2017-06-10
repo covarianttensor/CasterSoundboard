@@ -91,7 +91,7 @@ OscBundle* OscBundle::getBundle(qint32 index)
 {
     if (dynamic_cast<OscBundle*>(mContentList[index]) != 0)
         return dynamic_cast<OscBundle*>(mContentList[index]);
-	throw GetBundleException();
+    throw GetBundleException();
 }
 
 /**
@@ -105,5 +105,5 @@ OscMessage* OscBundle::getMessage(qint32 index)
 {
     if (dynamic_cast<OscMessage*>(mContentList[index]) != 0)
         return dynamic_cast<OscMessage*>(mContentList[index]);
-	throw GetMessageException();
+    throw GetMessageException();
 }
