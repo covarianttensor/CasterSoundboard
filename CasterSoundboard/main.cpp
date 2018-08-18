@@ -23,17 +23,27 @@
 #include "MainWindow.h"
 #include <QApplication>
 
+#include <QGuiApplication>
+#include <QQmlApplicationEngine>
 
 int main(int argc, char *argv[])
 {
     //START APPLICATION
-    QApplication a(argc, argv);
+    //QApplication a(argc, argv);
     //CREATE MAIN WINDOW
-    MainWindow *w = new MainWindow;
+    //MainWindow *w = new MainWindow;
     //SET MAIN WINDOW SIZE
-    w->resize(1000, 500);
+    //w->resize(1000, 500);
     //SHOW MAIN WINDOW
-    w->show();
+    //w->show();
     //END APPLICATION
-    return a.exec();
+    //return a.exec();
+
+    QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+    QGuiApplication app(argc, argv);
+
+    QQmlApplicationEngine engine;
+    engine.load(QUrl(QLatin1String("qrc:/main.qml")));
+
+    return app.exec();
 }
