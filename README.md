@@ -112,5 +112,6 @@ Solution: Install missing qt5 multimedia plugins
 ```
 sudo apt-get install libqt5multimedia5-plugins
 ```
-### Screenshot ###
-![Alt text](/docs/img/screenshot.png?raw=true "Running on Ubuntu")
+### Screenshots ###
+![Alt text](/docs/img/screenshot_1.png?raw=true "Running on OS X. Development version.")
+![Alt text](/docs/img/screenshot_2.png?raw=true "Running on OS X. Development version.")
