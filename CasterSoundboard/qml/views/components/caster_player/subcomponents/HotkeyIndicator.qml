@@ -6,13 +6,13 @@ import QtQuick.Layouts 1.11
 Item {
     id: root
     width: root.size; height: root.size
-    property int size: 40
-    property alias source: image.source
-    property bool isSelected: false
+    property int size: 50
+    property string hotkeyText: "?"
     signal clicked
 
     Button {
         id: button
+        enabled: root.enabled
         width: root.width; height: root.height
         onClicked: root.clicked()
         background: Rectangle {
@@ -25,15 +25,19 @@ Item {
             }
         }
 
-        Image {
-            id: image
-            width: Math.floor(0.80 * root.size); height: Math.floor(0.80 * root.size)
-            fillMode: Image.PreserveAspectFit
+        Text {
+            id: text
+            enabled: root.enabled
             anchors.centerIn: parent
+            color: "white"
+            font.family: "Helvetica"
+            font.bold: true
+            font.pointSize: 28
+            text: root.hotkeyText
         }
 
         ColorOverlay {
-                anchors.fill: image; source: image
+                anchors.fill: text; source: text
                 color: (button.down ? "#000000" : "#ffffff")  // make image white
         }
     }

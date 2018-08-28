@@ -3,8 +3,13 @@ import QtGraphicalEffects 1.0
 import QtQuick.Controls 2.4
 import QtQuick.Layouts 1.11
 
+import MVC_CasterPlayer 1.0
+
+import "../caster_player" as CasterPlayer
+
 Flickable {
     id: soundboardFlickable
+    property int defaultPlayerSize: 210
     anchors.fill: parent
     anchors.margins: 8
     contentHeight: soundboardGrid.height
@@ -21,12 +26,12 @@ Flickable {
                             }
             }
 
-    onWidthChanged: soundboardGrid.columns = soundboardGrid.computeNeededColumns(200, soundboardFlickable.width, soundboardGrid.spacing, soundboardScrollbar.width)
+    onWidthChanged: soundboardGrid.columns = soundboardGrid.computeNeededColumns(soundboardFlickable.defaultPlayerSize, soundboardFlickable.width, soundboardGrid.spacing, soundboardScrollbar.width)
 
     Grid {
             id: soundboardGrid
             spacing: 8
-            columns: soundboardGrid.computeNeededColumns(200, parent.width, soundboardGrid.spacing, soundboardScrollbar.width)
+            columns: soundboardGrid.computeNeededColumns(soundboardFlickable.defaultPlayerSize, parent.width, soundboardGrid.spacing, soundboardScrollbar.width)
 
             function computeNeededColumns(playerWidth, containerWidth, gridSpacing, scrollbarWidth){
                 var neededColumnsWithoutSpacing = Math.floor(containerWidth / playerWidth);
@@ -37,8 +42,11 @@ Flickable {
             }
 
             Repeater {
-                model: 32
-                Player {}
+                model: CasterPlayerModel { list: casterPlayerController }
+                delegate: CasterPlayer.Component {
+                    size: soundboardFlickable.defaultPlayerSize
+                    isInPlayerMode: model.isInPlayerMode
+                }
             }
     }
 }

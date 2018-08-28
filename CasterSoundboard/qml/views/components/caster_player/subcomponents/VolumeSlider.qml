@@ -5,11 +5,10 @@ Slider {
     id: control
     orientation: Qt.Vertical
 
-    implicitWidth: 26
+    implicitWidth: 25
     implicitHeight: 145
 
     handle: Rectangle {
-
         x: (control.width - width) / 2
         y: control.visualPosition * (control.height - height)
         width: 50
@@ -35,7 +34,7 @@ Slider {
             anchors.centerIn: parent
             color: "white"
             font.family: "Helvetica"; font.pointSize: 18; font.bold: true
-            text: Math.floor((1 - control.visualPosition) * 100) + "%"
+            text: Math.floor(control.value * 100) + "%"
         }
     }
 

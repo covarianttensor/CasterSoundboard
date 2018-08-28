@@ -67,7 +67,9 @@ SOURCES += main.cpp\
     libs/tools/ByteBuffer.cpp \
     libs/tools/ByteOrder.cpp \
     libs/tools/NtpTimestamp.cpp \
-    CasterOSCServerConfigPicker.cpp
+    CasterOSCServerConfigPicker.cpp \
+    casterplayer_model.cpp \
+    casterplayer_controller.cpp
 
 HEADERS  += \
     CasterPlayer.h \
@@ -137,7 +139,9 @@ HEADERS  += \
     libs/tools/ByteBuffer.h \
     libs/tools/ByteOrder.h \
     libs/tools/NtpTimestamp.h \
-    CasterOSCServerConfigPicker.h
+    CasterOSCServerConfigPicker.h \
+    casterplayer_model.h \
+    casterplayer_controller.h
 
 RESOURCES += \
     qml.qrc

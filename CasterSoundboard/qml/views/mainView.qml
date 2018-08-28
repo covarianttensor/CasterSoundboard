@@ -4,6 +4,8 @@ import QtGraphicalEffects 1.0
 import QtQuick.Controls 2.4
 import QtQuick.Layouts 1.11
 
+import "./components/caster_board" as CasterBoard
+
 ApplicationWindow {
     id: root
     visible: true
@@ -14,7 +16,7 @@ ApplicationWindow {
             mainSideNav_buttonsContainer_column_button_toggleFullscreen.source = '/qml/icons/fullscreen.png';
     }
     title: "Caster Soundboard"
-    width: 750
+    width: 780
     height: 600
     color: Qt.rgba(0.3, 0.3, 0.3)
 
@@ -206,19 +208,11 @@ ApplicationWindow {
                     TabBar {
                         id: mainSoundboardsContainer_tabBar
                         TabButton {
-                            text: qsTr("Home")
+                            text: qsTr("Sound Set 1")
                             width: 150
                         }
                         TabButton {
-                            text: qsTr("Discover")
-                            width: 150
-                        }
-                        TabButton {
-                            text: qsTr("Activity")
-                            width: 150
-                        }
-                        TabButton {
-                            text: qsTr("Activity 2")
+                            text: qsTr("Sound Set 2")
                             width: 150
                         }
                     }
@@ -233,20 +227,12 @@ ApplicationWindow {
                     width: parent.width; height: parent.height - (mainSoundboardsContainer_menubar.height + mainSoundboardsContainer_tabBar_flickable.height)
                     currentIndex: mainSoundboardsContainer_tabBar.currentIndex
                     Item {
-                        id: homeTab
-                        Soundboard {}
+                        id: tab1
+                        CasterBoard.Component {}
                     }
                     Item {
-                        id: discoverTab
-                        Soundboard {}
-                    }
-                    Item {
-                        id: activityTab
-                        Soundboard {}
-                    }
-                    Item {
-                        id: activityTab2
-                        Soundboard {}
+                        id: tab2
+                        //CasterBoard.Component {}
                     }
 
                 }
