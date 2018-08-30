@@ -118,7 +118,7 @@ Rectangle {
             visible: root.isInPlayerMode
             enabled: root.isInPlayerMode
             anchors.fill: parent
-            onPressed:  {
+            onClicked: {
                 switch (player.playbackState) {
                 case MediaPlayer.StoppedState:
                     player.play();
@@ -178,7 +178,7 @@ Rectangle {
         enabled: root.isInPlayerMode
         x: 10; y:10
         onClicked: {
-            casterPlayerController.removeItemAt(index);
+            casterPlayerSettingsDrawer.openSettings(index);
         }
     }
 

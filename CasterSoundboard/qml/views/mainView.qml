@@ -5,6 +5,7 @@ import QtQuick.Controls 2.4
 import QtQuick.Layouts 1.11
 
 import "./components/caster_board" as CasterBoard
+import "./components/caster_player_settings_drawer" as CasterPlayerSettingsDrawer
 
 ApplicationWindow {
     id: root
@@ -16,9 +17,14 @@ ApplicationWindow {
             mainSideNav_buttonsContainer_column_button_toggleFullscreen.source = '/qml/icons/fullscreen.png';
     }
     title: "Caster Soundboard"
+    minimumWidth: 230
     width: 780
     height: 600
-    color: Qt.rgba(0.3, 0.3, 0.3)
+    color: "#4D4D4D"
+
+    CasterPlayerSettingsDrawer.Component {
+        id: casterPlayerSettingsDrawer
+    }
 
     Rectangle {
         id: mainSideNav
@@ -233,6 +239,7 @@ ApplicationWindow {
                     Item {
                         id: tab2
                         //CasterBoard.Component {}
+
                     }
 
                 }

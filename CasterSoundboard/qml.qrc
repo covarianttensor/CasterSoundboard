@@ -44,5 +44,7 @@
         <file>qml/icons/add_player.png</file>
         <file>qml/views/components/caster_player/subcomponents/AddPlayer.qml</file>
         <file>qml/img/player_outline.png</file>
+        <file>qml/views/components/caster_player_settings_drawer/Component.qml</file>
+        <file>qml/views/components/caster_player_settings_drawer/subcomponents/BootstrapButton.qml</file>
     </qresource>
 </RCC>

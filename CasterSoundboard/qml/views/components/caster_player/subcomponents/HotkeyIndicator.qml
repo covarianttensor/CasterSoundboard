@@ -8,6 +8,7 @@ Item {
     width: root.size; height: root.size
     property int size: 50
     property string hotkeyText: "?"
+    property bool isHotKeySet: false
     signal clicked
 
     Button {
@@ -25,9 +26,18 @@ Item {
             }
         }
 
+        Image {
+            id: image
+            visible: false
+            anchors.centerIn: parent
+            width: Math.floor(0.80 * root.width); height: Math.floor(0.80 * root.height)
+            fillMode: Image.PreserveAspectFit
+            source: '/qml/icons/cog.png'
+        }
+
         Text {
             id: text
-            enabled: root.enabled
+            visible: false
             anchors.centerIn: parent
             color: "white"
             font.family: "Helvetica"
@@ -37,7 +47,7 @@ Item {
         }
 
         ColorOverlay {
-                anchors.fill: text; source: text
+                anchors.fill: (root.isHotKeySet ? text : image); source: (root.isHotKeySet ? text : image)
                 color: (button.down ? "#000000" : "#ffffff")  // make image white
         }
     }
