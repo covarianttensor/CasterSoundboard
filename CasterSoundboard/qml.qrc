@@ -46,5 +46,8 @@
         <file>qml/img/player_outline.png</file>
         <file>qml/views/components/caster_player_settings_drawer/Component.qml</file>
         <file>qml/views/components/caster_player_settings_drawer/subcomponents/BootstrapButton.qml</file>
+        <file>qml/views/components/caster_player_settings_drawer/subcomponents/FlatSwitch.qml</file>
+        <file>qml/views/components/caster_player_settings_drawer/subcomponents/StateSelector.qml</file>
+        <file>qml/views/components/caster_player_settings_drawer/subcomponents/TimeRangeSelector.qml</file>
     </qresource>
 </RCC>

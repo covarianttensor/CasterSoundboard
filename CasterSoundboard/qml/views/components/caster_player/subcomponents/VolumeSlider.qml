@@ -2,16 +2,15 @@ import QtQuick 2.7
 import QtQuick.Controls 2.4
 
 Slider {
-    id: control
+    id: root
     orientation: Qt.Vertical
 
-    implicitWidth: 25
+    implicitWidth: 50
     implicitHeight: 145
 
     handle: Rectangle {
-        x: (control.width - width) / 2
-        y: control.visualPosition * (control.height - height)
-        width: 50
+        y: root.visualPosition * (root.height - height)
+        width: root.width
         height: 60
         border.color: "white"
         border.width: 2
@@ -34,14 +33,14 @@ Slider {
             anchors.centerIn: parent
             color: "white"
             font.family: "Helvetica"; font.pointSize: 18; font.bold: true
-            text: Math.floor(control.value * 100) + "%"
+            text: Math.floor(root.value * 100) + "%"
         }
     }
 
     background: Rectangle {
-        x: (control.width - width) / 2; y: 25
+        x: (root.width - width) / 2; y: 25
         width: 20
-        height: control.height - 50
+        height: root.height - 50
         border.color: "white"
         border.width: 2
         gradient: Gradient {

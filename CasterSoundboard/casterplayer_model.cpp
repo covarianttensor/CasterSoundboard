@@ -27,6 +27,18 @@ QVariant CasterPlayerModel::data(const QModelIndex &index, int role) const
     switch (role) {
     case IsInPlayerModeRole:
         return QVariant(item.isInPlayerMode);
+    case IsLoopedRole:
+        return QVariant(item.isLooped);
+    case VolumeRole:
+        return QVariant(item.volume);
+    case IsPlayingRegionEnabledRole:
+        return QVariant(item.isPlayRegionEnabled);
+    case PlayRegionBeginRole:
+        return QVariant(item.playRegionBegin);
+    case PlayRegionEndRole:
+        return QVariant(item.playRegionEnd);
+    case TriggerStyleRole:
+        return QVariant(item.triggerStyle);
     }
 
     return QVariant();
@@ -42,6 +54,23 @@ bool CasterPlayerModel::setData(const QModelIndex &index, const QVariant &value,
     case IsInPlayerModeRole:
         item.isInPlayerMode = value.toBool();
         break;
+    case IsLoopedRole:
+        item.isLooped = value.toBool();
+        break;
+    case VolumeRole:
+        item.volume = value.toDouble();
+        break;
+    case IsPlayingRegionEnabledRole:
+        item.isPlayRegionEnabled = value.toBool();
+        break;
+    case PlayRegionBeginRole:
+        item.playRegionBegin = value.toInt();
+        break;
+    case PlayRegionEndRole:
+        item.playRegionEnd = value.toInt();
+        break;
+    case TriggerStyleRole:
+        item.triggerStyle = value.toInt();
     }
 
     if (mList->setItemAt(index.row(), item)) {
@@ -65,8 +94,15 @@ Qt::ItemFlags CasterPlayerModel::flags(const QModelIndex &index) const
 */
 QHash<int, QByteArray> CasterPlayerModel::roleNames() const
 {
+    // Set QML property names
     QHash<int, QByteArray> names;
     names[IsInPlayerModeRole] = "isInPlayerMode";
+    names[IsLoopedRole] = "isLooped";
+    names[VolumeRole] = "volume";
+    names[IsPlayingRegionEnabledRole] = "isPlayRegionEnabled";
+    names[PlayRegionBeginRole] = "playRegionBegin";
+    names[PlayRegionEndRole] = "playRegionEnd";
+    names[TriggerStyleRole] = "triggerStyle";
     return names;
 }
 

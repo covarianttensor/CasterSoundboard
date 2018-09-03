@@ -4,6 +4,8 @@ import QtGraphicalEffects 1.0
 import QtQuick.Controls 2.4
 import QtQuick.Layouts 1.11
 
+import MVC_CasterPlayer 1.0
+
 import "./components/caster_board" as CasterBoard
 import "./components/caster_player_settings_drawer" as CasterPlayerSettingsDrawer
 
@@ -22,9 +24,7 @@ ApplicationWindow {
     height: 600
     color: "#4D4D4D"
 
-    CasterPlayerSettingsDrawer.Component {
-        id: casterPlayerSettingsDrawer
-    }
+    CasterPlayerSettingsDrawer.Component { id: casterPlayerSettingsDrawer }
 
     Rectangle {
         id: mainSideNav
@@ -234,7 +234,7 @@ ApplicationWindow {
                     currentIndex: mainSoundboardsContainer_tabBar.currentIndex
                     Item {
                         id: tab1
-                        CasterBoard.Component {}
+                        CasterBoard.Component {id: soundboard1 }
                     }
                     Item {
                         id: tab2

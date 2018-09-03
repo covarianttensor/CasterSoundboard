@@ -13,9 +13,22 @@ class CasterPlayerModel : public QAbstractListModel
 public:
     explicit CasterPlayerModel(QObject *parent = nullptr);
 
-    enum {
-        IsInPlayerModeRole = Qt::UserRole
+    enum ModelRoles {
+        IsInPlayerModeRole = Qt::UserRole,
+        IsLoopedRole,
+        VolumeRole,
+        IsPlayingRegionEnabledRole,
+        PlayRegionBeginRole,
+        PlayRegionEndRole,
+        TriggerStyleRole
     };
+    Q_ENUM(ModelRoles)
+    enum TriggerStyle {
+        PlayPauseTriggerStyle = 0,
+        PlayStopTriggerStyle,
+        PlayAgainTriggerStyle
+    };
+    Q_ENUM(TriggerStyle)
 
     // Basic functionality:
     int rowCount(const QModelIndex &parent = QModelIndex()) const override;

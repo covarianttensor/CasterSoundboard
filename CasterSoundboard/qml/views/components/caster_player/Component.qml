@@ -4,24 +4,47 @@ import QtQuick.Controls 2.4
 import QtQuick.Layouts 1.11
 import QtMultimedia 5.9
 
+import MVC_CasterPlayer 1.0
+
 import "./subcomponents" as Subcomponent
 
 Rectangle {
     id: root
+    //Component properties
     property int size: 210
     width: root.size; height: root.size
     color: "transparent"
+    property bool shouldKeepPlayingLoop: false
+    property int duration: player.duration
 
+    //Player properties, functions & events
     property bool isInPlayerMode: true
+    property bool isLooped: false
+    property double volume: 1.0
+    property bool isPlayRegionEnabled: false
+    property int playRegionBegin: 0
+    property int playRegionEnd: 0
+    onPlayRegionEndChanged: progressBar.playRegionEnd = root.playRegionEnd
+    property int triggerStyle: 0
+
     property alias trackTile: trackTitle.trackTitleString
     property alias trackVolume: volumeBar.value
-    property alias isLooped: progressBar.isLooped
+
+    onIsLoopedChanged: {
+        if(root.isLooped == false)
+            root.shouldKeepPlayingLoop = false;
+        else if (root.isLooped == true && player.playbackState == MediaPlayer.PlayingState){
+            root.shouldKeepPlayingLoop = true;
+        }
+    }
 
     function baseName(url)
     {
         var filename = url.substring(url.lastIndexOf('/')+1, url.lastIndexOf('.'));
         return filename;
     }
+
+    //Player Subcomponents
 
     MediaPlayer {
         id: player
@@ -30,14 +53,27 @@ Rectangle {
         onPlaybackStateChanged: {
             switch (playbackState) {
             case MediaPlayer.StoppedState:
-                playerStateOverlay.source = '/qml/icons/playState_stopped.png'
+                // Enforce Looping
+                if(root.shouldKeepPlayingLoop){
+                    // Loop behavior
+                    player.play();
+                } else {
+                    // Normal behavior
+                    playerStateOverlay.source = '/qml/icons/playState_stopped.png'
+                    progressBar.state = "stopped";
+                }
                 break;
             case MediaPlayer.PausedState:
                 playerStateOverlay.source = '/qml/icons/playState_paused.png'
+                progressBar.state = "paused";
                 break;
             case MediaPlayer.PlayingState:
             default:
                 playerStateOverlay.source = '/qml/icons/playState_playing.png'
+                progressBar.state = "playing";
+                // Enforce Looping
+                if(root.isLooped)
+                    root.shouldKeepPlayingLoop = true;
                 break;
             }
         }
@@ -54,10 +90,26 @@ Rectangle {
 
         onDurationChanged: {
             progressBar.duration = player.duration;
+            root.playRegionBegin = 0;
+            root.playRegionEnd = player.duration;
         }
 
         onPositionChanged: {
+            //Update ProgressBar
             progressBar.elapsedTime = player.position;
+            //Enforce play region and looping
+            if(root.isPlayRegionEnabled)
+                if(0 < root.playRegionEnd && root.playRegionEnd <= player.position){
+                    if(root.isLooped)
+                        player.seek(root.playRegionBegin);
+                    else {
+                        player.stop();
+                        player.seek(root.playRegionBegin);
+                    }
+                } else if (player.position < root.playRegionBegin && 0 < root.playRegionBegin && root.playRegionBegin < root.playRegionEnd) {
+                    player.seek(root.playRegionBegin);
+                }
+
         }
     }
 
@@ -121,14 +173,58 @@ Rectangle {
             onClicked: {
                 switch (player.playbackState) {
                 case MediaPlayer.StoppedState:
-                    player.play();
+                    switch(root.triggerStyle){
+                    default:
+                    case CasterPlayerModel.PlayPauseTriggerStyle:
+                        player.play();
+                        break;
+                    case CasterPlayerModel.PlayStopTriggerStyle:
+                        player.play();
+                        break;
+                    case CasterPlayerModel.PlayAgainTriggerStyle:
+                        if(root.isPlayRegionEnabled)
+                            player.seek(root.playRegionBegin);
+                        else
+                            player.seek(0);
+                        player.play();
+                        break;
+                    }
                     break;
                 case MediaPlayer.PausedState:
-                    player.play();
+                    switch(root.triggerStyle){
+                    default:
+                    case CasterPlayerModel.PlayPauseTriggerStyle:
+                        player.play();
+                        break;
+                    case CasterPlayerModel.PlayStopTriggerStyle:
+                        player.play();
+                        break;
+                    case CasterPlayerModel.PlayAgainTriggerStyle:
+                        if(root.isPlayRegionEnabled)
+                            player.seek(root.playRegionBegin);
+                        else
+                            player.seek(0);
+                        player.play();
+                        break;
+                    }
                     break;
-                case MediaPlayer.PlayingState:
                 default:
-                    player.pause();
+                case MediaPlayer.PlayingState:
+                    switch(root.triggerStyle){
+                    default:
+                    case CasterPlayerModel.PlayPauseTriggerStyle:
+                        player.pause();
+                        break;
+                    case CasterPlayerModel.PlayStopTriggerStyle:
+                        player.stop();
+                        break;
+                    case CasterPlayerModel.PlayAgainTriggerStyle:
+                        if(root.isPlayRegionEnabled)
+                            player.seek(root.playRegionBegin);
+                        else
+                            player.seek(0);
+                        break;
+                    }
                     break;
                 }
             }
@@ -156,6 +252,10 @@ Rectangle {
         id: progressBar
         visible: root.isInPlayerMode
         enabled: root.isInPlayerMode
+        isLooped: root.isLooped
+        isPlayRegionEnabled: root.isPlayRegionEnabled
+        playRegionBegin: root.playRegionBegin
+        playRegionEnd: root.playRegionEnd
         x: 5 ; y: root.height - this.height - 12;
         onMoved: {
             player.seek(progressBar.value);
@@ -166,9 +266,11 @@ Rectangle {
         id: volumeBar
         visible: root.isInPlayerMode
         enabled: root.isInPlayerMode
-        x: root.size - 45; y: 10;
+        x: root.size - this.width - 5; y: 10;
+        value: root.volume
         onMoved: {
-            player.volume = volumeBar.value;
+            player.volume = volumeBar.value;//Change volume
+            root.volume = volumeBar.value;//Update model since we are changing volume internally
         }
     }
 

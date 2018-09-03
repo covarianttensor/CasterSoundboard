@@ -8,31 +8,34 @@ import MVC_CasterPlayer 1.0
 import "../caster_player" as CasterPlayer
 
 Flickable {
-    id: soundboardFlickable
-    property int defaultPlayerSize: 210
+    id: root
+    //Component Properties & Events
     anchors.fill: parent
     anchors.margins: 8
     contentHeight: soundboardGrid.height
-    //contentWidth: soundboardGrid.width
     clip: true
     flickableDirection: Flickable.VerticalFlick
     ScrollBar.vertical: ScrollBar {
-                id: soundboardScrollbar
-                width: 30
-                active: true
-                onActiveChanged: {
-                                if (!active)
-                                    active = true;//Keep scrollbar always visible
-                            }
-            }
+        id: soundboardScrollbar
+        width: 30
+        active: true
+        onActiveChanged: {
+            if (!active)
+                active = true;//Keep scrollbar always visible
+        }
+    }
+    onWidthChanged: soundboardGrid.columns = soundboardGrid.computeNeededColumns(root.defaultPlayerSize, root.width, soundboardGrid.spacing, soundboardScrollbar.width)
+    onDefaultPlayerSizeChanged: soundboardGrid.columns = soundboardGrid.computeNeededColumns(root.defaultPlayerSize, root.width, soundboardGrid.spacing, soundboardScrollbar.width)
 
-    onWidthChanged: soundboardGrid.columns = soundboardGrid.computeNeededColumns(soundboardFlickable.defaultPlayerSize, soundboardFlickable.width, soundboardGrid.spacing, soundboardScrollbar.width)
+    //Player Properties
+    property int defaultPlayerSize: 210
+    property alias soundboardPlayers: playerRepeater
 
     Grid {
             id: soundboardGrid
+            //Properties & Functions
             spacing: 8
-            columns: soundboardGrid.computeNeededColumns(soundboardFlickable.defaultPlayerSize, parent.width, soundboardGrid.spacing, soundboardScrollbar.width)
-
+            columns: soundboardGrid.computeNeededColumns(root.defaultPlayerSize, parent.width, soundboardGrid.spacing, soundboardScrollbar.width)
             function computeNeededColumns(playerWidth, containerWidth, gridSpacing, scrollbarWidth){
                 var neededColumnsWithoutSpacing = Math.floor(containerWidth / playerWidth);
                 var adjustedGridWidth = containerWidth - ((neededColumnsWithoutSpacing - 1) * gridSpacing) - (gridSpacing + scrollbarWidth);
@@ -41,11 +44,25 @@ Flickable {
                 return neededColumns;
             }
 
+            //Generate Players
             Repeater {
+                id: playerRepeater
                 model: CasterPlayerModel { list: casterPlayerController }
                 delegate: CasterPlayer.Component {
-                    size: soundboardFlickable.defaultPlayerSize
+                    size: root.defaultPlayerSize
                     isInPlayerMode: model.isInPlayerMode
+                    isLooped: model.isLooped
+                    onIsLoopedChanged: model.isLooped = isLooped
+                    volume: model.volume
+                    onVolumeChanged: model.volume = volume
+                    isPlayRegionEnabled: model.isPlayRegionEnabled
+                    onIsPlayRegionEnabledChanged: model.isPlayRegionEnabled = isPlayRegionEnabled
+                    playRegionBegin: model.playRegionBegin
+                    onPlayRegionBeginChanged: model.playRegionBegin = playRegionBegin
+                    playRegionEnd: model.playRegionEnd
+                    onPlayRegionEndChanged: model.playRegionEnd = playRegionEnd
+                    triggerStyle: model.triggerStyle
+                    onTriggerStyleChanged: model.triggerStyle = triggerStyle
                 }
             }
     }

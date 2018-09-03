@@ -2,7 +2,16 @@
 
 CasterPlayerController::CasterPlayerController(QObject *parent) : QObject(parent)
 {
-    mItems.append({ false });
+    // Add initial player
+    mItems.append({
+                      false, // IsInPlayerMode
+                      false, // IsLooped
+                      1.0,   // Volume
+                      false, // IsPlayRegionEnabled
+                      0,     // PlayRegionBegin
+                      0,     // PlayRegionEnd
+                      0     // Trigger Style
+                  });
 }
 
 QVector<CasterPlayerItem> CasterPlayerController::items() const
@@ -23,10 +32,16 @@ bool CasterPlayerController::setItemAt(int index, const CasterPlayerItem &item)
 
 void CasterPlayerController::appendItem()
 {
-    // Adds player
+    // Adds player with default settings
     emit preItemAppend();
     CasterPlayerItem item;
     item.isInPlayerMode = false;
+    item.isLooped = false;
+    item.volume = 1.0;
+    item.isPlayRegionEnabled = false;
+    item.playRegionBegin = 0;
+    item.playRegionEnd = 0;
+    item.triggerStyle = 0;
     mItems.append(item);
     emit postItemAppend();
 }

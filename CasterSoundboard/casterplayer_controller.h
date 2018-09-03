@@ -7,6 +7,12 @@
 
 struct CasterPlayerItem {
     bool isInPlayerMode;
+    bool isLooped;
+    double volume;
+    bool isPlayRegionEnabled;
+    int playRegionBegin;
+    int playRegionEnd;
+    int triggerStyle;
 };
 
 
