@@ -3,7 +3,6 @@
 CasterSoundboard
 ================
 [![Snap Status](https://build.snapcraft.io/badge/JupiterBroadcasting/CasterSoundboard.svg)](https://build.snapcraft.io/user/JupiterBroadcasting/CasterSoundboard)
-[![Copr Status](https://copr.fedorainfracloud.org/coprs/fszymanski/castersoundboard/package/castersoundboard/status_image/last_build.png)](https://copr.fedorainfracloud.org/coprs/fszymanski/castersoundboard/package/castersoundboard/)
 [![License](https://img.shields.io/github/license/JupiterBroadcasting/CasterSoundboard.svg)](https://github.com/JupiterBroadcasting/CasterSoundboard/blob/master/LICENSE)
 
 A soundboard for hot-keying and playing back sounds. (For podcasting)
