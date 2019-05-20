@@ -76,7 +76,7 @@ Item {
     Column {
         id: gridContainer
         width: root.width
-        height: root.height
+        height: 0.8 * root.height
         spacing: 8
 
         Item {

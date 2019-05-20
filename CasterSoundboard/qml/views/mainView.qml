@@ -24,8 +24,10 @@ ApplicationWindow {
     height: 600
     color: "#4D4D4D"
 
+    // Application overlay that shows individual player settings
     CasterPlayerSettingsDrawer.Component { id: casterPlayerSettingsDrawer }
 
+    // Main Application UI
     Rectangle {
         id: mainSideNav
         height: parent.height
@@ -155,6 +157,7 @@ ApplicationWindow {
                                 source: '/qml/icons/newTab.png'
                                 size: mainSoundboardsContainer_menubar.height
                                 //onClicked: mainSideNav.index = 0
+                                onClicked: console.log("New Tab")
                             }
 
                             Button_SoundboardsContainer_MenuBar {

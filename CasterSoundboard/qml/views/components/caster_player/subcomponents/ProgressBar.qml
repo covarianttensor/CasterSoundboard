@@ -6,7 +6,7 @@ Slider {
     id: root
 
     // Component properties
-    implicitWidth: 200
+    implicitWidth: parent.width - 10
     implicitHeight: 40
     from: 0
     to: 0
@@ -27,13 +27,10 @@ Slider {
             PropertyChanges { target: sliderHandle; color: "#6AFF0000" }
             PropertyChanges { target: repeatIcon; color: "#000000" }
             PropertyChanges { target: foregroundBar; color: "red" }
-            PropertyChanges {
-                target: trackTimeElapsed
-                color: (sliderHandle.x >= sliderHandle.width + 8 ? "white" : "black")
-            }
+            PropertyChanges { target: trackTimeElapsed; color: "white" }
             PropertyChanges {
                 target: trackTimeRemaining
-                color: (sliderHandle.x + sliderHandle.width >= parent.width - this.width - 5 ? "white" : "black")
+                color: (remainingTimeRect.x < sliderHandle.x + sliderHandle.width + 5 ? "white" : "black")
             }
         },
         State {
@@ -41,21 +38,24 @@ Slider {
             PropertyChanges { target: sliderHandle; color: "#80FFFF00" }
             PropertyChanges { target: repeatIcon; color: "#000000" }
             PropertyChanges { target: foregroundBar; color: "yellow" }
-            PropertyChanges { target: trackTimeElapsed; color: "black" }
-            PropertyChanges { target: trackTimeRemaining; color: "black" }
+            PropertyChanges {
+                target: trackTimeElapsed
+                color: (elapsedTimeRect.width + 5 <= sliderHandle.x ? "black" : "white")
+            }
+            PropertyChanges {
+                target: trackTimeRemaining
+                color: (remainingTimeRect.x < sliderHandle.x + sliderHandle.width + 5 ? "white" : "black")
+            }
         },
         State {
             name: "playing"
             PropertyChanges { target: sliderHandle; color: "#6A00FF00" }
             PropertyChanges { target: repeatIcon; color: "#000000" }
             PropertyChanges { target: foregroundBar; color: "green" }
-            PropertyChanges {
-                target: trackTimeElapsed
-                color: (sliderHandle.x >= sliderHandle.width + 8 ? "white" : "black")
-            }
+            PropertyChanges { target: trackTimeElapsed; color: "white" }
             PropertyChanges {
                 target: trackTimeRemaining
-                color: (sliderHandle.x + sliderHandle.width >= parent.width - this.width - 5 ? "white" : "black")
+                color: (remainingTimeRect.x < sliderHandle.x + sliderHandle.width + 5 ? "white" : "black")
             }
         }
     ]
@@ -125,30 +125,44 @@ Slider {
         root.to = root.duration;
     }
 
+    function timeElapsed(msTime){
+        var ms = (msTime % 1000) / 1000;
+        var secs = (msTime / 1000 - (msTime % 1000) / 1000) % 60;
+        var mins = ((msTime / 1000 - (msTime % 1000) / 1000) - secs) / 60;
+        var msStr = ("000" + ms).slice(-3);
+        if(msStr.startsWith('.')){
+            msStr = msStr.replace('.', '');
+            if(msStr.length === 2){
+                msStr = msStr + "0";
+            }
+        } else if(msStr.startsWith('0.')){
+            msStr = msStr.replace('0.', '');
+            msStr = (msStr + "00").substring(0, 3);
+        }
 
-    function timeElapsed(elapsedMs){
-        if (elapsedMs <= 0)
-            return "+00:00";
-        var elapsed = elapsedMs
-        var ms = elapsed % 1000;
-        elapsed = (elapsed - ms) / 1000;
-        var secs = elapsed % 60;
-        var mins = (elapsed - secs) / 60;
-
-        return "+" + ("00" + mins).slice(-2) + ':' + ("00" + secs).slice(-2);
+        return '+' + ("00" + mins).slice(-2) + ':' + ("00" + secs).slice(-2) + "." + msStr;
     }
 
-    function timeRemaining(elapsedMs, durationMs) {
+    function timeRemaining(elapsedMs, durationMs){
         if(durationMs <= 0)
-            return "-00:00";
-        var remaining = durationMs - elapsedMs;
+            return "-00:00.000";
+        var msTime = durationMs - elapsedMs;
 
-        var ms = remaining % 1000;
-        remaining = (remaining - ms) / 1000;
-        var secs = remaining % 60;
-        var mins = (remaining - secs) / 60;
+        var ms = (msTime % 1000) / 1000;
+        var secs = (msTime / 1000 - (msTime % 1000) / 1000) % 60;
+        var mins = ((msTime / 1000 - (msTime % 1000) / 1000) - secs) / 60;
+        var msStr = ("000" + ms).slice(-3);
+        if(msStr.startsWith('.')){
+            msStr = msStr.replace('.', '');
+            if(msStr.length === 2){
+                msStr = msStr + "0";
+            }
+        } else if(msStr.startsWith('0.')){
+            msStr = msStr.replace('0.', '');
+            msStr = (msStr + "00").substring(0, 3);
+        }
 
-        return "-" + ("00" + mins).slice(-2) + ':' + ("00" + secs).slice(-2);
+        return '-' + ("00" + mins).slice(-2) + ':' + ("00" + secs).slice(-2) + "." + msStr;
     }
 
     // Component UI
@@ -201,6 +215,32 @@ Slider {
         }
 
         Rectangle {
+            id: elapsedTimeRect
+            x: 0
+            y: (this.width + 5 <= sliderHandle.x ? Math.floor((parent.height - this.height) / 2) : -this.height -(sliderHandle.height - parent.height)/2 - 5 )
+            width: trackTimeElapsed.width + 10
+            height: parent.height
+            border.color: "white"
+            border.width: 2
+            color: "#90000000"
+
+            Behavior on y { NumberAnimation { duration: 200; easing.type: Easing.InOutQuad } }
+        }
+
+        Rectangle {
+            id: remainingTimeRect
+            x: parent.width - this.width
+            y: (remainingTimeRect.x < sliderHandle.x + sliderHandle.width + 5 ? -this.height -(sliderHandle.height - parent.height)/2 - 5 : Math.floor((parent.height - this.height) / 2) )
+            width: trackTimeRemaining.width + 10
+            height: parent.height
+            border.color: "white"
+            border.width: 2
+            color: "#90000000"
+
+            Behavior on y { NumberAnimation { duration: 200; easing.type: Easing.InOutQuad } }
+        }
+
+        Rectangle {
                 id: backgroundBar
                 width: root.width; height: 20
                 border.color: "white"
@@ -230,21 +270,23 @@ Slider {
 
         Text {
              id: trackTimeElapsed
-             x: (sliderHandle.x >= sliderHandle.width + 8 ? 5 : sliderHandle.x + sliderHandle.width + 5)
-             y: Math.floor((parent.height - this.height) / 2)
-             color: (sliderHandle.x >= sliderHandle.width + 8 ? "white" : "black")
+             x: 5
+             y: (elapsedTimeRect.width + 5 <= sliderHandle.x ? Math.floor((parent.height - this.height) / 2) : elapsedTimeRect.y + (elapsedTimeRect.height - this.height)/2 )
+             color: "white"
              font.family: "Helvetica"
              font.bold: true
              font.pointSize: 14
-             text: timeElapsed(root.elapsedTime)
+             text: root.timeElapsed(root.elapsedTime)
+
+             Behavior on y { NumberAnimation { duration: 200; easing.type: Easing.InOutQuad } }
         }
 
 
         Text {
              id: trackTimeRemaining
-             x: (sliderHandle.x + sliderHandle.width >= parent.width - this.width - 5 ? sliderHandle.x - this.width - 5 : parent.width - this.width - 5)
-             y: Math.floor((parent.height - this.height) / 2)
-             color: (sliderHandle.x + sliderHandle.width >= parent.width - this.width - 5 ? "white" : "black")
+             x: parent.width - this.width - 5
+             y: (remainingTimeRect.x < sliderHandle.x + sliderHandle.width + 5 ? remainingTimeRect.y + (remainingTimeRect.height - this.height)/2 : Math.floor((parent.height - this.height) / 2) )
+             color: "black"
              font.family: "Helvetica"
              font.bold: true
              font.pointSize: 14

@@ -15,6 +15,10 @@ Rectangle {
     width: root.size; height: root.size
     color: "transparent"
     property bool shouldKeepPlayingLoop: false
+    property int seekEventTriggerCount: 0 //Needed to prevent irratic loop behavior and crashing (hacky solution, sigh)
+    property int seekOffset: 2000 //Needed to prevent irratic loop behavior and crashing (hacky solution, sigh)
+    property string normalTrackTitleBuffer: '<DROP FILE>'
+    property string soundEffectTrackTitleBuffer: '<DROP WAV FILE>'
     property int duration: player.duration
 
     //Player properties, functions & events
@@ -44,7 +48,49 @@ Rectangle {
         return filename;
     }
 
+    onTriggerStyleChanged: {
+        // Player Mode Changed
+        switch (root.triggerStyle){
+        case CasterPlayerModel.SoundEffectTriggerStyle:
+            //SFX MODE
+            root.normalTrackTitleBuffer = trackTitle.trackTitleString;
+            trackTitle.trackTitleString = root.soundEffectTrackTitleBuffer;
+            progressBar.visible = false;
+            progressBar.enabled = false;
+            playerStateOverlay.visible = false;
+            playerStateColorOverlay.visible = false;
+            soundEffectIconColorOverlay.visible = true;
+            break;
+        default:
+            //NORMAL MODE
+            root.soundEffectTrackTitleBuffer = trackTitle.trackTitleString;
+            trackTitle.trackTitleString = root.normalTrackTitleBuffer;
+            progressBar.visible = true;
+            progressBar.enabled = true;
+            playerStateOverlay.visible = true;
+            playerStateColorOverlay.visible = true;
+            soundEffectIconColorOverlay.visible = false;
+            break;
+        }
+    }
+
     //Player Subcomponents
+
+    SoundEffect {
+        id: sfx
+
+        onStatusChanged: {
+            switch(sfx.status){
+            case SoundEffect.Error:
+                trackTitle.trackTitleString = "<ERROR>";
+                break;
+            case SoundEffect.Ready:
+                trackTitle.trackTitleString = root.baseName(source.toString());
+                root.soundEffectTrackTitleBuffer = trackTitle.trackTitleString;
+                break;
+            }
+        }
+    }
 
     MediaPlayer {
         id: player
@@ -95,21 +141,31 @@ Rectangle {
         }
 
         onPositionChanged: {
-            //Update ProgressBar
-            progressBar.elapsedTime = player.position;
+            // true position buffer
+            var truePosition = player.position;
             //Enforce play region and looping
-            if(root.isPlayRegionEnabled)
-                if(0 < root.playRegionEnd && root.playRegionEnd <= player.position){
-                    if(root.isLooped)
-                        player.seek(root.playRegionBegin);
-                    else {
+            if(root.isPlayRegionEnabled){
+                if( root.seekEventTriggerCount < 1 && truePosition < root.playRegionBegin - root.seekOffset){
+                    root.seekEventTriggerCount += 1;
+                    truePosition = root.playRegionBegin;
+                    player.seek(truePosition);
+                } else if(root.seekEventTriggerCount < 1 && root.playRegionEnd < truePosition){
+                    root.seekEventTriggerCount += 1;
+                    if(root.isLooped === false)
                         player.stop();
-                        player.seek(root.playRegionBegin);
-                    }
-                } else if (player.position < root.playRegionBegin && 0 < root.playRegionBegin && root.playRegionBegin < root.playRegionEnd) {
-                    player.seek(root.playRegionBegin);
+                    var tempTruePostition = truePosition;
+                    truePosition = root.playRegionBegin;
+                    player.seek(truePosition);
+                } else {
+                    if(root.seekEventTriggerCount < 0)
+                        root.seekEventTriggerCount = 0;
+                    else
+                        root.seekEventTriggerCount -= 1;
                 }
+            }
 
+            //Update ProgressBar
+            progressBar.elapsedTime = truePosition;
         }
     }
 
@@ -165,69 +221,95 @@ Rectangle {
         color: "#ffffff"
     }
 
+    Image {
+        id: soundEffectIconOverlay
+        visible: false
+        width: Math.floor(0.35 * root.size); height: Math.floor(0.35 * root.size)
+        fillMode: Image.PreserveAspectFit
+        anchors.centerIn: parent
+        source: '/qml/icons/soundboard_tab.png'
+    }
+
+    ColorOverlay {
+        id: soundEffectIconColorOverlay
+        visible: false
+        anchors.fill: soundEffectIconOverlay; source: soundEffectIconOverlay
+        color: mouseArea.pressed ? 'grey' : "#ffffff"
+    }
+
     MouseArea {
             id: mouseArea
             visible: root.isInPlayerMode
             enabled: root.isInPlayerMode
             anchors.fill: parent
             onClicked: {
-                switch (player.playbackState) {
-                case MediaPlayer.StoppedState:
-                    switch(root.triggerStyle){
-                    default:
-                    case CasterPlayerModel.PlayPauseTriggerStyle:
-                        player.play();
-                        break;
-                    case CasterPlayerModel.PlayStopTriggerStyle:
-                        player.play();
-                        break;
-                    case CasterPlayerModel.PlayAgainTriggerStyle:
-                        if(root.isPlayRegionEnabled)
-                            player.seek(root.playRegionBegin);
-                        else
-                            player.seek(0);
-                        player.play();
-                        break;
-                    }
-                    break;
-                case MediaPlayer.PausedState:
-                    switch(root.triggerStyle){
-                    default:
-                    case CasterPlayerModel.PlayPauseTriggerStyle:
-                        player.play();
-                        break;
-                    case CasterPlayerModel.PlayStopTriggerStyle:
-                        player.play();
-                        break;
-                    case CasterPlayerModel.PlayAgainTriggerStyle:
-                        if(root.isPlayRegionEnabled)
-                            player.seek(root.playRegionBegin);
-                        else
-                            player.seek(0);
-                        player.play();
-                        break;
-                    }
+                switch (root.triggerStyle){
+                case CasterPlayerModel.SoundEffectTriggerStyle:
+                    // Sound Effect Mode
+                    sfx.play();
                     break;
                 default:
-                case MediaPlayer.PlayingState:
-                    switch(root.triggerStyle){
+                    // Normal Mode
+                    switch (player.playbackState) {
+                    case MediaPlayer.StoppedState:
+                        switch(root.triggerStyle){
+                        default:
+                        case CasterPlayerModel.PlayPauseTriggerStyle:
+                            player.play();
+                            break;
+                        case CasterPlayerModel.PlayStopTriggerStyle:
+                            player.play();
+                            break;
+                        case CasterPlayerModel.PlayAgainTriggerStyle:
+                            if(root.isPlayRegionEnabled)
+                                player.seek(root.playRegionBegin);
+                            else
+                                player.seek(0);
+                            player.play();
+                            break;
+                        }
+                        break;
+                    case MediaPlayer.PausedState:
+                        switch(root.triggerStyle){
+                        default:
+                        case CasterPlayerModel.PlayPauseTriggerStyle:
+                            player.play();
+                            break;
+                        case CasterPlayerModel.PlayStopTriggerStyle:
+                            player.play();
+                            break;
+                        case CasterPlayerModel.PlayAgainTriggerStyle:
+                            if(root.isPlayRegionEnabled)
+                                player.seek(root.playRegionBegin);
+                            else
+                                player.seek(0);
+                            player.play();
+                            break;
+                        }
+                        break;
                     default:
-                    case CasterPlayerModel.PlayPauseTriggerStyle:
-                        player.pause();
-                        break;
-                    case CasterPlayerModel.PlayStopTriggerStyle:
-                        player.stop();
-                        break;
-                    case CasterPlayerModel.PlayAgainTriggerStyle:
-                        if(root.isPlayRegionEnabled)
-                            player.seek(root.playRegionBegin);
-                        else
-                            player.seek(0);
+                    case MediaPlayer.PlayingState:
+                        switch(root.triggerStyle){
+                        default:
+                        case CasterPlayerModel.PlayPauseTriggerStyle:
+                            player.pause();
+                            break;
+                        case CasterPlayerModel.PlayStopTriggerStyle:
+                            root.shouldKeepPlayingLoop = false;
+                            player.stop();
+                            break;
+                        case CasterPlayerModel.PlayAgainTriggerStyle:
+                            if(root.isPlayRegionEnabled)
+                                player.seek(root.playRegionBegin);
+                            else
+                                player.seek(0);
+                            break;
+                        }
                         break;
                     }
-                    break;
                 }
             }
+
     }
 
     DropArea {
@@ -236,7 +318,14 @@ Rectangle {
             enabled: root.isInPlayerMode
             anchors.fill: parent
             onDropped: {
-                player.source = drop.urls[0];
+                switch (root.triggerStyle){
+                case CasterPlayerModel.SoundEffectTriggerStyle:
+                    sfx.source = drop.urls[0];
+                    break;
+                default:
+                    player.source = drop.urls[0];
+                    break;
+                }
             }
 
     }

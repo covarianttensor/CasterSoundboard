@@ -6,7 +6,7 @@ Slider {
     orientation: Qt.Vertical
 
     implicitWidth: 50
-    implicitHeight: 145
+    implicitHeight: 120
 
     handle: Rectangle {
         y: root.visualPosition * (root.height - height)

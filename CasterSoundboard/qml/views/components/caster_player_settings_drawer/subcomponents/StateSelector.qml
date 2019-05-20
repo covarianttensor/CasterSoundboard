@@ -16,13 +16,12 @@ Item {
     Rectangle {
         anchors { left: parent.left; right: parent.right; bottom: parent.bottom; }
 
-        height: labelText.implicitHeight + 4 + (expanded ? 20 * view.count : 20)
-        Behavior on height { NumberAnimation { duration: 300 } }
+        height: parent.height
 
         radius: 2
         border.width: 1
-        border.color: "yellow"
-        color: "yellow"
+        border.color: "#4e4e4e"
+        color: "#4e4e4e"
 
         MouseArea {
             anchors.fill: parent
@@ -31,6 +30,9 @@ Item {
 
             Text {
                 id: labelText
+                font.pointSize: 24
+                font.bold: true
+                color: "white"
                 anchors { left: parent.left; top: parent.top; margins: 2 }
             }
 
@@ -43,7 +45,7 @@ Item {
                 }
 
                 radius: 2
-                color: "white"
+                color: "grey"
 
                 ListView {
                     id: view
@@ -54,10 +56,13 @@ Item {
 
                     delegate: Text {
                         anchors { left: parent.left; right: parent.right }
-                        height: 20
+                        height: 35
 
                         verticalAlignment: Text.AlignVCenter
 
+                        font.pointSize: 30
+                        font.bold: true
+                        color: "white"
                         text: modelData
 
                         MouseArea {
@@ -69,12 +74,13 @@ Item {
                             }
                         }
                     }
+
                     highlight: Rectangle {
                         anchors { left: parent.left; right: parent.right }
-                        height: 20
+                        height: 35
                         radius: 2
 
-                        color: "yellow"
+                        color: "#2f2f2f"
                     }
                 }
             }

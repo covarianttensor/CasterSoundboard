@@ -26,7 +26,8 @@ public:
     enum TriggerStyle {
         PlayPauseTriggerStyle = 0,
         PlayStopTriggerStyle,
-        PlayAgainTriggerStyle
+        PlayAgainTriggerStyle,
+        SoundEffectTriggerStyle
     };
     Q_ENUM(TriggerStyle)
 

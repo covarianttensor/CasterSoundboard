@@ -19,6 +19,8 @@ Drawer {
     //Settings properties & functions
     property int playerIndex: 0
     function openSettings(player_index){
+        // interaction
+        root.interactive = true;
         //Set active player
         root.playerIndex = player_index;
         //Update setting components
@@ -27,6 +29,7 @@ Drawer {
         settingPlayRegionRange.regionBegin = soundboard1.soundboardPlayers.itemAt(playerIndex).playRegionBegin;
         settingPlayRegionRange.regionEnd = soundboard1.soundboardPlayers.itemAt(playerIndex).playRegionEnd;
         settingPlayRegionRange.duration = soundboard1.soundboardPlayers.itemAt(playerIndex).duration;
+        settingTriggerStyle.selectedIndex = soundboard1.soundboardPlayers.itemAt(playerIndex).triggerStyle;
         //open settings drawer
         root.open();
     }
@@ -39,17 +42,19 @@ Drawer {
         case CasterPlayerModel.IsPlayingRegionEnabledRole:
             soundboard1.soundboardPlayers.itemAt(playerIndex).isPlayRegionEnabled = settingValue;
             break;
-        case CasterPlayerModel.TriggerStyleRole:
-            soundboard1.soundboardPlayers.itemAt(playerIndex).triggerStyle = settingValue;
-            break;
         case CasterPlayerModel.PlayRegionBeginRole:
             soundboard1.soundboardPlayers.itemAt(playerIndex).playRegionBegin = settingValue;
             break;
         case CasterPlayerModel.PlayRegionEndRole:
             soundboard1.soundboardPlayers.itemAt(playerIndex).playRegionEnd = settingValue;
             break;
+        case CasterPlayerModel.TriggerStyleRole:
+            soundboard1.soundboardPlayers.itemAt(playerIndex).triggerStyle = settingValue;
+            break;
         }
     }
+
+    onClosed: root.interactive = false;
 
     // Settings subcomponents
     Pane {
@@ -82,7 +87,7 @@ Drawer {
 
         Flickable {
             anchors.fill: parent
-            contentHeight: columnView.height
+            contentHeight: columnView.height + 200
             clip: true
             anchors.margins: 8
             flickableDirection: Flickable.VerticalFlick
@@ -106,7 +111,7 @@ Drawer {
                 }
 
                 Item {//Setting: isLooped
-                    width: parent.width; height:100
+                    width: parent.width; height:120
 
                     Subcomponent.FlatSwitch {
                         id: settingLoopSwitch
@@ -121,7 +126,7 @@ Drawer {
                 }
 
                 Item {//Setting: isPlayRegionEnabled
-                    width: parent.width; height:100
+                    width: parent.width; height:120
 
                     Subcomponent.FlatSwitch {
                         id: settingPlayRegionEnabledSwitch
@@ -134,7 +139,7 @@ Drawer {
                 }
 
                 Item {//Setting: play region time range
-                    width: parent.width; height:100
+                    width: parent.width; height: 180
 
                     Subcomponent.TimeRangeSelector {
                         id: settingPlayRegionRange
@@ -151,13 +156,13 @@ Drawer {
                 }
 
                 Item {//Setting: Trigger Style
-                    width: parent.width; height: 100
+                    width: parent.width; height: 150
 
                     Subcomponent.StateSelector {
                         id: settingTriggerStyle
                         anchors.centerIn: parent
 
-                        label: "Test label"
+                        label: "Select Trigger Style:"
                         list: ListModel {
                             ListElement {
                                 name: "Play/Pause"
@@ -167,6 +172,9 @@ Drawer {
                             }
                             ListElement {
                                 name: "Play Again"
+                            }
+                            ListElement {
+                                name: "Sound Effect"
                             }
                         }
 
