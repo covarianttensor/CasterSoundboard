@@ -47,24 +47,30 @@
 #include <QLinearGradient>
 #include <QGraphicsDropShadowEffect>
 #include <QFileDialog>
+#include "libs/osc/composer/OscMessageComposer.h"
 
 //Constructor
 CasterPlayerWidget::CasterPlayerWidget(QWidget* parent) : QWidget(parent)
 {
+    // ID
+    id = new QString("");
+
     //Set Widget Defaults
     this->setAcceptDrops(true);
 
     //Init Player
-    player = new QMediaPlayer();
+    player = new QMediaPlayer(this);
     playStateImage = new QImage;
     playStateImage->load(":/res/img/playState_playing.png");
     //Init Properties
+    playerState = new CasterPlayerState;
     soundFilePath = new QString("");
     hotKeyLetter = new QString("1");
     progress = 0.0;
-    volume = 100;
+    playerState->volume = 100;
     trackBarWasChangedByPlayer = false;
-    playerState = new CasterPlayerState;
+
+    isAudioDucked = false;
 
     //Diag
     cuePicker = new CasterCuePicker(0, 0);
@@ -100,17 +106,17 @@ CasterPlayerWidget::CasterPlayerWidget(QWidget* parent) : QWidget(parent)
     /* Open File Button */
     openFileButton = new QPushButton("");
     openFileButton->setIcon(QIcon(":/res/img/openMusic.png"));
-    openFileButton->setIconSize(QSize(32,32));
+    openFileButton->setIconSize(QSize(28,28));
     openFileButton->setFlat(true);
     /* Set Cue Button */
     setCueButton = new QPushButton("");
     setCueButton->setIcon(QIcon(":/res/img/cue.png"));
-    setCueButton->setIconSize(QSize(32,32));
+    setCueButton->setIconSize(QSize(28,28));
     setCueButton->setFlat(true);
     /* Toggle Loop Button */
     toggleLoopButton = new QPushButton("");
     toggleLoopButton->setIcon(QIcon(":/res/img/no_loop"));
-    toggleLoopButton->setIconSize(QSize(32,32));
+    toggleLoopButton->setIconSize(QSize(28,28));
     toggleLoopButton->setFlat(true);
     /* Sub Menu Button */
     colorPickerButton = new QPushButton("");
@@ -121,7 +127,7 @@ CasterPlayerWidget::CasterPlayerWidget(QWidget* parent) : QWidget(parent)
     /* Edit Notes Button */
     editNotesButton = new QPushButton("");
     editNotesButton->setIcon(QIcon(":/res/img/notes.png"));
-    editNotesButton->setIconSize(QSize(32,32));
+    editNotesButton->setIconSize(QSize(28,28));
     editNotesButton->setFlat(true);
     /* Volume Slider */
     volumeSlider = new QSlider(Qt::Vertical);
@@ -223,6 +229,46 @@ CasterPlayerWidget::CasterPlayerWidget(QWidget* parent) : QWidget(parent)
 void CasterPlayerWidget::setHotKeyLetter(QString hotKey)
 {
     hotKeyLabel->setText(hotKey);
+    this->id = new QString(hotKey.toUtf8());
+}
+
+void CasterPlayerWidget::syncWithOSCClient()
+{
+    //Update Volume
+    OscMessageComposer* msg1 = writeOSCMessage("/cbp/" + this->id->toUtf8() + "/m/vol", (float)(volumeSlider->value()/100.0) );
+    emit updateOSCClient(msg1);
+
+    //Update Track Position
+    OscMessageComposer* msg2 = writeOSCMessage("/cbp/" + this->id->toUtf8() + "/m/t_p_p", (float)((float)trackBar->value()/100.0) );
+    emit updateOSCClient(msg2);
+
+    //Update Title
+    OscMessageComposer* msg3 = writeOSCMessage("/cbp/" + this->id->toUtf8() + "/m/label/tr_name", this->soundNameLabel->text());
+    emit updateOSCClient(msg3);
+
+    //Update Loop State
+    OscMessageComposer* msg4 = writeOSCMessage("/cbp/" + this->id->toUtf8() + "/m/l_s", (int)(playerState->loop));
+    emit updateOSCClient(msg4);
+
+    //Update Time
+    QStringList times = this->timeLabel->text().split("\n");
+    OscMessageComposer* msg5 = writeOSCMessage("/cbp/" + this->id->toUtf8() + "/m/label/time", times.value(0) + times.value(1));
+    emit updateOSCClient(msg5);
+
+    //Update Play State
+    if(player->state() == QMediaPlayer::PlayingState){
+        OscMessageComposer* msg6 = writeOSCMessage("/cbp/" + this->id->toUtf8() + "/m/label/p_s", "Playing");
+        emit updateOSCClient(msg6);
+    }
+    else if(player->state() == QMediaPlayer::PausedState){
+        OscMessageComposer* msg6 = writeOSCMessage("/cbp/" + this->id->toUtf8() + "/m/label/p_s", "Paused");
+        emit updateOSCClient(msg6);
+    }
+    else if (player->state() == QMediaPlayer::StoppedState){
+        OscMessageComposer* msg6 = writeOSCMessage("/cbp/" + this->id->toUtf8() + "/m/label/p_s", "Stopped");
+        emit updateOSCClient(msg6);
+    }
+
 }
 
 //----SIGNALS----
@@ -231,7 +277,7 @@ void CasterPlayerWidget::setHotKeyLetter(QString hotKey)
 void CasterPlayerWidget::playerToggle()
 {
     //CURRENT PLAY STATE TOGGLE LOGIC
-    player->setVolume(volume);
+    volumeSlider->setValue(playerState->volume);
     if(player->state() == QMediaPlayer::PlayingState)
     {
         player->stop();
@@ -250,12 +296,16 @@ void CasterPlayerWidget::playerToggle()
 
 void CasterPlayerWidget::volumeChanged(int value)
 {
-    //Update volume change
-    volume = value;
-    player->setVolume(volume);
-
     //Update Player Save State
-    playerState->volume = volume;
+    playerState->volume = value;
+    if(isAudioDucked)
+        player->setVolume(playerState->volume * 0.33);
+    else
+        player->setVolume(playerState->volume);
+
+    //Update OSC Client
+    OscMessageComposer* msg = writeOSCMessage("/cbp/" + this->id->toUtf8() + "/m/vol", (float)(playerState->volume/100.0) );
+    emit updateOSCClient(msg);
 }
 
 /* Track Barn Position Changed */
@@ -266,6 +316,10 @@ void CasterPlayerWidget::trackBarChanged(int value)
         qint64 position = (qint64)((float)(value) * (float)(player->duration()))/100.0;
         player->setPosition(position);
     }
+
+    //Update OSC Client
+    OscMessageComposer* msg = writeOSCMessage("/cbp/" + this->id->toUtf8() + "/m/t_p_p", (float)((float)trackBar->value()/100.0) );
+    emit updateOSCClient(msg);
 
 }
 
@@ -347,9 +401,17 @@ void CasterPlayerWidget::toggleLooping()
     if(playerState->loop == true){
         toggleLoopButton->setIcon(QIcon(":/res/img/no_loop"));
         playerState->loop = false;
+
+        //Update OSC Client
+        OscMessageComposer* msg = writeOSCMessage("/cbp/" + this->id->toUtf8() + "/m/l_s", 0);
+        emit updateOSCClient(msg);
     } else {
         toggleLoopButton->setIcon(QIcon(":/res/img/loop"));
         playerState->loop = true;
+
+        //Update OSC Client
+        OscMessageComposer* msg = writeOSCMessage("/cbp/" + this->id->toUtf8() + "/m/l_s", 1);
+        emit updateOSCClient(msg);
     }
 }
 
@@ -379,6 +441,10 @@ void CasterPlayerWidget::playerPositionChanged(qint64 position)
         trackBarWasChangedByPlayer = false;
         this->update();
 
+        //Update OSC Client
+        OscMessageComposer* msg = writeOSCMessage("/cbp/" + this->id->toUtf8() + "/m/label/time", currentTime + "/" + timeRemaining);
+        emit updateOSCClient(msg);
+
         /* Enforce Start Time And Stop And Looping */
         if(position >= playerState->stopTime)
         {
@@ -405,14 +471,26 @@ void CasterPlayerWidget::playerStateChanged(QMediaPlayer::State state)
     if(state == QMediaPlayer::PlayingState)
     {
         playStateButton->setIcon(QIcon(":/res/img/play.png"));
+
+        //Update OSC Client
+        OscMessageComposer* msg = writeOSCMessage("/cbp/" + this->id->toUtf8() + "/m/label/p_s", "Playing");
+        emit updateOSCClient(msg);
     }
     else if(state == QMediaPlayer::PausedState)
     {
         playStateButton->setIcon(QIcon(":/res/img/pause.png"));
+
+        //Update OSC Client
+        OscMessageComposer* msg = writeOSCMessage("/cbp/" + this->id->toUtf8() + "/m/label/p_s", "Paused");
+        emit updateOSCClient(msg);
     }
     else if (state == QMediaPlayer::StoppedState)
     {
         playStateButton->setIcon(QIcon(":/res/img/stop.png"));
+
+        //Update OSC Client
+        OscMessageComposer* msg = writeOSCMessage("/cbp/" + this->id->toUtf8() + "/m/label/p_s", "Stopped");
+        emit updateOSCClient(msg);
 
         progress = 0;
         int timeLeft = player->duration();
@@ -434,11 +512,19 @@ void CasterPlayerWidget::playerMetaDataChanged()
     {
         //Use metadata title
         soundNameLabel->setText(player->metaData(QMediaMetaData::Title).toString());
+
+        //Update OSC Client
+        OscMessageComposer* msg = writeOSCMessage("/cbp/" + this->id->toUtf8() + "/m/label/tr_name", player->metaData(QMediaMetaData::Title).toString());
+        emit updateOSCClient(msg);
     }
     else
     {
         //Use filename as title
         soundNameLabel->setText(fi.baseName());
+
+        //Update OSC Client
+        OscMessageComposer* msg = writeOSCMessage("/cbp/" + this->id->toUtf8() + "/m/label/tr_name", fi.baseName());
+        emit updateOSCClient(msg);
     }
 
     //Hack solution to prevent playing when when meadia loaded.
@@ -484,16 +570,95 @@ int CasterPlayerWidget::getProgressWidth()
 //===============Player Methods=================
 void CasterPlayerWidget::playSound()
 {
-    player->setVolume(volume);
+    volumeSlider->setValue(playerState->volume);
     player->setPosition(playerState->startTime);
     player->play();
 }
 
+void CasterPlayerWidget::resumeSound()
+{
+    volumeSlider->setValue(playerState->volume);
+    player->play();
+}
+
+void CasterPlayerWidget::pauseSound()
+{
+    volumeSlider->setValue(playerState->volume);
+    player->pause();
+}
+
 void CasterPlayerWidget::stopSound()
 {
-    player->setVolume(volume);
+    volumeSlider->setValue(playerState->volume);
     player->stop();
 }
+
+void CasterPlayerWidget::play_stop_toggle()
+{
+    // Toggle play state
+    // Play/Pause
+    //CURRENT PLAY STATE TOGGLE LOGIC
+    volumeSlider->setValue(playerState->volume);
+    if(player->state() == QMediaPlayer::PlayingState)
+    {
+        player->stop();
+    }
+    else if (player->state() == QMediaPlayer::StoppedState)
+    {
+        player->setPosition(playerState->startTime);
+        player->play();
+    }
+    else if(player->state() == QMediaPlayer::PausedState)
+    {
+        player->setPosition(playerState->startTime);
+        player->play();
+    }
+}
+
+void CasterPlayerWidget::resume_pause_toggle()
+{
+    // Toggle play state
+    // Play/Pause
+    //CURRENT PLAY STATE TOGGLE LOGIC
+    volumeSlider->setValue(playerState->volume);
+    if(player->state() == QMediaPlayer::PlayingState)
+    {
+        player->pause();
+    }
+    else if (player->state() == QMediaPlayer::StoppedState)
+    {
+        player->setPosition(playerState->startTime);
+        player->play();
+    }
+    else if(player->state() == QMediaPlayer::PausedState)
+    {
+        player->play();
+    }
+}
+
+void CasterPlayerWidget::setLoopState(int state)
+{
+    if(state == 0){
+        toggleLoopButton->setIcon(QIcon(":/res/img/no_loop"));
+        playerState->loop = false;
+    } else if(state == 1) {
+        toggleLoopButton->setIcon(QIcon(":/res/img/loop"));
+        playerState->loop = true;
+    }
+}
+
+void CasterPlayerWidget::setAudioDuckState(int state)
+{
+    if(state == 0){
+        isAudioDucked = false;
+        player->setVolume(playerState->volume);
+    } else if(state == 1) {
+       isAudioDucked = true;
+       player->setVolume(playerState->volume * 0.33);
+    }
+    this->update();
+}
+
 //==================================================
 
 //Protected Methods
@@ -541,6 +706,7 @@ void CasterPlayerWidget::dropEvent(QDropEvent *event)
                  msgBox.setDefaultButton(QMessageBox::Close);
                  msgBox.setModal(true);
                  int ret = msgBox.exec();
+                 Q_UNUSED(ret);
             }
         }
 }
@@ -563,7 +729,7 @@ bool CasterPlayerWidget::openFiles(const QStringList& pathList)
             fi.suffix() == "wmv")
     {
         soundFilePath = new QString(pathList[0]);//Sets File Path
-        player->setVolume(volume);
+        volumeSlider->setValue(playerState->volume);
         player->setMedia(QUrl::fromLocalFile(soundFilePath->toUtf8().constData()));
         newMediaLoaded = true;
 
@@ -584,10 +750,11 @@ bool CasterPlayerWidget::openFiles(const QStringList& pathList)
 /* When user touches wiget it toggles the player state (Play/Pause/Stop) */
 void CasterPlayerWidget::mousePressEvent(QMouseEvent *event)
 {
+    Q_UNUSED(event);
     // Toggle play state
     // Play/Pause
     //CURRENT PLAY STATE TOGGLE LOGIC
-    player->setVolume(volume);
+    volumeSlider->setValue(playerState->volume);
     if(player->state() == QMediaPlayer::PlayingState)
     {
         player->pause();
@@ -608,12 +775,14 @@ void CasterPlayerWidget::mousePressEvent(QMouseEvent *event)
 //===========Focus Event===========
 void CasterPlayerWidget::mouseMoveEvent(QMouseEvent *event)
 {
+    Q_UNUSED(event);
     this->setFocus();
 }
 
 //===========Paint Event===========
 void CasterPlayerWidget::paintEvent(QPaintEvent *event)
 {
+    Q_UNUSED(event);
     //Make widget render it's own style sheet.
     QStyleOption opt;
     opt.init(this);
@@ -670,6 +839,12 @@ void CasterPlayerWidget::paintEvent(QPaintEvent *event)
     // Draw Play State
     p.drawImage(this->width()/2 - playStateImage->width()/2, this->height()/2 - playStateImage->height()/2, *playStateImage);
 
+    // Draw Audio Ducking Indicator
+    if(isAudioDucked){
+        playStateImage->load(":/res/img/33_percent.png");
+        p.drawImage(this->width()/2 - playStateImage->scaled(64,64).width()/2, this->height()/2 - playStateImage->scaled(64,64).height()/2, playStateImage->scaled(64,64));
+    }
+
 }
 //====================================
 
@@ -693,8 +868,31 @@ void CasterPlayerWidget::reloadFromPlayerState()
     pathList.append(playerState->filePath->toUtf8());
     newMediaLoadedFromProfile = true;
     openFiles(pathList);
-    player->setVolume(playerState->volume);
     volumeSlider->setValue(playerState->volume);
     newMediaLoadedFromProfile = false;
 
+}
+
+
+//========================================================
+//==========OSC Composer Methods=====
+OscMessageComposer* CasterPlayerWidget::writeOSCMessage(QString address, int value){
+    // Compose OSC Message
+    OscMessageComposer* msg = new OscMessageComposer(address);
+    msg->pushInt32((qint32)value);
+    return msg;
+}
+
+OscMessageComposer* CasterPlayerWidget::writeOSCMessage(QString address, float value){
+    // Compose OSC Message
+    OscMessageComposer* msg = new OscMessageComposer(address);
+    msg->pushFloat(value);
+    return msg;
+}
+
+OscMessageComposer* CasterPlayerWidget::writeOSCMessage(QString address, QString value){
+    // Compose OSC Message
+    OscMessageComposer* msg = new OscMessageComposer(address);
+    msg->pushString(value.toUtf8());
+    return msg;
 }

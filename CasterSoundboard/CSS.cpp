@@ -21,8 +21,10 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 #include "CSS.h"
-#include <math.h>
+#include <cmath>
 #include <QString>
+
+using std::abs;
 
 QString Generate_CSS(HSL_C hsl_color)
 {
@@ -270,6 +272,7 @@ HSL_C::HSL_C(RGB_C rgb_color)
                 h = 60 * ( ( r - g ) / d + 4.0 );
                 break;
             default:
+                h = 0.0;
                 break;
         }
     }

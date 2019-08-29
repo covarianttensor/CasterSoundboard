@@ -200,6 +200,7 @@ void CasterLabelColorPicker::set_slider_L_Value(int L_Value)
 //SLOTS
 void CasterLabelColorPicker::slider_HSL_valueChanged(int value)
 {
+    Q_UNUSED(value);
     label_H_Value->setText(QString::number(slider_H->value()));
     label_S_Value->setText(QString::number(slider_S->value()).append("%"));
     label_L_Value->setText(QString::number(slider_L->value()).append("%"));
