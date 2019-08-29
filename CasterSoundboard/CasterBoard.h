@@ -25,6 +25,8 @@
 #include <QWidget>
 #include <QDataStream>
 #include <QString>
+#include <QMap>
+#include "libs/osc/composer/OscMessageComposer.h"
 
 //forward declarations
 class CasterPlayerWidget;
@@ -39,49 +41,18 @@ public:
     CasterBoard(QWidget* parent = 0); //don't forget to pass the parent
 
     //Properties
+    bool isCurrentBoard = false;
     QString *soundBoardName;
     QString *profileFilePath;
-
-    //WIDGETS
-    CasterPlayerWidget *player1;
-    CasterPlayerWidget *player2;
-    CasterPlayerWidget *player3;
-    CasterPlayerWidget *player4;
-    CasterPlayerWidget *player5;
-    CasterPlayerWidget *player6;
-    CasterPlayerWidget *player7;
-    CasterPlayerWidget *player8;
-
-    CasterPlayerWidget *playerQ;
-    CasterPlayerWidget *playerW;
-    CasterPlayerWidget *playerE;
-    CasterPlayerWidget *playerR;
-    CasterPlayerWidget *playerT;
-    CasterPlayerWidget *playerY;
-    CasterPlayerWidget *playerU;
-    CasterPlayerWidget *playerI;
-
-    CasterPlayerWidget *playerA;
-    CasterPlayerWidget *playerS;
-    CasterPlayerWidget *playerD;
-    CasterPlayerWidget *playerF;
-    CasterPlayerWidget *playerG;
-    CasterPlayerWidget *playerH;
-    CasterPlayerWidget *playerJ;
-    CasterPlayerWidget *playerK;
-
-    CasterPlayerWidget *playerZ;
-    CasterPlayerWidget *playerX;
-    CasterPlayerWidget *playerC;
-    CasterPlayerWidget *playerV;
-    CasterPlayerWidget *playerB;
-    CasterPlayerWidget *playerN;
-    CasterPlayerWidget *playerM;
-    CasterPlayerWidget *playerCOMMA;
+    QMap<int,QString> *int_to_player_key;
+    QMap<int,QString> *keyboard_key_to_player_key;
+    QMap<QString, CasterPlayerWidget*> *players;
 
     //Methods
     void stopAllSounds();
     void reloadBoardFromPlayerStates();
+    void setAllAudioDuckingStates(int state);
+    void syncWithOSCClient();//Refeshes UI on OSC Client
 
 
 protected:
@@ -90,12 +61,19 @@ protected:
 
 private:
     //Private Methods
+    //OSC Composer Methods
+    OscMessageComposer* writeOSCMessage(QString address, int value);
+    OscMessageComposer* writeOSCMessage(QString address, float value);
+    OscMessageComposer* writeOSCMessage(QString address, QString value);
 
 signals:
     //SIGNALS
+    void globalHotKeyReleasedEvent(QKeyEvent *event);//Use by mainwindow to perform actions on all sound boads. Needed because of how focus works in qt.
+    void _updateOSCClient(OscMessageComposer* message);
 
 public slots:
     //SLOTS
+    void notifyApplicationAboutOSCMessage(OscMessageComposer* message);
 
 };
 

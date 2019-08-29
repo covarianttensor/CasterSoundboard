@@ -23,5 +23,9 @@
         <file>res/img/no_loop.png</file>
         <file>res/img/stopAll.png</file>
         <file>res/img/rename.png</file>
+        <file>res/img/open_sound_control.png</file>
+        <file>res/img/duck.png</file>
+        <file>res/img/unduck.png</file>
+        <file>res/img/33_percent.png</file>
     </qresource>
 </RCC>

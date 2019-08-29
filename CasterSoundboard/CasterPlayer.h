@@ -25,6 +25,7 @@
 #include <QWidget>
 #include <QDropEvent>
 #include <QtMultimedia/QMediaPlayer>
+#include "libs/osc/composer/OscMessageComposer.h"
 
 //forward declarations
 class QMediaPlayer;
@@ -48,43 +49,11 @@ public:
 
     //Set Properties
     void setHotKeyLetter(QString hotKey);
+    void syncWithOSCClient();
 
     //Media Player
     QMediaPlayer *player;
     QImage *playStateImage;
-
-    //Player Methhods
-    void playSound();//Plays sound
-    void stopSound();//Stops sound
-
-    //Properties
-    QString *soundFilePath;
-    QString *hotKeyLetter;
-    float progress;
-    int volume;
-    bool trackBarWasChangedByPlayer;// Used to prevent player from tiggering track bar progress changed event
-    CasterPlayerState *playerState;
-
-    //Methods
-    void reloadFromPlayerState();
-
-protected:
-    //Focus Event
-    void mouseMoveEvent(QMouseEvent *event);
-    //Paint Event
-    void paintEvent(QPaintEvent *event); //Overide Paint Event
-    //Drag-N-Drop Events
-    void dragEnterEvent(QDragEnterEvent *event);
-    void dragMoveEvent(QDragMoveEvent *event);
-    void dragLeaveEvent(QDragLeaveEvent *event);
-    void dropEvent(QDropEvent *event);
-    bool openFiles(const QStringList& pathList);
-    // Press/Touch Events
-    void mousePressEvent(QMouseEvent *event);
-
-private:
-    //Private Methods
-    int getProgressWidth(); //Use to compute width of progress bar
 
     //contained widgets:
     QVBoxLayout *mainLayout;
@@ -107,6 +76,49 @@ private:
     QSlider *trackBar;
     QSlider *volumeSlider;
 
+    //Player Methhods
+    void playSound();//Plays sound
+    void resumeSound();//Plays from where it left off sound
+    void pauseSound();//Pauses sound
+    void stopSound();//Stops sound
+    void play_stop_toggle();
+    void resume_pause_toggle();
+    void setLoopState(int state);//Sets loop state
+    void setAudioDuckState(int state);//Set duck state
+
+    //Properties
+    QString *soundFilePath;
+    QString *hotKeyLetter;
+    float progress;
+    bool trackBarWasChangedByPlayer;// Used to prevent player from tiggering track bar progress changed event
+    CasterPlayerState *playerState;
+
+    //Methods
+    void reloadFromPlayerState();
+
+protected:
+    //Focus Event
+    void mouseMoveEvent(QMouseEvent *event);
+    //Paint Event
+    void paintEvent(QPaintEvent *event); //Overide Paint Event
+    //Drag-N-Drop Events
+    void dragEnterEvent(QDragEnterEvent *event);
+    void dragMoveEvent(QDragMoveEvent *event);
+    void dragLeaveEvent(QDragLeaveEvent *event);
+    void dropEvent(QDropEvent *event);
+    bool openFiles(const QStringList& pathList);
+    // Press/Touch Events
+    void mousePressEvent(QMouseEvent *event);
+
+private:
+    //Proeprties
+    QString *id;
+    bool isAudioDucked;
+
+    //Private Methods
+    int getProgressWidth(); //Use to compute width of progress bar
+
+
     // Diag
     CasterCuePicker *cuePicker;
     CasterLabelColorPicker *colorPicker;
@@ -115,8 +127,15 @@ private:
     bool newMediaLoaded;
     bool newMediaLoadedFromProfile;
 
+    //METHODS
+    //OSC Composer Methods
+    OscMessageComposer* writeOSCMessage(QString address, int value);
+    OscMessageComposer* writeOSCMessage(QString address, float value);
+    OscMessageComposer* writeOSCMessage(QString address, QString value);
+
 signals:
     //MyWidget's signals....
+    void updateOSCClient(OscMessageComposer* message);
 
 public slots:
     void playerToggle();

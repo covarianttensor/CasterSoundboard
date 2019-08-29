@@ -158,6 +158,7 @@ void CasterCuePicker::button_Cancel_Clicked()
 //=======Protected=======
 void CasterCuePicker::closeEvent(QCloseEvent *event)
 {
+    Q_UNUSED(event);
     player->stop();
     button_Preview->setText("Preview");
 }
