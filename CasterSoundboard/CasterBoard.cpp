@@ -27,6 +27,7 @@
 #include <QFile>
 #include <QDataStream>
 #include <QString>
+#include "libs/osc/composer/OscMessageComposer.h"
 
 //Constructor=============================================
 CasterBoard::CasterBoard(QWidget* parent) : QWidget(parent)
@@ -37,703 +38,161 @@ CasterBoard::CasterBoard(QWidget* parent) : QWidget(parent)
     soundBoardName = new QString("No Name");
     profileFilePath = new QString("");
 
-    //WIDGETS
-    player1 = new CasterPlayerWidget;
-    player1->setHotKeyLetter("1");
-    player2 = new CasterPlayerWidget;
-    player2->setHotKeyLetter("2");
-    player3 = new CasterPlayerWidget;
-    player3->setHotKeyLetter("3");
-    player4 = new CasterPlayerWidget;
-    player4->setHotKeyLetter("4");
-    player5 = new CasterPlayerWidget;
-    player5->setHotKeyLetter("5");
-    player6 = new CasterPlayerWidget;
-    player6->setHotKeyLetter("6");
-    player7 = new CasterPlayerWidget;
-    player7->setHotKeyLetter("7");
-    player8 = new CasterPlayerWidget;
-    player8->setHotKeyLetter("8");
+    // MAPs
+    // int_to_player_key
+    int_to_player_key = new QMap<int,QString>
+    {
+        {0, "1"},{1,"2"},{2,"3"},{3,"4"},{4,"5"},{5,"6"},{6,"7"},{7,"8"},
+        {8, "Q"},{9,"W"},{10,"E"},{11,"R"},{12,"T"},{13,"Y"},{14,"U"},{15,"I"},
+        {16,"A"},{17,"S"},{18,"D"},{19,"F"},{20,"G"},{21,"H"},{22,"J"},{23,"K"},
+        {24,"Z"},{25,"X"},{26,"C"},{27,"V"},{28,"B"},{29,"N"},{30,"M"},{31,","}
+    };
+    // keyboard_key_to_player_key
+    keyboard_key_to_player_key = new QMap<int,QString>
+    {
+        {Qt::Key_1,"1"},{Qt::Key_2,"2"},{Qt::Key_3,"3"},{Qt::Key_4,"4"},{Qt::Key_5,"5"},{Qt::Key_6,"6"},{Qt::Key_7,"7"},{Qt::Key_8,"8"},
+        {Qt::Key_Q, "Q"},{Qt::Key_W,"W"},{Qt::Key_E,"E"},{Qt::Key_R,"R"},{Qt::Key_T,"T"},{Qt::Key_Y,"Y"},{Qt::Key_U,"U"},{Qt::Key_I,"I"},
+        {Qt::Key_A,"A"},{Qt::Key_S,"S"},{Qt::Key_D,"D"},{Qt::Key_F,"F"},{Qt::Key_G,"G"},{Qt::Key_H,"H"},{Qt::Key_J,"J"},{Qt::Key_K,"K"},
+        {Qt::Key_Z,"Z"},{Qt::Key_X,"X"},{Qt::Key_C,"C"},{Qt::Key_V,"V"},{Qt::Key_B,"B"},{Qt::Key_N,"N"},{Qt::Key_M,"M"},{Qt::Key_Comma,","}
+    };
+    // players
+    players = new QMap<QString, CasterPlayerWidget*>();
 
-    playerQ = new CasterPlayerWidget;
-    playerQ->setHotKeyLetter("Q");
-    playerW = new CasterPlayerWidget;
-    playerW->setHotKeyLetter("W");
-    playerE = new CasterPlayerWidget;
-    playerE->setHotKeyLetter("E");
-    playerR = new CasterPlayerWidget;
-    playerR->setHotKeyLetter("R");
-    playerT = new CasterPlayerWidget;
-    playerT->setHotKeyLetter("T");
-    playerY = new CasterPlayerWidget;
-    playerY->setHotKeyLetter("Y");
-    playerU = new CasterPlayerWidget;
-    playerU->setHotKeyLetter("U");
-    playerI = new CasterPlayerWidget;
-    playerI->setHotKeyLetter("I");
+    /* Create Players */
+    int _board_column = 0; int _board_row = 0;
+    for(int i=0; i < int_to_player_key->count(); i++){
+        // Initialize player
+        players->insert(int_to_player_key->value(i), new CasterPlayerWidget);
+        players->value(int_to_player_key->value(i))->setHotKeyLetter(int_to_player_key->value(i));
 
-    playerA = new CasterPlayerWidget;
-    playerA->setHotKeyLetter("A");
-    playerS = new CasterPlayerWidget;
-    playerS->setHotKeyLetter("S");
-    playerD = new CasterPlayerWidget;
-    playerD->setHotKeyLetter("D");
-    playerF = new CasterPlayerWidget;
-    playerF->setHotKeyLetter("F");
-    playerG = new CasterPlayerWidget;
-    playerG->setHotKeyLetter("G");
-    playerH = new CasterPlayerWidget;
-    playerH->setHotKeyLetter("H");
-    playerJ = new CasterPlayerWidget;
-    playerJ->setHotKeyLetter("J");
-    playerK = new CasterPlayerWidget;
-    playerK->setHotKeyLetter("K");
+        // Connect OSC Events
+        connect(players->value(int_to_player_key->value(i)),SIGNAL(updateOSCClient(OscMessageComposer*)),this,SLOT(notifyApplicationAboutOSCMessage(OscMessageComposer*)));
 
-    playerZ = new CasterPlayerWidget;
-    playerZ->setHotKeyLetter("Z");
-    playerX = new CasterPlayerWidget;
-    playerX->setHotKeyLetter("X");
-    playerC = new CasterPlayerWidget;
-    playerC->setHotKeyLetter("C");
-    playerV = new CasterPlayerWidget;
-    playerV->setHotKeyLetter("V");
-    playerB = new CasterPlayerWidget;
-    playerB->setHotKeyLetter("B");
-    playerN = new CasterPlayerWidget;
-    playerN->setHotKeyLetter("N");
-    playerM = new CasterPlayerWidget;
-    playerM->setHotKeyLetter("M");
-    playerCOMMA = new CasterPlayerWidget;
-    playerCOMMA->setHotKeyLetter(",");
+        // Add to layout
+        boardLayout->addWidget(players->value(int_to_player_key->value(i)), _board_row, _board_column);
 
-    //ADD TO LAYOUT
-    boardLayout->addWidget(player1, 0,0);
-    boardLayout->addWidget(player2, 0,1);
-    boardLayout->addWidget(player3, 0,2);
-    boardLayout->addWidget(player4, 0,3);
-    boardLayout->addWidget(player5, 0,4);
-    boardLayout->addWidget(player6, 0,5);
-    boardLayout->addWidget(player7, 0,6);
-    boardLayout->addWidget(player8, 0,7);
-
-    boardLayout->addWidget(playerQ, 1,0);
-    boardLayout->addWidget(playerW, 1,1);
-    boardLayout->addWidget(playerE, 1,2);
-    boardLayout->addWidget(playerR, 1,3);
-    boardLayout->addWidget(playerT, 1,4);
-    boardLayout->addWidget(playerY, 1,5);
-    boardLayout->addWidget(playerU, 1,6);
-    boardLayout->addWidget(playerI, 1,7);
-
-    boardLayout->addWidget(playerA, 2,0);
-    boardLayout->addWidget(playerS, 2,1);
-    boardLayout->addWidget(playerD, 2,2);
-    boardLayout->addWidget(playerF, 2,3);
-    boardLayout->addWidget(playerG, 2,4);
-    boardLayout->addWidget(playerH, 2,5);
-    boardLayout->addWidget(playerJ, 2,6);
-    boardLayout->addWidget(playerK, 2,7);
-
-    boardLayout->addWidget(playerZ, 3,0);
-    boardLayout->addWidget(playerX, 3,1);
-    boardLayout->addWidget(playerC, 3,2);
-    boardLayout->addWidget(playerV, 3,3);
-    boardLayout->addWidget(playerB, 3,4);
-    boardLayout->addWidget(playerN, 3,5);
-    boardLayout->addWidget(playerM, 3,6);
-    boardLayout->addWidget(playerCOMMA, 3,7);
+        // Update Next Layout
+        _board_column += 1;
+        if(_board_column > 7){
+            _board_row += 1;
+            _board_column = 0;
+        }
+    }
 }
 //PUBLIC
 void CasterBoard::stopAllSounds()
 {
-    //WIDGETS
-    player1->stopSound();
-    player2->stopSound();
-    player3->stopSound();
-    player4->stopSound();
-    player5->stopSound();
-    player6->stopSound();
-    player7->stopSound();
-    player8->stopSound();
-
-    playerQ->stopSound();
-    playerW->stopSound();
-    playerE->stopSound();
-    playerR->stopSound();
-    playerT->stopSound();
-    playerY->stopSound();
-    playerU->stopSound();
-    playerI->stopSound();
-
-    playerA->stopSound();
-    playerS->stopSound();
-    playerD->stopSound();
-    playerF->stopSound();
-    playerG->stopSound();
-    playerH->stopSound();
-    playerJ->stopSound();
-    playerK->stopSound();
-
-    playerZ->stopSound();
-    playerX->stopSound();
-    playerC->stopSound();
-    playerV->stopSound();
-    playerB->stopSound();
-    playerN->stopSound();
-    playerM->stopSound();
-    playerCOMMA->stopSound();
+    // Iterate through players
+    foreach(QString _letter, players->keys()){
+        players->value(_letter)->stopSound();
+    }
 }
 
+void CasterBoard::setAllAudioDuckingStates(int state)
+{
+    // Iterate through players
+    foreach(QString _letter, players->keys()){
+        players->value(_letter)->setAudioDuckState(state);
+    }
+}
+
+void CasterBoard::notifyApplicationAboutOSCMessage(OscMessageComposer* message){
+    if(this->isCurrentBoard)
+        emit this->_updateOSCClient(message);
+}
+
+void CasterBoard::syncWithOSCClient()
+{
+    // Update Tab Name
+    OscMessageComposer* msg = writeOSCMessage("/glo/m/label/tab_name", *soundBoardName);
+    emit this->_updateOSCClient(msg);
+
+    // Iterate through players
+    foreach(QString _letter, players->keys()){
+        players->value(_letter)->syncWithOSCClient();
+    }
+}
 
 // PROTECTED
 void CasterBoard::keyReleaseEvent(QKeyEvent *event)
 {
     //Handles All Hot Key Behavior
-    //BOARD 1
-    if(event->key() == Qt::Key_1)
-    {
-        if(player1->player->state() == QMediaPlayer::PlayingState)
-        {
-            player1->stopSound();
+    if(keyboard_key_to_player_key->contains(event->key())){
+        if(players->contains(keyboard_key_to_player_key->value(event->key()))){
+            // Play or stop sound based on player's play state
+            if(players->value(keyboard_key_to_player_key->value(event->key()))->player->state() == QMediaPlayer::PlayingState)
+                players->value(keyboard_key_to_player_key->value(event->key()))->stopSound();
+            else if (players->value(keyboard_key_to_player_key->value(event->key()))->player->state() == QMediaPlayer::PausedState)
+                players->value(keyboard_key_to_player_key->value(event->key()))->playSound();
+            else if (players->value(keyboard_key_to_player_key->value(event->key()))->player->state() == QMediaPlayer::StoppedState)
+                players->value(keyboard_key_to_player_key->value(event->key()))->playSound();
         }
-        else if (player1->player->state() == QMediaPlayer::PausedState)
-        {
-            player1->playSound();
-        }
-        else if (player1->player->state() == QMediaPlayer::StoppedState)
-        {
-            player1->playSound();
-        }
+    } else {
+        // Delegates global hotkeys to MainWIndow
+        emit globalHotKeyReleasedEvent(event);
     }
-    else if(event->key() == Qt::Key_2)
-    {
-        if(player2->player->state() == QMediaPlayer::PlayingState)
-        {
-            player2->stopSound();
-        }
-        else if (player2->player->state() == QMediaPlayer::PausedState)
-        {
-            player2->playSound();
-        }
-        else if (player2->player->state() == QMediaPlayer::StoppedState)
-        {
-            player2->playSound();
-        }
-    }
-    else if(event->key() == Qt::Key_3)
-    {
-        if(player3->player->state() == QMediaPlayer::PlayingState)
-        {
-            player3->stopSound();
-        }
-        else if (player3->player->state() == QMediaPlayer::PausedState)
-        {
-            player3->playSound();
-        }
-        else if (player3->player->state() == QMediaPlayer::StoppedState)
-        {
-            player3->playSound();
-        }
-    }
-    else if(event->key() == Qt::Key_4)
-    {
-        if(player4->player->state() == QMediaPlayer::PlayingState)
-        {
-            player4->stopSound();
-        }
-        else if (player4->player->state() == QMediaPlayer::PausedState)
-        {
-            player4->playSound();
-        }
-        else if (player4->player->state() == QMediaPlayer::StoppedState)
-        {
-            player4->playSound();
-        }
-    }
-    else if(event->key() == Qt::Key_5)
-    {
-        if(player5->player->state() == QMediaPlayer::PlayingState)
-        {
-            player5->stopSound();
-        }
-        else if (player5->player->state() == QMediaPlayer::PausedState)
-        {
-            player5->playSound();
-        }
-        else if (player5->player->state() == QMediaPlayer::StoppedState)
-        {
-            player5->playSound();
-        }
-    }
-    else if(event->key() == Qt::Key_6)
-    {
-        if(player6->player->state() == QMediaPlayer::PlayingState)
-        {
-            player6->stopSound();
-        }
-        else if (player6->player->state() == QMediaPlayer::PausedState)
-        {
-            player6->playSound();
-        }
-        else if (player6->player->state() == QMediaPlayer::StoppedState)
-        {
-            player6->playSound();
-        }
-    }
-    else if(event->key() == Qt::Key_7)
-    {
-        if(player7->player->state() == QMediaPlayer::PlayingState)
-        {
-            player7->stopSound();
-        }
-        else if (player7->player->state() == QMediaPlayer::PausedState)
-        {
-            player7->playSound();
-        }
-        else if (player7->player->state() == QMediaPlayer::StoppedState)
-        {
-            player7->playSound();
-        }
-    }
-    else if(event->key() == Qt::Key_8)
-    {
-        if(player8->player->state() == QMediaPlayer::PlayingState)
-        {
-            player8->stopSound();
-        }
-        else if (player8->player->state() == QMediaPlayer::PausedState)
-        {
-            player8->playSound();
-        }
-        else if (player8->player->state() == QMediaPlayer::StoppedState)
-        {
-            player8->playSound();
-        }
-    }
-    //BOARD 2
-    else if(event->key() == Qt::Key_Q)
-    {
-        if(playerQ->player->state() == QMediaPlayer::PlayingState)
-        {
-            playerQ->stopSound();
-        }
-        else if (playerQ->player->state() == QMediaPlayer::PausedState)
-        {
-            playerQ->playSound();
-        }
-        else if (playerQ->player->state() == QMediaPlayer::StoppedState)
-        {
-            playerQ->playSound();
-        }
-    }
-    else if(event->key() == Qt::Key_W)
-    {
-        if(playerW->player->state() == QMediaPlayer::PlayingState)
-        {
-            playerW->stopSound();
-        }
-        else if (playerW->player->state() == QMediaPlayer::PausedState)
-        {
-            playerW->playSound();
-        }
-        else if (playerW->player->state() == QMediaPlayer::StoppedState)
-        {
-            playerW->playSound();
-        }
-    }
-    else if(event->key() == Qt::Key_E)
-    {
-        if(playerE->player->state() == QMediaPlayer::PlayingState)
-        {
-            playerE->stopSound();
-        }
-        else if (playerE->player->state() == QMediaPlayer::PausedState)
-        {
-            playerE->playSound();
-        }
-        else if (playerE->player->state() == QMediaPlayer::StoppedState)
-        {
-            playerE->playSound();
-        }
-    }
-    else if(event->key() == Qt::Key_R)
-    {
-        if(playerR->player->state() == QMediaPlayer::PlayingState)
-        {
-            playerR->stopSound();
-        }
-        else if (playerR->player->state() == QMediaPlayer::PausedState)
-        {
-            playerR->playSound();
-        }
-        else if (playerR->player->state() == QMediaPlayer::StoppedState)
-        {
-            playerR->playSound();
-        }
-    }
-    else if(event->key() == Qt::Key_T)
-    {
-        if(playerT->player->state() == QMediaPlayer::PlayingState)
-        {
-            playerT->stopSound();
-        }
-        else if (playerT->player->state() == QMediaPlayer::PausedState)
-        {
-            playerT->playSound();
-        }
-        else if (playerT->player->state() == QMediaPlayer::StoppedState)
-        {
-            playerT->playSound();
-        }
-    }
-    else if(event->key() == Qt::Key_Y)
-    {
-        if(playerY->player->state() == QMediaPlayer::PlayingState)
-        {
-            playerY->stopSound();
-        }
-        else if (playerY->player->state() == QMediaPlayer::PausedState)
-        {
-            playerY->playSound();
-        }
-        else if (playerY->player->state() == QMediaPlayer::StoppedState)
-        {
-            playerY->playSound();
-        }
-    }
-    else if(event->key() == Qt::Key_U)
-    {
-        if(playerU->player->state() == QMediaPlayer::PlayingState)
-        {
-            playerU->stopSound();
-        }
-        else if (playerU->player->state() == QMediaPlayer::PausedState)
-        {
-            playerU->playSound();
-        }
-        else if (playerU->player->state() == QMediaPlayer::StoppedState)
-        {
-            playerU->playSound();
-        }
-    }
-    else if(event->key() == Qt::Key_I)
-    {
-        if(playerI->player->state() == QMediaPlayer::PlayingState)
-        {
-            playerI->stopSound();
-        }
-        else if (playerI->player->state() == QMediaPlayer::PausedState)
-        {
-            playerI->playSound();
-        }
-        else if (playerI->player->state() == QMediaPlayer::StoppedState)
-        {
-            playerI->playSound();
-        }
-    }
-    //BOARD 3
-    else if(event->key() == Qt::Key_A)
-    {
-        if(playerA->player->state() == QMediaPlayer::PlayingState)
-        {
-            playerA->stopSound();
-        }
-        else if (playerA->player->state() == QMediaPlayer::PausedState)
-        {
-            playerA->playSound();
-        }
-        else if (playerA->player->state() == QMediaPlayer::StoppedState)
-        {
-            playerA->playSound();
-        }
-    }
-    else if(event->key() == Qt::Key_S)
-    {
-        if(playerS->player->state() == QMediaPlayer::PlayingState)
-        {
-            playerS->stopSound();
-        }
-        else if (playerS->player->state() == QMediaPlayer::PausedState)
-        {
-            playerS->playSound();
-        }
-        else if (playerS->player->state() == QMediaPlayer::StoppedState)
-        {
-            playerS->playSound();
-        }
-    }
-    else if(event->key() == Qt::Key_D)
-    {
-        if(playerD->player->state() == QMediaPlayer::PlayingState)
-        {
-            playerD->stopSound();
-        }
-        else if (playerD->player->state() == QMediaPlayer::PausedState)
-        {
-            playerD->playSound();
-        }
-        else if (playerD->player->state() == QMediaPlayer::StoppedState)
-        {
-            playerD->playSound();
-        }
-    }
-    else if(event->key() == Qt::Key_F)
-    {
-        if(playerF->player->state() == QMediaPlayer::PlayingState)
-        {
-            playerF->stopSound();
-        }
-        else if (playerF->player->state() == QMediaPlayer::PausedState)
-        {
-            playerF->playSound();
-        }
-        else if (playerF->player->state() == QMediaPlayer::StoppedState)
-        {
-            playerF->playSound();
-        }
-    }
-    else if(event->key() == Qt::Key_G)
-    {
-        if(playerG->player->state() == QMediaPlayer::PlayingState)
-        {
-            playerG->stopSound();
-        }
-        else if (playerG->player->state() == QMediaPlayer::PausedState)
-        {
-            playerG->playSound();
-        }
-        else if (playerG->player->state() == QMediaPlayer::StoppedState)
-        {
-            playerG->playSound();
-        }
-    }
-    else if(event->key() == Qt::Key_H)
-    {
-        if(playerH->player->state() == QMediaPlayer::PlayingState)
-        {
-            playerH->stopSound();
-        }
-        else if (playerH->player->state() == QMediaPlayer::PausedState)
-        {
-            playerH->playSound();
-        }
-        else if (playerH->player->state() == QMediaPlayer::StoppedState)
-        {
-            playerH->playSound();
-        }
-    }
-    else if(event->key() == Qt::Key_J)
-    {
-        if(playerJ->player->state() == QMediaPlayer::PlayingState)
-        {
-            playerJ->stopSound();
-        }
-        else if (playerJ->player->state() == QMediaPlayer::PausedState)
-        {
-            playerJ->playSound();
-        }
-        else if (playerJ->player->state() == QMediaPlayer::StoppedState)
-        {
-            playerJ->playSound();
-        }
-    }
-    else if(event->key() == Qt::Key_K)
-    {
-        if(playerK->player->state() == QMediaPlayer::PlayingState)
-        {
-            playerK->stopSound();
-        }
-        else if (playerK->player->state() == QMediaPlayer::PausedState)
-        {
-            playerK->playSound();
-        }
-        else if (playerK->player->state() == QMediaPlayer::StoppedState)
-        {
-            playerK->playSound();
-        }
-    }
-    //BOARD 4
-    else if(event->key() == Qt::Key_Z)
-    {
-        if(playerZ->player->state() == QMediaPlayer::PlayingState)
-        {
-            playerZ->stopSound();
-        }
-        else if (playerZ->player->state() == QMediaPlayer::PausedState)
-        {
-            playerZ->playSound();
-        }
-        else if (playerZ->player->state() == QMediaPlayer::StoppedState)
-        {
-            playerZ->playSound();
-        }
-    }
-    else if(event->key() == Qt::Key_X)
-    {
-        if(playerX->player->state() == QMediaPlayer::PlayingState)
-        {
-            playerX->stopSound();
-        }
-        else if (playerX->player->state() == QMediaPlayer::PausedState)
-        {
-            playerX->playSound();
-        }
-        else if (playerX->player->state() == QMediaPlayer::StoppedState)
-        {
-            playerX->playSound();
-        }
-    }
-    else if(event->key() == Qt::Key_C)
-    {
-        if(playerC->player->state() == QMediaPlayer::PlayingState)
-        {
-            playerC->stopSound();
-        }
-        else if (playerC->player->state() == QMediaPlayer::PausedState)
-        {
-            playerC->playSound();
-        }
-        else if (playerC->player->state() == QMediaPlayer::StoppedState)
-        {
-            playerC->playSound();
-        }
-    }
-    else if(event->key() == Qt::Key_V)
-    {
-        if(playerV->player->state() == QMediaPlayer::PlayingState)
-        {
-            playerV->stopSound();
-        }
-        else if (playerV->player->state() == QMediaPlayer::PausedState)
-        {
-            playerV->playSound();
-        }
-        else if (playerV->player->state() == QMediaPlayer::StoppedState)
-        {
-            playerV->playSound();
-        }
-    }
-    else if(event->key() == Qt::Key_B)
-    {
-        if(playerB->player->state() == QMediaPlayer::PlayingState)
-        {
-            playerB->stopSound();
-        }
-        else if (playerB->player->state() == QMediaPlayer::PausedState)
-        {
-            playerB->playSound();
-        }
-        else if (playerB->player->state() == QMediaPlayer::StoppedState)
-        {
-            playerB->playSound();
-        }
-    }
-    else if(event->key() == Qt::Key_N)
-    {
-        if(playerN->player->state() == QMediaPlayer::PlayingState)
-        {
-            playerN->stopSound();
-        }
-        else if (playerN->player->state() == QMediaPlayer::PausedState)
-        {
-            playerN->playSound();
-        }
-        else if (playerN->player->state() == QMediaPlayer::StoppedState)
-        {
-            playerN->playSound();
-        }
-    }
-    else if(event->key() == Qt::Key_M)
-    {
-        if(playerM->player->state() == QMediaPlayer::PlayingState)
-        {
-            playerM->stopSound();
-        }
-        else if (playerM->player->state() == QMediaPlayer::PausedState)
-        {
-            playerM->playSound();
-        }
-        else if (playerM->player->state() == QMediaPlayer::StoppedState)
-        {
-            playerM->playSound();
-        }
-    }
-    else if(event->key() == Qt::Key_Comma)
-    {
-        if(playerCOMMA->player->state() == QMediaPlayer::PlayingState)
-        {
-            playerCOMMA->stopSound();
-        }
-        else if (playerCOMMA->player->state() == QMediaPlayer::PausedState)
-        {
-            playerCOMMA->playSound();
-        }
-        else if (playerCOMMA->player->state() == QMediaPlayer::StoppedState)
-        {
-            playerCOMMA->playSound();
-        }
-    }
+
 }
 
 //Public Methods
 void CasterBoard::reloadBoardFromPlayerStates()
 {
-    this->player1->reloadFromPlayerState();
-    this->player2->reloadFromPlayerState();
-    this->player3->reloadFromPlayerState();
-    this->player4->reloadFromPlayerState();
-    this->player5->reloadFromPlayerState();
-    this->player6->reloadFromPlayerState();
-    this->player7->reloadFromPlayerState();
-    this->player8->reloadFromPlayerState();
-
-    this->playerQ->reloadFromPlayerState();
-    this->playerW->reloadFromPlayerState();
-    this->playerE->reloadFromPlayerState();
-    this->playerR->reloadFromPlayerState();
-    this->playerT->reloadFromPlayerState();
-    this->playerY->reloadFromPlayerState();
-    this->playerU->reloadFromPlayerState();
-    this->playerI->reloadFromPlayerState();
-
-    this->playerA->reloadFromPlayerState();
-    this->playerS->reloadFromPlayerState();
-    this->playerD->reloadFromPlayerState();
-    this->playerF->reloadFromPlayerState();
-    this->playerG->reloadFromPlayerState();
-    this->playerH->reloadFromPlayerState();
-    this->playerJ->reloadFromPlayerState();
-    this->playerK->reloadFromPlayerState();
-
-    this->playerZ->reloadFromPlayerState();
-    this->playerX->reloadFromPlayerState();
-    this->playerC->reloadFromPlayerState();
-    this->playerV->reloadFromPlayerState();
-    this->playerB->reloadFromPlayerState();
-    this->playerN->reloadFromPlayerState();
-    this->playerM->reloadFromPlayerState();
-    this->playerCOMMA->reloadFromPlayerState();
+    // Iterate through players
+    foreach(QString _letter, players->keys()){
+        players->value(_letter)->reloadFromPlayerState();
+    }
 
     this->update();
 }
+
+//========================================================
+//==========OSC Composer Methods=====
+OscMessageComposer* CasterBoard::writeOSCMessage(QString address, int value){
+    // Compose OSC Message
+    OscMessageComposer* msg = new OscMessageComposer(address);
+    msg->pushInt32((qint32)value);
+    return msg;
+}
+
+OscMessageComposer* CasterBoard::writeOSCMessage(QString address, float value){
+    // Compose OSC Message
+    OscMessageComposer* msg = new OscMessageComposer(address);
+    msg->pushFloat(value);
+    return msg;
+}
+
+OscMessageComposer* CasterBoard::writeOSCMessage(QString address, QString value){
+    // Compose OSC Message
+    OscMessageComposer* msg = new OscMessageComposer(address);
+    msg->pushString(value.toUtf8());
+    return msg;
+}
+
+//================================================
 
 
 //Operator Overloading
 QDataStream &operator<<(QDataStream &ds, const CasterBoard &cb)
 {
-    return ds << *cb.soundBoardName
-              << *cb.player1->playerState << *cb.player2->playerState << *cb.player3->playerState << *cb.player4->playerState << *cb.player5->playerState << *cb.player6->playerState << *cb.player7->playerState << *cb.player8->playerState
-              << *cb.playerQ->playerState << *cb.playerW->playerState << *cb.playerE->playerState << *cb.playerR->playerState << *cb.playerT->playerState << *cb.playerY->playerState << *cb.playerU->playerState << *cb.playerI->playerState
-              << *cb.playerA->playerState << *cb.playerS->playerState << *cb.playerD->playerState << *cb.playerF->playerState << *cb.playerG->playerState << *cb.playerH->playerState << *cb.playerJ->playerState << *cb.playerK->playerState
-              << *cb.playerZ->playerState << *cb.playerX->playerState << *cb.playerC->playerState << *cb.playerV->playerState << *cb.playerB->playerState << *cb.playerN->playerState << *cb.playerM->playerState << *cb.playerCOMMA->playerState;
+    /* Properties */
+    ds << *cb.soundBoardName;
+    /* All Player Properties */
+    // Iterate through players
+    foreach(QString _letter, cb.players->keys()){
+        ds << *cb.players->value(_letter)->playerState;
+    }
+    return ds;
 }
 
 
 QDataStream &operator>>(QDataStream &ds, CasterBoard &cb)
 {
-    return ds >> *cb.soundBoardName
-              >> *cb.player1->playerState >> *cb.player2->playerState >> *cb.player3->playerState >> *cb.player4->playerState >> *cb.player5->playerState >> *cb.player6->playerState >> *cb.player7->playerState >> *cb.player8->playerState
-              >> *cb.playerQ->playerState >> *cb.playerW->playerState >> *cb.playerE->playerState >> *cb.playerR->playerState >> *cb.playerT->playerState >> *cb.playerY->playerState >> *cb.playerU->playerState >> *cb.playerI->playerState
-              >> *cb.playerA->playerState >> *cb.playerS->playerState >> *cb.playerD->playerState >> *cb.playerF->playerState >> *cb.playerG->playerState >> *cb.playerH->playerState >> *cb.playerJ->playerState >> *cb.playerK->playerState
-              >> *cb.playerZ->playerState >> *cb.playerX->playerState >> *cb.playerC->playerState >> *cb.playerV->playerState >> *cb.playerB->playerState >> *cb.playerN->playerState >> *cb.playerM->playerState >> *cb.playerCOMMA->playerState;
+    /* Properties */
+    ds >> *cb.soundBoardName;
+    /* All Player Properties */
+    // Iterate through players
+    foreach(QString _letter, cb.players->keys()){
+        ds >> *cb.players->value(_letter)->playerState;
+    }
+    return ds;
 }

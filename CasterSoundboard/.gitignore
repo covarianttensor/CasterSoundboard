@@ -1,0 +1,8 @@
+CasterSoundboard.pro.*
+.qmake.stash
+*.o
+CasterSoundboard
+*.app
+Makefile
+moc_*
+qrc_*

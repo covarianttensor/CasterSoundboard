@@ -1,0 +1,56 @@
+name: castersoundboard
+version: git
+summary: A soundboard for hot-keying and playing back sounds. (For podcasting)
+description: |
+ A soundboard for hot-keying and playing back sounds. (For podcasting)
+
+grade: stable
+confinement: strict
+
+parts:
+  desktop-icon:
+    source: .
+    plugin: nil
+    prepare: |
+      mkdir -p $SNAPCRAFT_PART_INSTALL/usr/share/applications
+      mkdir -p $SNAPCRAFT_PART_INSTALL/usr/share/pixmaps
+      cp -v dist/linux/CasterSoundboard.desktop $SNAPCRAFT_PART_INSTALL/usr/share/applications/
+      cp -v dist/linux/CasterSoundboard.png $SNAPCRAFT_PART_INSTALL/usr/share/pixmaps/
+      sed -i 's|Icon=CasterSoundboard|Icon=/usr/share/pixmaps/CasterSoundboard\.png|' $SNAPCRAFT_PART_INSTALL/usr/share/applications/CasterSoundboard.desktop
+
+  castersoundboard:
+    source: ./CasterSoundboard
+    plugin: qmake
+    qt-version: qt5
+    after:
+      - desktop-icon
+      - desktop-qt5
+    build-packages:
+      - g++
+      - qt5-default
+      - qtdeclarative5-dev
+      - qtmultimedia5-dev
+    stage-packages:
+      - gstreamer1.0-plugins-bad
+      - gstreamer1.0-plugins-base
+      - gstreamer1.0-plugins-good
+      - gstreamer1.0-plugins-ugly
+      - libqt5declarative5
+      - libqt5multimedia5
+      - libqt5multimedia5-plugins
+      - libqt5network5
+    prime:
+      - -usr/share/doc
+
+apps:
+  castersoundboard:
+    command: bin/desktop-launch $SNAP/usr/local/bin/CasterSoundboard
+    desktop: usr/share/applications/CasterSoundboard.desktop
+    plugs:
+      - home
+      - mount-observe
+      - network
+      - network-bind
+      - opengl
+      - pulseaudio
+      - x11
