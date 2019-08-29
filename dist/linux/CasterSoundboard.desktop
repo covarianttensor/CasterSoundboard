@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=CasterSoundboard
+Comment=A soundboard for hot-keying and playing back sounds
+Icon=CasterSoundboard
+Exec=CasterSoundboard
+NoDisplay=false
+Categories=AudioVideo;
+StartupNotify=false
+Terminal=false

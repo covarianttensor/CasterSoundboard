@@ -20,12 +20,19 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-#include "MainWindow.h"
-#include <QApplication>
+#include "MainWindow.h" //Will become obsolete after QML conversion
+#include <QApplication> //Will become obsolete after QML conversion
 
+#include <QGuiApplication>
+#include <QQmlApplicationEngine>
+#include <QQmlContext>
+
+#include "casterplayer_controller.h"
+#include "casterplayer_model.h"
 
 int main(int argc, char *argv[])
 {
+    /*
     //START APPLICATION
     QApplication a(argc, argv);
     //CREATE MAIN WINDOW
@@ -36,4 +43,29 @@ int main(int argc, char *argv[])
     w->show();
     //END APPLICATION
     return a.exec();
+    */
+
+    //Create application
+    QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+    QGuiApplication app(argc, argv);
+
+    //Register Types
+    qmlRegisterType<CasterPlayerModel>("MVC_CasterPlayer", 1, 0, "CasterPlayerModel");
+    qmlRegisterUncreatableType<CasterPlayerController>("MVC_CasterPlayer", 1, 0, "CasterPlayerController",
+            QStringLiteral("CasterPlayerController should not be created in QML"));
+
+    //Create QML engine instance
+    QQmlApplicationEngine engine;
+
+    //Load context properties
+    CasterPlayerController casterPlayerController;
+    engine.rootContext()->setContextProperty(QStringLiteral("casterPlayerController"), &casterPlayerController);
+
+    //Start QML engine with main qml file
+    engine.load(QUrl(QLatin1String("qrc:/qml/views/mainView.qml")));
+    if (engine.rootObjects().isEmpty())
+        return -1;
+
+    return app.exec();
+
 }
