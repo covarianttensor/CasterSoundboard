@@ -695,7 +695,7 @@ void CasterPlayerWidget::dropEvent(QDropEvent *event)
             if(openFiles(pathList))
             {
                 event->acceptProposedAction();
-                playSound();
+                //playSound();
             }
             else
             {
@@ -869,7 +869,7 @@ void CasterPlayerWidget::reloadFromPlayerState()
     newMediaLoadedFromProfile = true;
     openFiles(pathList);
     volumeSlider->setValue(playerState->volume);
-    newMediaLoadedFromProfile = false;
+    player->setPosition(playerState->startTime);
 
 }
 
