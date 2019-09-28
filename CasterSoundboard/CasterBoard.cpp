@@ -23,20 +23,34 @@
 #include "CasterBoard.h"
 #include "CasterPlayer.h"
 #include "CasterPlayerState.h"
+#include <QVBoxLayout>
 #include <QGridLayout>
 #include <QFile>
 #include <QDataStream>
 #include <QString>
+#include <QScrollArea>
 #include "libs/osc/composer/OscMessageComposer.h"
 
 //Constructor=============================================
 CasterBoard::CasterBoard(QWidget* parent) : QWidget(parent)
 {
-    QGridLayout *boardLayout = new QGridLayout(this);
+    // Main Layout
+    QVBoxLayout *mainLayout = new QVBoxLayout(this);
+    QScrollArea *playersScrollArea = new QScrollArea();
+    QWidget *boardWidget = new QWidget();
+    QGridLayout *boardLayout = new QGridLayout();
+    boardLayout->setMargin(0);
+    boardWidget->setMinimumWidth(1700);
+    boardWidget->setMinimumHeight(900);
+    boardWidget->setLayout(boardLayout);
+    playersScrollArea->setWidget(boardWidget);
+    mainLayout->addWidget(playersScrollArea, 0);
+    mainLayout->setMargin(0);
 
     //Properties
     soundBoardName = new QString("No Name");
     profileFilePath = new QString("");
+
 
     // MAPs
     // int_to_player_key

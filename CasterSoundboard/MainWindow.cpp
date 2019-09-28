@@ -30,6 +30,7 @@
 #include <QToolBar>
 #include <QPushButton>
 #include <QTableWidget>
+#include <QVBoxLayout>
 #include <QGridLayout>
 #include <QString>
 #include <QStringList>
@@ -64,9 +65,11 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent)
     //SET WINDOW PROPETIES
     this->setWindowTitle("CasterSoundboard");
     this->setWindowIcon(QIcon(":/res/img/app.png"));
+    //this->setStyleSheet("background-color:#4D4D4D;color:white");
 
     //DENFINE LAYOUT
-    QGridLayout *layout = new QGridLayout;
+    QVBoxLayout *layout = new QVBoxLayout;
+    layout->setMargin(0);
 
     //INIT NEW TAB PUSH BUTTONS
     //~~New Tab~~
@@ -74,29 +77,24 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent)
     addNewTabButton->setIcon(QIcon(":/res/img/newTab.png"));
     addNewTabButton->setIconSize(QSize(40,40));
     addNewTabButton->setToolTip("New Tab");
-    //addNewTabButton->setFixedSize(30,30);
-    //layout->addWidget(addNewTabButton,0,2, Qt::AlignRight);
 
     //~~Open Tab~~
     openTabButton = new QPushButton;
     openTabButton->setIcon(QIcon(":/res/img/open.png"));
     openTabButton->setIconSize(QSize(40,40));
     openTabButton->setToolTip("Open Tab");
-    //openTabButton->setFixedSize(30,30);
 
     //~~Save Tab~~
     saveTabButton = new QPushButton;
     saveTabButton->setIcon(QIcon(":/res/img/save.png"));
     saveTabButton->setIconSize(QSize(40,40));
     saveTabButton->setToolTip("Save Tab");
-    //saveTabButton->setFixedSize(30,30);
 
     //~~Save As Tab~~
     saveAsTabButton = new QPushButton;
     saveAsTabButton->setIcon(QIcon(":/res/img/save_as.png"));
     saveAsTabButton->setIconSize(QSize(40,40));
     saveAsTabButton->setToolTip("Save Tab As");
-    //saveAsTabButton->setFixedSize(40,40);
 
     //~~Stop ALL Sounds~~
     stopAllSoundsButton = new QPushButton;
@@ -127,8 +125,6 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent)
     aboutButton->setIcon(QIcon(":/res/img/about.png"));
     aboutButton->setIconSize(QSize(40,40));
     aboutButton->setToolTip("About");
-    //aboutButton->setFixedSize(30,30);
-    //layout->addWidget(aboutButton,0,0, Qt::AlignLeft);
 
     //======Main Toolbar=========
     mainToolbar = new QToolBar;
@@ -143,12 +139,12 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent)
     mainToolbar->addWidget(openSoundControlButton);
     mainToolbar->addWidget(aboutButton);
     // Add toolbar to layout
-    layout->addWidget(mainToolbar, 0, 0, Qt::AlignLeft);
+    layout->addWidget(mainToolbar, 0, Qt::AlignLeft);
 
     //INIT MAIN TAB CONTAINER
     mainTabContainer = new QTabWidget;
     mainTabContainer->setTabsClosable(true);
-    layout->addWidget(mainTabContainer,1,0, 2, 0);
+    layout->addWidget(mainTabContainer,0);
 
     // Status Bar
     main_statusbar = new QStatusBar;
@@ -245,7 +241,7 @@ void MainWindow::addNewTab()
     //ASK FOR SOUNDBOARD TAB
     bool ok;
     QString text = QInputDialog::getText(
-                          this,
+                          Q_NULLPTR,
                           tr("String"),
                           tr("Enter a tab name:"),
                           QLineEdit::Normal,
@@ -277,7 +273,7 @@ void MainWindow::openProfile()
 {
     //File Diag
     QString _filePath = QFileDialog::getOpenFileName(
-            this, "Open Sound Board Profile", "",
+            Q_NULLPTR, "Open Sound Board Profile", "",
             "Sound Board Profile (*.caster)");
 
     if (!_filePath.isNull())
@@ -324,7 +320,7 @@ void MainWindow::saveTab()
             file.close();
         } else {
             /* Save As.. */
-            QString _filePath = QFileDialog::getSaveFileName(this, "Save Sound Board Profile As...", "",
+            QString _filePath = QFileDialog::getSaveFileName(Q_NULLPTR, "Save Sound Board Profile As...", "",
                                                              "Sound Board Profile (*.caster)");
 
             if (!_filePath.isNull())
@@ -354,7 +350,7 @@ void MainWindow::saveAsTab()
 
     if(mainTabContainer->count() > 0)
     {
-        QString _filePath = QFileDialog::getSaveFileName(this, "Save Sound Board Profile As...", "",
+        QString _filePath = QFileDialog::getSaveFileName(Q_NULLPTR, "Save Sound Board Profile As...", "",
                                                          "Sound Board Profile (*.caster)");
 
         if (!_filePath.isNull())
@@ -386,7 +382,7 @@ void MainWindow::renameCurrentTab()
         //ASK FOR SOUNDBOARD TAB
         bool ok;
         QString text = QInputDialog::getText(
-                              this,
+                              Q_NULLPTR,
                               tr("String"),
                               tr("Enter a new tab name:"),
                               QLineEdit::Normal,

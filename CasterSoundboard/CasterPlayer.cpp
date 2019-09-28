@@ -55,6 +55,12 @@ CasterPlayerWidget::CasterPlayerWidget(QWidget* parent) : QWidget(parent)
     // ID
     id = new QString("");
 
+    // UI Settings
+    this->setMinimumWidth(200);
+    this->setMinimumHeight(200);
+    this->setMaximumWidth(200);
+    this->setMaximumHeight(200);
+
     //Set Widget Defaults
     this->setAcceptDrops(true);
 
@@ -82,6 +88,7 @@ CasterPlayerWidget::CasterPlayerWidget(QWidget* parent) : QWidget(parent)
 
     //Set-Up Widget Layout
     soundNameLabel = new QLabel("<Drop File>");
+    soundNameLabel->setStyleSheet("background-color:transparent;color:black;");
     soundNameLabel->setAlignment(Qt::AlignTop | Qt::AlignLeft);
     QFont sNLF("Georgia",10,-1,false); sNLF.setBold(true);
     soundNameLabel->setFont(sNLF);
@@ -94,6 +101,7 @@ CasterPlayerWidget::CasterPlayerWidget(QWidget* parent) : QWidget(parent)
     hotKeyLabel->setStyleSheet("background:url(:/res/img/Key.png) no-repeat;background-attachment:fixed;background-position:center;color:white;");
     //hotKeyLabel->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Expanding);
     timeLabel = new QLabel("+00:00\n-00:00");
+    timeLabel->setStyleSheet("background-color:transparent;color:black;");
     timeLabel->setAlignment(Qt::AlignHCenter | Qt::AlignRight);
     QFont tLF("Georgia",9,-1,false); tLF.setBold(true);
     timeLabel->setFont(tLF);
@@ -134,6 +142,7 @@ CasterPlayerWidget::CasterPlayerWidget(QWidget* parent) : QWidget(parent)
     volumeSlider->setValue(100);
     volumeSlider->setStyleSheet("QSlider:vertical {"
                                 "min-width: 30px;"
+                                "background-color:transparent;"
                                 "}"
                                 "QSlider::groove:vertical { "
                                 "border: 1px solid #999999; "
@@ -151,6 +160,7 @@ CasterPlayerWidget::CasterPlayerWidget(QWidget* parent) : QWidget(parent)
     trackBar->setValue(0);
     trackBar->setStyleSheet("QSlider:horizontal {"
                                 "min-height: 30px;"
+                                "background-color:transparent;"
                                 "}"
                                 "QSlider::groove:horizontal { "
                                 "border: 1px solid #999999; "
