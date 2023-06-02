@@ -4,14 +4,14 @@ CasterPlayerController::CasterPlayerController(QObject *parent) : QObject(parent
 {
     // Add initial player
     mItems.append({
-                      false, // IsInPlayerMode
-                      false, // IsLooped
-                      1.0,   // Volume
-                      false, // IsPlayRegionEnabled
-                      0,     // PlayRegionBegin
-                      0,     // PlayRegionEnd
-                      0     // Trigger Style
-                  });
+        false, // IsInPlayerMode
+        false, // IsLooped
+        1.0,   // Volume
+        false, // IsPlayRegionEnabled
+        0,     // PlayRegionBegin
+        0,     // PlayRegionEnd
+        0     // Trigger Style
+    });
 }
 
 QVector<CasterPlayerItem> CasterPlayerController::items() const

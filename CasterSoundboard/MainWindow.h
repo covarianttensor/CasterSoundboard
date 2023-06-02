@@ -23,7 +23,6 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 #include <QWidget>
-#include "libs/osc/composer/OscMessageComposer.h"
 
 //forward declarations
 class QObject;
@@ -72,9 +71,6 @@ private:
 
     //METHODS
     //OSC Composer Methods
-    OscMessageComposer* writeOSCMessage(QString address, int value);
-    OscMessageComposer* writeOSCMessage(QString address, float value);
-    OscMessageComposer* writeOSCMessage(QString address, QString value);
     //Utility
     QString get_local_ip();
 
@@ -122,12 +118,6 @@ public slots:
     void hotKeyExecution(QKeyEvent * event);
     void handleGlobalHotKeyEventFromCurrentWidget(QKeyEvent *event);
     //OSC Server
-    void openOSCSettings();
-    void executeOSCCommand();
-    void executeOneWayOSCCommand(OscMessage* msg, QStringList address_params);
-    void executeTwoWayOSCCommand(OscMessage* msg, QStringList address_params);
-    void sendOSCMessageToClient(OscMessageComposer* message);
-    void syncWithOSCClient();
 
 };
 

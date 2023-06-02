@@ -21,7 +21,7 @@ int CasterPlayerModel::rowCount(const QModelIndex &parent) const
 QVariant CasterPlayerModel::data(const QModelIndex &index, int role) const
 {
     if (!index.isValid() || !mList)
-            return QVariant();
+        return QVariant();
 
     const CasterPlayerItem item = mList->items().at(index.row());
     switch (role) {
