@@ -20,8 +20,6 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-#include <QApplication> //Will become obsolete after QML conversion
-
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
@@ -31,19 +29,6 @@
 
 int main(int argc, char *argv[])
 {
-    /*
-    //START APPLICATION
-    QApplication a(argc, argv);
-    //CREATE MAIN WINDOW
-    MainWindow *w = new MainWindow;
-    //SET MAIN WINDOW SIZE
-    w->resize(1000, 500);
-    //SHOW MAIN WINDOW
-    w->show();
-    //END APPLICATION
-    return a.exec();
-    */
-
     //Create application
     QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
     QGuiApplication app(argc, argv);
