@@ -22,18 +22,52 @@
  */
 #include "MainWindow.h"
 #include <QApplication>
+#include <QCommandLineParser>
+#include <QCommandLineOption>
+#include <QFileInfo>
+#include <QDebug>
 
 
 int main(int argc, char *argv[])
 {
     //START APPLICATION
     QApplication a(argc, argv);
+
+    QCommandLineParser parser;
+    parser.setApplicationDescription("CasterSoundboard");
+    parser.addHelpOption();
+    QCommandLineOption profileOption(QStringList() << "p" << "profile",
+                                     "Load a .caster profile at startup", "file");
+    parser.addOption(profileOption);
+    parser.addPositionalArgument("profile", "Optional .caster profile file", "[profile]");
+    parser.process(a);
+
+    const QStringList positional = parser.positionalArguments();
+    if (positional.size() > 1 || (parser.isSet(profileOption) && !positional.isEmpty())) {
+        qCritical() << "Specify only one profile, either as --profile FILE or FILE.";
+        return 2;
+    }
+    const QString profile = parser.isSet(profileOption) ? parser.value(profileOption)
+                                                        : positional.value(0);
+    if ((parser.isSet(profileOption) || !positional.isEmpty()) && profile.isEmpty()) {
+        qCritical() << "Profile filename must not be empty.";
+        return 2;
+    }
     //CREATE MAIN WINDOW
     MainWindow *w = new MainWindow;
     //SET MAIN WINDOW SIZE
     w->resize(1000, 500);
     //SHOW MAIN WINDOW
     w->show();
+    if (!profile.isEmpty()) {
+        const QString absolutePath = QFileInfo(profile).absoluteFilePath();
+        QString error;
+        if (!w->loadProfile(absolutePath, error)) {
+            qCritical().noquote() << error;
+            delete w;
+            return 1;
+        }
+    }
     //END APPLICATION
     return a.exec();
 }
