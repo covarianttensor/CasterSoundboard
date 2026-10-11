@@ -100,6 +100,7 @@ OscReader::init(QByteArray* src, qint32 offset, qint32 size)
 	}
 	catch (...)
 	{
+		delete mPacket;
 		throw ReadMessageException();
 	}
 }

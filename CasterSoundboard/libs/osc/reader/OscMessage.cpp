@@ -21,6 +21,7 @@
  */
  
 #include <libs/osc/reader/OscMessage.h>
+#include <memory>
 #include <libs/osc/reader/OscReader.h>
 #include <libs/tools/ByteBuffer.h>
 #include <libs/osc/exceptions/MalformedArrayException.h>
@@ -50,7 +51,7 @@
 /** */
 size_t OscMessage::getNumValues() const
 {
-	return mValues.size() - 2;
+	return mValues.size() >= 2 ? mValues.size() - 2 : 0;
 }
 
 /** */
@@ -96,7 +97,9 @@ OscContent(packet)
 	qint32 arrayLevel = 0;
 	try
 	{
-		mValues.push_back(new OscAddress(packet, mStartIdx));
+		std::unique_ptr<OscValue> address(new OscAddress(packet, mStartIdx));
+		mValues.push_back(address.get());
+		address.release();
 
 		// Current packet position is set to data section.
 		qint32 dataIdx = mPacket->getPosition();
@@ -104,7 +107,7 @@ OscContent(packet)
 		do
 		{
 			if (dataIdx > mStartIdx + messageSize)
-				throw new BufferUnderflowException();
+				throw BufferUnderflowException();
 
 			char tag = mPacket->get(tagsIdx);
 			dataIdx = mPacket->getPosition();
@@ -133,6 +136,8 @@ OscContent(packet)
 					++arrayLevel;
 					break;
 				case ']':
+					if (arrayLevel == 0)
+						throw MalformedArrayException();
 					newValue = new OscArrayEnd(packet, dataIdx);
 					--arrayLevel;
 					break;
@@ -174,20 +179,37 @@ OscContent(packet)
 			}            
 
 			if (newValue != 0)
-				mValues.push_back(newValue); // push this Value to the Value list
+			{
+				std::unique_ptr<OscValue> value(newValue);
+				mValues.push_back(value.get());
+				value.release();
+			}
 
 		} while (mPacket->get(tagsIdx++) != 0);
+		if (arrayLevel != 0)
+			throw MalformedArrayException();
 	}
 	catch (BufferUnderflowException&)
 	{
+		for (OscValue* value : mValues)
+			delete value;
+		mValues.clear();
 		throw OutOfBoundsReadException();
 	}
 	catch (IndexOutOfBoundsException&)
 	{
+		for (OscValue* value : mValues)
+			delete value;
+		mValues.clear();
 		throw OutOfBoundsReadException();
 	}
-	if (arrayLevel != 0)
-		throw MalformedArrayException();
+	catch (...)
+	{
+		for (OscValue* value : mValues)
+			delete value;
+		mValues.clear();
+		throw;
+	}
 }
 
 OscMessage::~OscMessage()
