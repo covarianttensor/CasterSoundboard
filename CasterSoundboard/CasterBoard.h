@@ -32,6 +32,7 @@
 class CasterPlayerWidget;
 class QString;
 class CasterBoardState;
+class QGridLayout;
 
 class CasterBoard : public QWidget //inherit from QWidget
 {
@@ -60,6 +61,8 @@ protected:
     void keyReleaseEvent(QKeyEvent *event);//Capture Hot Keys
 
 private:
+    QGridLayout *boardLayout;
+
     //Private Methods
     //OSC Composer Methods
     OscMessageComposer* writeOSCMessage(QString address, int value);
