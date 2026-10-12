@@ -21,6 +21,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 #include "MainWindow.h"
+#include <memory>
 #include "CasterBoard.h"
 #include "CasterPlayer.h"
 #include "CasterPlayerState.h"
@@ -900,16 +901,16 @@ void MainWindow::executeTwoWayOSCCommand(OscMessage *msg, QStringList address_pa
 
 void MainWindow::sendOSCMessageToClient(OscMessageComposer* message)
 {
+    std::unique_ptr<OscMessageComposer> ownedMessage(message);
     // Send OSC Message
     try{
         if(oscConfigPicker->getIsServerRunning()){
-            QByteArray* oscDatagram = message->getBytes();
+            std::unique_ptr<QByteArray> oscDatagram(message->getBytes());
             QHostAddress oscClientAddress(*outbound_ipv4);
             socket->writeDatagram(*oscDatagram, oscClientAddress, outbound_port);
         }
     } catch(...) { }
 
-    delete message;
 }
 
 //========================================================

@@ -117,6 +117,7 @@ private:
 
     //Private Methods
     int getProgressWidth(); //Use to compute width of progress bar
+    void validateCueRange(qint64 duration);
 
 
     // Diag

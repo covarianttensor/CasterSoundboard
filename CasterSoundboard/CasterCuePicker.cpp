@@ -205,6 +205,9 @@ void CasterCuePicker::setStopTime(int _stopTime)
 
 void CasterCuePicker::playerPositionChanged(qint64 position)
 {
+    if (player->state() != QMediaPlayer::PlayingState
+            || position != player->position() || stopTime <= startTime)
+        return;
     if((int)position >= this->stopTime)
     {
         if(loop){
