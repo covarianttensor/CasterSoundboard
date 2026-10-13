@@ -145,13 +145,19 @@ linux {
     appdata.files = ../dist/linux/CasterSoundboard.appdata.xml
     appdata.path = $$DATADIR/appdata/
 
+    metainfo.files = ../dist/linux/CasterSoundboard.appdata.xml
+    metainfo.path = $$DATADIR/metainfo/
+
     desktop.files = ../dist/linux/CasterSoundboard.desktop
     desktop.path = $$DATADIR/applications/
 
     pixmap.files = ../dist/linux/CasterSoundboard.png
     pixmap.path = $$DATADIR/pixmaps/
 
-    INSTALLS += appdata desktop pixmap
+    icon256.files = ../dist/linux/CasterSoundboard.png
+    icon256.path = $$DATADIR/icons/hicolor/256x256/apps/
+
+    INSTALLS += appdata metainfo desktop pixmap icon256
 }
 
 macx {

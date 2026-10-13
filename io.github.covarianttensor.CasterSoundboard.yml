@@ -1,0 +1,27 @@
+app-id: io.github.covarianttensor.CasterSoundboard
+runtime: org.kde.Platform
+runtime-version: '6.8'
+sdk: org.kde.Sdk
+command: CasterSoundboard
+rename-desktop-file: CasterSoundboard.desktop
+rename-appdata-file: CasterSoundboard.appdata.xml
+rename-icon: CasterSoundboard
+
+finish-args:
+  - --share=ipc
+  - --socket=wayland
+  - --socket=fallback-x11
+  - --socket=pulseaudio
+  - --share=network
+  - --device=dri
+  - --filesystem=host
+
+modules:
+  - name: castersoundboard
+    buildsystem: qmake
+    subdir: CasterSoundboard
+    config-opts:
+      - PREFIX=/app
+    sources:
+      - type: dir
+        path: .

@@ -1,19 +1,29 @@
-with import <nixpkgs> {};
+{ pkgs ? import <nixpkgs> {} }:
 
-stdenv.mkDerivation {
-  name = "CasterSoundboard";
-  src = ./CasterSoundboard;
-  nativeBuildInputs = [ qt5.qmakeHook qt5.makeQtWrapper ];
-  buildInputs = [
-    qt5.qtmultimedia
-    gst_all_1.gst-plugins-base
-    gst_all_1.gst-plugins-good
-    gst_all_1.gst-plugins-bad
-    gst_all_1.gst-plugins-ugly
-  ];
-  enableParallelBuilding = true;
-  postInstall = ''
-    wrapQtProgram "$out/bin/$name" \
-      --prefix GST_PLUGIN_SYSTEM_PATH_1_0 : "$GST_PLUGIN_SYSTEM_PATH_1_0"
+pkgs.stdenv.mkDerivation {
+  pname = "CasterSoundboard";
+  version = "1.0";
+
+  src = ./.;
+  preConfigure = ''
+    cd CasterSoundboard
   '';
+
+  nativeBuildInputs = [
+    pkgs.qt6.qmake
+    pkgs.qt6.wrapQtAppsHook
+  ];
+
+  buildInputs = [
+    pkgs.qt6.qtbase
+    pkgs.qt6.qtmultimedia
+    pkgs.qt6.qtwayland
+    pkgs.ffmpeg
+  ];
+
+  qmakeFlags = [
+    "PREFIX=${placeholder "out"}"
+  ];
+
+  enableParallelBuilding = true;
 }
