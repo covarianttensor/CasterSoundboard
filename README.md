@@ -11,6 +11,7 @@ CasterSoundboard is written in C++ Qt5.
 ---
 
 ## Guides
++ [OSC colour and grid metadata API](docs/osc-metadata.md)
 + [Control CasterSoundboard with your phone or tablet via a network](https://github.com/JupiterBroadcasting/CasterSoundboard/wiki/Guide:-How-to-Control-CasterSoundboard-Using-Your-Phone-or-Tablet "CasterSoundboard's Wiki")
 ---
 

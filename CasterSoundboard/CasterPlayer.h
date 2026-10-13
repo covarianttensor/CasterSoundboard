@@ -50,6 +50,7 @@ public:
     //Set Properties
     void setHotKeyLetter(QString hotKey);
     void syncWithOSCClient();
+    QString displayColor();
 
     //Media Player
     QMediaPlayer *player;

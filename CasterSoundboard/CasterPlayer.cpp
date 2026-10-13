@@ -242,6 +242,21 @@ void CasterPlayerWidget::setHotKeyLetter(QString hotKey)
     this->id = new QString(hotKey.toUtf8());
 }
 
+QString CasterPlayerWidget::displayColor()
+{
+    // Let Qt interpret the applied stylesheet, including fractional RGB values
+    // in existing profiles. Sliders are adjustments, not absolute HSL colours.
+    ensurePolished();
+    // Hidden/reloaded widgets can still have the previous stylesheet palette.
+    style()->polish(this);
+    const QBrush background = palette().brush(QPalette::Window);
+    const QGradient *gradient = background.gradient();
+    if (gradient && !gradient->stops().isEmpty())
+        return gradient->stops().first().second.name(QColor::HexRgb).toUpper();
+    // Defensive fallback for missing/unsupported profile styling.
+    return QStringLiteral("#DADADA");
+}
+
 void CasterPlayerWidget::syncWithOSCClient()
 {
     //Update Volume
@@ -279,6 +294,7 @@ void CasterPlayerWidget::syncWithOSCClient()
         emit updateOSCClient(msg6);
     }
 
+    emit updateOSCClient(writeOSCMessage("/cbp/" + *id + "/m/color", displayColor()));
 }
 
 //----SIGNALS----
@@ -361,23 +377,26 @@ void CasterPlayerWidget::openFileDiag()
 
 void CasterPlayerWidget::openColorPicker()
 {
-    //OPEN SUB MENU
-    if(playerState->backgroundCSSChanged){
-        colorPicker->set_slider_H_Value(playerState->slider_H_Value);
-        colorPicker->set_slider_S_Value(playerState->slider_S_Value);
-        colorPicker->set_slider_L_Value(playerState->slider_L_Value);
-    }
+    const QString previousColor = displayColor();
+    colorPicker->set_slider_H_Value(playerState->slider_H_Value);
+    colorPicker->set_slider_S_Value(playerState->slider_S_Value);
+    colorPicker->set_slider_L_Value(playerState->slider_L_Value);
+    // Cancel, Escape and the window close button must not reuse a prior OK.
+    colorPicker->ok = false;
 
     colorPicker->exec();
     if(colorPicker->ok)
     {
         this->setStyleSheet(colorPicker->currentCSS);
         // Update Player State
-        playerState->PlayerBackgroundCSS = &colorPicker->currentCSS;
+        *playerState->PlayerBackgroundCSS = colorPicker->currentCSS;
         playerState->backgroundCSSChanged = true;
         playerState->slider_H_Value = colorPicker->slider_H_Value;
         playerState->slider_S_Value = colorPicker->slider_S_Value;
         playerState->slider_L_Value = colorPicker->slider_L_Value;
+        const QString currentColor = displayColor();
+        if (currentColor != previousColor)
+            emit updateOSCClient(writeOSCMessage("/cbp/" + *id + "/m/color", currentColor));
 
     }
 }
@@ -865,10 +884,8 @@ void CasterPlayerWidget::reloadFromPlayerState()
     colorPicker->set_slider_H_Value(playerState->slider_H_Value);
     colorPicker->set_slider_S_Value(playerState->slider_S_Value);
     colorPicker->set_slider_L_Value(playerState->slider_L_Value);
-    if(playerState->PlayerBackgroundCSS->toUtf8() != "")
-    {
-        this->setStyleSheet(playerState->PlayerBackgroundCSS->toUtf8());
-    }
+    this->setStyleSheet(playerState->PlayerBackgroundCSS->isEmpty()
+                       ? QStringLiteral(CSS_GRAIENT_GREY) : *playerState->PlayerBackgroundCSS);
     /* Reload Loop UI */
     if(playerState->loop){
         toggleLoopButton->setIcon(QIcon(":/res/img/loop"));

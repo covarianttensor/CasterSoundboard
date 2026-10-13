@@ -38,7 +38,7 @@ CasterBoard::CasterBoard(QWidget* parent) : QWidget(parent)
     QVBoxLayout *mainLayout = new QVBoxLayout(this);
     QScrollArea *playersScrollArea = new QScrollArea();
     QWidget *boardWidget = new QWidget();
-    QGridLayout *boardLayout = new QGridLayout();
+    boardLayout = new QGridLayout();
     boardLayout->setMargin(0);
     boardWidget->setMinimumWidth(1700);
     boardWidget->setMinimumHeight(900);
@@ -113,6 +113,8 @@ void CasterBoard::setAllAudioDuckingStates(int state)
 void CasterBoard::notifyApplicationAboutOSCMessage(OscMessageComposer* message){
     if(this->isCurrentBoard)
         emit this->_updateOSCClient(message);
+    else
+        delete message; // No transport receiver owns messages from inactive tabs.
 }
 
 void CasterBoard::syncWithOSCClient()
@@ -123,7 +125,17 @@ void CasterBoard::syncWithOSCClient()
 
     // Iterate through players
     foreach(QString _letter, players->keys()){
-        players->value(_letter)->syncWithOSCClient();
+        CasterPlayerWidget *player = players->value(_letter);
+        player->syncWithOSCClient();
+        // Query the same layout that places the widgets, not the player-key order.
+        const int index = boardLayout->indexOf(player);
+        if (isCurrentBoard && index >= 0) {
+            int row, column, rowSpan, columnSpan;
+            boardLayout->getItemPosition(index, &row, &column, &rowSpan, &columnSpan);
+            OscMessageComposer *grid = writeOSCMessage("/cbp/" + _letter + "/m/grid", row);
+            grid->pushInt32(column);
+            emit _updateOSCClient(grid);
+        }
     }
 }
 
