@@ -444,10 +444,29 @@ void CasterPlayerWidget::toggleLooping()
     }
 }
 
+void CasterPlayerWidget::validateCueRange(qint64 duration)
+{
+    if (duration <= 0)
+        return; // Loading can temporarily report an unknown duration.
+    if (!playerState->timeSet || playerState->startTime < 0
+            || playerState->startTime >= duration
+            || playerState->stopTime <= playerState->startTime) {
+        playerState->startTime = 0;
+        playerState->stopTime = duration;
+        playerState->timeSet = false;
+    } else if (playerState->stopTime > duration) {
+        playerState->stopTime = duration;
+    }
+}
+
 void CasterPlayerWidget::playerPositionChanged(qint64 position)
 {
+    // Queued notifications may describe a position from before the last seek.
+    if (position != player->position())
+        return;
     if(player->duration() > 0)
     {
+        validateCueRange(player->duration());
         //Player State Update
         if(!playerState->timeSet && playerState->stopTime == 0){
             playerState->stopTime = player->duration();
@@ -475,6 +494,11 @@ void CasterPlayerWidget::playerPositionChanged(qint64 position)
         emit updateOSCClient(msg);
 
         /* Enforce Start Time And Stop And Looping */
+        // Loading/seeking a stopped player must never start a seek/stop cycle.
+        // EndOfMedia is allowed so full-track loops can restart naturally.
+        if (player->state() != QMediaPlayer::PlayingState
+                && player->mediaStatus() != QMediaPlayer::EndOfMedia)
+            return;
         if(position >= playerState->stopTime)
         {
             if(playerState->loop){
@@ -567,6 +591,7 @@ void CasterPlayerWidget::playerMetaDataChanged()
 
 void CasterPlayerWidget::playerDurationChanged(qint64 _duration)
 {
+    validateCueRange(_duration);
     if(newMediaLoaded && !newMediaLoadedFromProfile){
         //reset player state
         playerState->startTime = 0;
