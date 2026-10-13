@@ -45,8 +45,8 @@ export EXTRA_QT_PLUGINS="multimedia;wayland-decoration-client;wayland-graphics-i
 pushd "${REPO_ROOT}" >/dev/null
 "${LINUXDEPLOY}" \
     --appdir "${APPDIR}" \
-    --desktop-file "${APPDIR}/usr/share/applications/CasterSoundboard.desktop" \
-    --icon-file "${APPDIR}/usr/share/icons/hicolor/256x256/apps/CasterSoundboard.png" \
+    --desktop-file "${APPDIR}/usr/share/applications/io.github.covarianttensor.CasterSoundboard.desktop" \
+    --icon-file "${APPDIR}/usr/share/icons/hicolor/256x256/apps/io.github.covarianttensor.CasterSoundboard.png" \
     --plugin qt \
     --output appimage
 popd >/dev/null

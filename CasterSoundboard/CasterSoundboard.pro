@@ -142,19 +142,23 @@ HEADERS  += \
 RESOURCES += res.qrc
 
 linux {
-    appdata.files = ../dist/linux/CasterSoundboard.appdata.xml
+    appdata.files = ../dist/linux/io.github.covarianttensor.CasterSoundboard.appdata.xml
     appdata.path = $$DATADIR/appdata/
 
-    metainfo.files = ../dist/linux/CasterSoundboard.appdata.xml
+    metainfo.files = ../dist/linux/io.github.covarianttensor.CasterSoundboard.metainfo.xml \
+                     ../dist/linux/io.github.covarianttensor.CasterSoundboard.appdata.xml
     metainfo.path = $$DATADIR/metainfo/
 
-    desktop.files = ../dist/linux/CasterSoundboard.desktop
+    desktop.files = ../dist/linux/io.github.covarianttensor.CasterSoundboard.desktop \
+                    ../dist/linux/CasterSoundboard.desktop
     desktop.path = $$DATADIR/applications/
 
-    pixmap.files = ../dist/linux/CasterSoundboard.png
+    pixmap.files = ../dist/linux/io.github.covarianttensor.CasterSoundboard.png \
+                   ../dist/linux/CasterSoundboard.png
     pixmap.path = $$DATADIR/pixmaps/
 
-    icon256.files = ../dist/linux/CasterSoundboard.png
+    icon256.files = ../dist/linux/io.github.covarianttensor.CasterSoundboard.png \
+                    ../dist/linux/CasterSoundboard.png
     icon256.path = $$DATADIR/icons/hicolor/256x256/apps/
 
     INSTALLS += appdata metainfo desktop pixmap icon256

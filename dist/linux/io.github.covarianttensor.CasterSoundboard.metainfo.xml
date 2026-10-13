@@ -1,24 +1,32 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- Copyright 2017 Filip Szymański <fszymanski@fedoraproject.org> -->
+<!-- Copyright 2026 Oscar Cerna <oscar.cerna@outlook.com> -->
 <component type="desktop-application">
-  <id>CasterSoundboard.desktop</id>
+  <id>io.github.covarianttensor.CasterSoundboard</id>
   <metadata_license>CC0-1.0</metadata_license>
-  <project_license>LGPL-3.0</project_license>
+  <project_license>LGPL-3.0-or-later</project_license>
   <name>CasterSoundboard</name>
   <summary>A soundboard for hot-keying and playing back sounds</summary>
   <description>
     <p>
-      A soundboard for hot-keying and playing back sounds. (For podcasting)
+      A soundboard application for hot-keying and playing audio sound effects and music tracks during podcasts and live broadcasts.
     </p>
   </description>
-  <launchable type="desktop-id">CasterSoundboard.desktop</launchable>
+  <developer id="io.github.covarianttensor">
+    <name>Oscar Cerna</name>
+  </developer>
+  <launchable type="desktop-id">io.github.covarianttensor.CasterSoundboard.desktop</launchable>
   <screenshots>
     <screenshot type="default">
+      <caption>Main window of CasterSoundboard</caption>
       <image>https://raw.githubusercontent.com/covarianttensor/CasterSoundboard/master/docs/img/screenshot.png</image>
     </screenshot>
   </screenshots>
   <url type="homepage">https://github.com/covarianttensor/CasterSoundboard</url>
   <url type="bugtracker">https://github.com/covarianttensor/CasterSoundboard/issues</url>
   <content_rating type="oars-1.1" />
-  <update_contact>fszymanski@fedoraproject.org</update_contact>
+  <releases>
+    <release version="0.6.0" date="2026-10-13" />
+  </releases>
+  <update_contact>oscar.cerna@outlook.com</update_contact>
 </component>
