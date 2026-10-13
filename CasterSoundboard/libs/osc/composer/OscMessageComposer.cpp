@@ -46,21 +46,14 @@ OscMessageComposer::OscMessageComposer(const char* str)
 void
 OscMessageComposer::init(const QString& address)
 {
-    try
-    {
-        mHeaderByteBuffer = checkBufferSize(mHeaderByteBuffer, address.length() + 1);
-        QByteArray addressByteArray(address.toLocal8Bit());
-        mHeaderByteBuffer->put(&addressByteArray);
-        mHeaderByteBuffer->put((char)0);        
-        fillAlignment(mHeaderByteBuffer);
+    QByteArray addressByteArray(address.toUtf8());
+    mHeaderByteBuffer = checkBufferSize(mHeaderByteBuffer, addressByteArray.size() + 1);
+    mHeaderByteBuffer->put(&addressByteArray);
+    mHeaderByteBuffer->put((char)0);
+    fillAlignment(mHeaderByteBuffer);
 
-        mHeaderByteBuffer = checkBufferSize(mHeaderByteBuffer, 1);
-        mHeaderByteBuffer->put((char) ',');
-    }
-    catch (const QException& e)
-    {
-		throw e;
-    }
+    mHeaderByteBuffer = checkBufferSize(mHeaderByteBuffer, 1);
+    mHeaderByteBuffer->put((char) ',');
 
     mDataBuffer = new QByteArray(mDataBufferSize, 0);
     mDataByteBuffer = ByteBuffer::wrap(mDataBuffer, true);
@@ -88,14 +81,7 @@ QByteArray* OscMessageComposer::getBytes(/*OscVersion::Version aVersion*/)
 		pushArrayEnd();
 	}
 
-	try
-	{
-		fillAlignment(mHeaderByteBuffer);
-	}
-	catch (const QException& e)
-	{
-		throw e;
-	}
+	fillAlignment(mHeaderByteBuffer);
 
 	qint32 size = computeSize();
 
@@ -485,29 +471,14 @@ void OscMessageComposer::pushSymbol(QString& S)
  */
 void OscMessageComposer::pushTimeTag(QDateTime& t)
 {
-	try
-	{
-		mHeaderByteBuffer = checkBufferSize(mHeaderByteBuffer, 1);
-		mHeaderByteBuffer->put((char) 't');
+	mHeaderByteBuffer = checkBufferSize(mHeaderByteBuffer, 1);
+	mHeaderByteBuffer->put((char) 't');
 
-		mDataByteBuffer = checkBufferSize(mDataByteBuffer, 8);
+	mDataByteBuffer = checkBufferSize(mDataByteBuffer, 8);
 
-		NtpTimestamp ntp = NtpTimestamp::fromDateTime(t);
-		QByteArray seconds(4,0);
-		qint32 secs = ntp.rawSeconds();
-		seconds.insert(0, (char*)&secs, 4);
-		mDataByteBuffer->put( &seconds, 0, 4);
-
-		QByteArray fraction(4,0);
-		qint32 frac = ntp.rawFraction();
-		fraction.insert(0, (char*)&frac, 4 );
-		mDataByteBuffer->put( &fraction, 0, 4 );
-
-	}
-	catch (const BufferUnderflowException& e)
-	{
-		throw e;
-	}
+	NtpTimestamp ntp = NtpTimestamp::fromDateTime(t);
+	mDataByteBuffer->putInt((qint32)ntp.seconds());
+	mDataByteBuffer->putInt((qint32)ntp.fraction());
 }
 
 /**

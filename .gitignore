@@ -5,6 +5,16 @@
 # OSX
 .DS_Store
 
-# Build directories
+# Build directories and artifacts
 build-CasterSoundboard-Desktop_Qt_5_8_0_GCC_64bit-Debug/
 build-CasterSoundboard-Desktop_Qt_5_8_0_clang_64bit-Debug/
+.qmake.stash
+*.o
+*.moc
+moc_*
+qrc_*
+Makefile
+Makefile.*
+tests/cues/cue-tests
+tests/metadata/metadata-tests
+tests/metadata/metadata-application-tests

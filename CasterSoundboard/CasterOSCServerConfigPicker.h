@@ -25,7 +25,8 @@ public:
     static const int Action_Kill_Server = 2;
 
     //Constructor
-    CasterOSCServerConfigPicker(QString _inbound_ipv4, int _inbound_port, QString _outbound_ipv4, int _outbound_port);
+    CasterOSCServerConfigPicker(QString _inbound_ipv4, int _inbound_port, QString _outbound_ipv4, int _outbound_port, QWidget *parent = nullptr);
+    ~CasterOSCServerConfigPicker();
 
 
     //PROPERTIES

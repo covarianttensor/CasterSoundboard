@@ -5,6 +5,10 @@
 #include <QTest>
 #include <QTemporaryFile>
 #include <QDataStream>
+#include <QFileInfo>
+#include <QDir>
+#include <QLabel>
+#include <QPushButton>
 
 class CueTest : public QObject {
     Q_OBJECT
@@ -90,6 +94,50 @@ private slots:
         disconnect(connection);
         widget.playerState->loop = false;
         widget.player->stop();
+    }
+
+    void uiLoopButtonAndChimeFileLoops() {
+        const QString chimePath = QFileInfo(QString::fromUtf8(__FILE__)).dir().filePath("test_loop_chime.wav");
+        QVERIFY2(QFileInfo::exists(chimePath), qPrintable(chimePath));
+
+        CasterPlayerWidget widget;
+        widget.setHotKeyLetter("1");
+        widget.show();
+        connect(&widget, &CasterPlayerWidget::updateOSCClient, [](OscMessageComposer *message) { delete message; });
+
+        // Simulate loading the sound effect and clicking the UI loop button.
+        *widget.playerState->filePath = chimePath;
+        widget.reloadFromPlayerState();
+        QTRY_VERIFY(widget.player->duration() > 0);
+        QCOMPARE(widget.soundNameLabel->text(), QString("test_loop_chime"));
+        QCOMPARE(widget.playerState->loop, false);
+
+        QTest::mouseClick(widget.toggleLoopButton, Qt::LeftButton);
+        QCOMPARE(widget.playerState->loop, true);
+
+        widget.player->setVolume(0);
+        int wraps = 0;
+        qint64 previous = 0;
+        auto connection = connect(widget.player, &QMediaPlayer::positionChanged, [&](qint64 position) {
+            if (position < previous) ++wraps;
+            previous = position;
+        });
+
+        // Start playback by clicking the widget tile itself.
+        QTest::mousePress(&widget, Qt::LeftButton);
+        QTRY_COMPARE(widget.player->state(), QMediaPlayer::PlayingState);
+        QTRY_VERIFY_WITH_TIMEOUT(wraps >= 2, 10000);
+        QCOMPARE(widget.player->state(), QMediaPlayer::PlayingState);
+
+        // Capture a screenshot of the active looping tile for visual verification.
+        const QString screenshotPath = qEnvironmentVariable("CASTER_LOOP_SCREENSHOT");
+        if (!screenshotPath.isEmpty()) {
+            QVERIFY(widget.grab().save(screenshotPath));
+        }
+
+        disconnect(connection);
+        widget.stopSound();
+        QTRY_COMPARE(widget.player->state(), QMediaPlayer::StoppedState);
     }
 };
 QTEST_MAIN(CueTest)

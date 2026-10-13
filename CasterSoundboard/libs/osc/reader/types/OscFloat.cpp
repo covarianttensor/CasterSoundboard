@@ -44,9 +44,7 @@ bool OscFloat::toBoolean()
 QByteArray OscFloat::toBytes()
 {
 	float f = get();
-	QByteArray bytes(4, 0);
-	bytes.insert(0, (char*)&f, 4);
-	return bytes;
+	return QByteArray(reinterpret_cast<const char*>(&f), sizeof(f));
 }
 
 char OscFloat::toChar()

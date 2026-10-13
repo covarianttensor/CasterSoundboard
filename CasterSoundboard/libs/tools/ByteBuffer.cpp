@@ -329,9 +329,9 @@ char ByteBuffer::getChar(qint32 index)
 double ByteBuffer::getDouble()
 {
 	qint64 l = getLong();
-    qint64* _l = &l;
-    double* _d = (double*)_l;
-    return *_d;
+	double d;
+	std::memcpy(&d, &l, sizeof(d));
+	return d;
 }
 
 /**
@@ -351,9 +351,9 @@ double ByteBuffer::getDouble()
 double ByteBuffer::getDouble(qint32 index)
 {
 	qint64 l = getLong(index);
-    qint64* _l = &l;
-    double* _d = (double*)_l;
-    return *_d;
+	double d;
+	std::memcpy(&d, &l, sizeof(d));
+	return d;
 }
 
 /**
@@ -370,9 +370,9 @@ double ByteBuffer::getDouble(qint32 index)
 float ByteBuffer::getFloat()
 {
 	qint32 i = getInt();
-    qint32* _i = &i;
-    float* _f = (float*)_i;
-    return *_f;
+	float f;
+	std::memcpy(&f, &i, sizeof(f));
+	return f;
 }
 
 /**
@@ -392,9 +392,9 @@ float ByteBuffer::getFloat()
 float ByteBuffer::getFloat(qint32 index)
 {
 	qint32 i = getInt(index);
-    qint32* _i = &i;
-    float* _f = (float*)_i;
-    return *_f;
+	float f;
+	std::memcpy(&f, &i, sizeof(f));
+	return f;
 }
 
 /**
@@ -589,6 +589,8 @@ ByteBuffer* ByteBuffer::setOrder(ByteOrder::Endianness byteOrder)
  */
 ByteBuffer* ByteBuffer::put(char b)
 {
+	if (mPosition < 0 || mPosition >= mLimit)
+		throw BufferOverflowException();
 	mArray->data()[mPosition++] = b;
 	return this;
 }
@@ -608,18 +610,7 @@ ByteBuffer* ByteBuffer::put(char b)
  */
 ByteBuffer* ByteBuffer::put(QByteArray* src)
 {
-	try
-	{
-		return put(src, 0, src->length());
-	}
-	catch (const IndexOutOfBoundsException& e)
-	{
-		throw e;
-	}
-	catch (const BufferUnderflowException& e)
-	{
-		throw e;
-	}
+	return put(src, 0, src->length());
 }
 
 /**
@@ -654,7 +645,7 @@ ByteBuffer* ByteBuffer::put(QByteArray* src, qint32 off, qint32 len)
 		throw BufferOverflowException();
 	}
 	
-	memcpy((char*)(mArray->constData()) + mPosition + off, src->constData(), len);
+	std::memcpy(mArray->data() + mPosition, src->constData() + off, len);
 	mPosition += len;
 	return this;
 }
@@ -683,10 +674,9 @@ ByteBuffer * ByteBuffer::put(ByteBuffer * src)
 	{
 		throw BufferOverflowException();
 	}
-	QByteArray* contents = new QByteArray(src->getRemaining(), 0);
-	src->get(contents);
-	put(contents);
-	delete contents;
+	QByteArray contents(src->getRemaining(), 0);
+	src->get(&contents);
+	put(&contents);
 	return this;
 }
 
@@ -704,6 +694,8 @@ ByteBuffer * ByteBuffer::put(ByteBuffer * src)
  */
 ByteBuffer* ByteBuffer::put(qint32 index, char b)
 {
+	if (index < 0 || index >= mLimit)
+		throw IndexOutOfBoundsException();
 	mArray->data()[index] = b;
 	return this;
 }
@@ -759,9 +751,9 @@ ByteBuffer* ByteBuffer::putChar(qint32 index, char value)
  */
 ByteBuffer* ByteBuffer::putDouble(double value)
 {
-    double* _v = &value;
-    qint64* _d = (qint64*)_v;
-    return putLong(*_d);
+	qint64 l;
+	std::memcpy(&l, &value, sizeof(l));
+	return putLong(l);
 }
 
 /**
@@ -781,9 +773,9 @@ ByteBuffer* ByteBuffer::putDouble(double value)
  */
 ByteBuffer* ByteBuffer::putDouble(qint32 index, double value)
 {
-    double* _v = &value;
-    qint64* _d = (qint64*)_v;
-    return putLong(index, *_d);
+	qint64 l;
+	std::memcpy(&l, &value, sizeof(l));
+	return putLong(index, l);
 }
 
 /**
@@ -800,9 +792,9 @@ ByteBuffer* ByteBuffer::putDouble(qint32 index, double value)
  */
 ByteBuffer* ByteBuffer::putFloat(float value)
 {
-    float* _v = &value;
-    qint32* _d = (qint32*)_v;
-    return putInt(*_d);
+	qint32 i;
+	std::memcpy(&i, &value, sizeof(i));
+	return putInt(i);
 }
 
 /**
@@ -822,9 +814,9 @@ ByteBuffer* ByteBuffer::putFloat(float value)
  */
 ByteBuffer* ByteBuffer::putFloat(qint32 index, float value)
 {
-    float* _v = &value;
-    qint32* _d = (qint32*)_v;
-    return putInt(index, *_d);
+	qint32 i;
+	std::memcpy(&i, &value, sizeof(i));
+	return putInt(index, i);
 }
 
 /**
@@ -863,12 +855,14 @@ ByteBuffer* ByteBuffer::putInt(qint32 value)
  */
 ByteBuffer* ByteBuffer::putInt(qint32 index, qint32 value)
 {
+	if (index < 0 || index > mLimit - 4)
+		throw IndexOutOfBoundsException();
 	if (mOrder != ByteOrder::endianness())
 	{
 		value = ((((value)& 0xff000000) >> 24) | (((value)& 0x00ff0000) >> 8) | (((value)& 0x0000ff00) << 8)
 			| (((value)& 0x000000ff) << 24));
 	}
-	(*(qint32*)(mArray->data() + index)) = value;
+	std::memcpy(mArray->data() + index, &value, sizeof(value));
 	return this;
 }
 
@@ -908,6 +902,8 @@ ByteBuffer* ByteBuffer::putLong(qint64 value)
  */
 ByteBuffer* ByteBuffer::putLong(qint32 index, qint64 value)
 {
+	if (index < 0 || index > mLimit - 8)
+		throw IndexOutOfBoundsException();
 	if (mOrder != ByteOrder::endianness())
 	{
 		value =  ((((value)& 0xff00000000000000ull) >> 56)
@@ -919,7 +915,7 @@ ByteBuffer* ByteBuffer::putLong(qint32 index, qint64 value)
 				| (((value)& 0x000000000000ff00ull) << 40)
 				| (((value)& 0x00000000000000ffull) << 56));
 	}
-	(*(qint64*)(mArray->data() + index)) = value;
+	std::memcpy(mArray->data() + index, &value, sizeof(value));
 	return this;
 }
 
@@ -959,11 +955,13 @@ ByteBuffer* ByteBuffer::putShort(short value)
  */
 ByteBuffer* ByteBuffer::putShort(qint32 index, short value)
 {
+	if (index < 0 || index > mLimit - 2)
+		throw IndexOutOfBoundsException();
 	if (mOrder != ByteOrder::endianness())
 	{
 		value = ((((value) >> 8) & 0xff) | (((value)& 0xff) << 8));
 	}
-	(*(qint64*)(mArray->data() + index)) = value;
+	std::memcpy(mArray->data() + index, &value, sizeof(value));
 	return this;
 }
 

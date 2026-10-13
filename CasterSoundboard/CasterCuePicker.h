@@ -1,9 +1,10 @@
 #ifndef CASTERCUEPICKER_H
 #define CASTERCUEPICKER_H
 #include <QDialog>
+#include <QtMultimedia/QMediaPlayer>
 
 //forward declarations
-class QMediaPlayer;
+class CasterMediaPlayer;
 class QWidget;
 class QSlider;
 class QLineEdit;
@@ -20,7 +21,7 @@ class CasterCuePicker : public QDialog
     Q_OBJECT
 public:
     //Constructor
-    CasterCuePicker(int _startTime, int _stopTime); //don't forget to pass the parent
+    CasterCuePicker(int _startTime, int _stopTime, QWidget *parent = nullptr); //don't forget to pass the parent
 
     //PROPERTIES
     bool ok;//DiagResult
@@ -28,7 +29,7 @@ public:
     int startTime;// Milliseconds
     int stopTime;// Milliseconds
     bool loop;
-    QMediaPlayer *player;//Media Player
+    CasterMediaPlayer *player;//Media Player
 
     //METHODS
     void setVolume(int _volume);
@@ -80,6 +81,7 @@ public slots:
     void button_Accept_Clicked();
     void button_Cancel_Clicked();
     void playerPositionChanged(qint64 position);
+    void playerMediaStatusChanged(QMediaPlayer::MediaStatus status);
 
 };
 

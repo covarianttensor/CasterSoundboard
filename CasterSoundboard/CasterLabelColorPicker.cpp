@@ -30,7 +30,7 @@
 #include <QLabel>
 
 //CONSTRUCTOR
-CasterLabelColorPicker::CasterLabelColorPicker()
+CasterLabelColorPicker::CasterLabelColorPicker(QWidget *parent) : QDialog(parent)
 {
     //SET WINDOW PROPETIES
     this->setWindowTitle("Select Label Color");

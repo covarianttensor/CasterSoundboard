@@ -77,7 +77,7 @@ QByteArray OscString::toBytes()
 char OscString::toChar()
 {
 	const QByteArray& value = get();
-	if (value.length() > 1)
+	if (value.length() != 1)
 		throw CharConversionException();
 	else
 		return value.at(0);

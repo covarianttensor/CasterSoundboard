@@ -20,7 +20,7 @@ macx {
     DATADIR = $$PREFIX/Library/Application\ Support/CasterSoundboard
 }
 
-CONFIG += c++11
+CONFIG += c++17
 QT += core gui multimedia network
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets

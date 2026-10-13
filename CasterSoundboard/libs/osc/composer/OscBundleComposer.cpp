@@ -134,16 +134,21 @@ QByteArray* OscBundleComposer::getBytes(/*OscVersion::Version aVersion*/)
 	mData = new QByteArray(size, 0);
 
 	// First, copy this bundle header
+	ByteBuffer* writeBufferHelper = ByteBuffer::wrap(mData);
 	try
 	{
-		ByteBuffer* writeBufferHelper = ByteBuffer::wrap(mData);
-		writeBufferHelper->putInt(0, size);
 		fillByteBuffer(writeBufferHelper);
-		return new QByteArray(*mData);
+		delete writeBufferHelper;
+		QByteArray* result = mData;
+		mData = NULL;
+		return result;
 	}
-	catch (const QException& e)
+	catch (...)
 	{
-		throw e;
+		delete writeBufferHelper;
+		delete mData;
+		mData = NULL;
+		throw;
 	}
 }
 
@@ -152,21 +157,14 @@ QByteArray* OscBundleComposer::getBytes(/*OscVersion::Version aVersion*/)
  */
 void OscBundleComposer::fillByteBuffer(ByteBuffer* byteBuffer)
 {
-	try
-	{
-		OscContentComposer::fillByteBuffer(byteBuffer);
+	OscContentComposer::fillByteBuffer(byteBuffer);
 
-		// Then, loop over all the contents to copy data in the buffer
-		for (qint32 i = 0; i < mContentList.size(); i++)
-		{
-			// Write content size
-			OscContentComposer* c = mContentList[i];
-			byteBuffer->putInt(c->computeSize());
-			c->fillByteBuffer(byteBuffer);
-		}
-	}
-	catch (const QException& e)
+	// Then, loop over all the contents to copy data in the buffer
+	for (qint32 i = 0; i < mContentList.size(); i++)
 	{
-		throw e;
+		// Write content size
+		OscContentComposer* c = mContentList[i];
+		byteBuffer->putInt(c->computeSize());
+		c->fillByteBuffer(byteBuffer);
 	}
 }

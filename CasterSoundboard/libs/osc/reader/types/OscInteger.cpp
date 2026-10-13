@@ -44,9 +44,7 @@ bool OscInteger::toBoolean()
 QByteArray OscInteger::toBytes()
 {
 	qint32 i = get();
-	QByteArray bytes(4, 0);
-	bytes.insert(0, (char*)&i, 4);
-	return bytes;
+	return QByteArray(reinterpret_cast<const char*>(&i), sizeof(i));
 }
 
 char OscInteger::toChar()

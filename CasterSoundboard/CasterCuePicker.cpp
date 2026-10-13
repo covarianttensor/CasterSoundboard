@@ -21,6 +21,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 #include "CasterCuePicker.h"
+#include "CasterPlayer.h"
 #include <QMediaPlayer>
 #include <QHBoxLayout>
 #include <QVBoxLayout>
@@ -29,14 +30,14 @@
 #include <QPushButton>
 #include <QLabel>
 
-CasterCuePicker::CasterCuePicker(int _startTime, int _stopTime)
+CasterCuePicker::CasterCuePicker(int _startTime, int _stopTime, QWidget *parent) : QDialog(parent)
 {
     this->setWindowTitle("CUE Sound");
     ok = false;
     startTime = _startTime;
     stopTime = _stopTime;
     loop = false;
-    player = new QMediaPlayer();
+    player = new CasterMediaPlayer(this);
 
     // UI
     label_StartTimeText = new QLabel("Start\nTime");
@@ -44,6 +45,8 @@ CasterCuePicker::CasterCuePicker(int _startTime, int _stopTime)
     label_StartTime = new QLabel("00:00");
     label_StopTime = new QLabel("00:00");
     slider_StartTime = new QSlider(Qt::Horizontal);
+    slider_StartTime->setRange(0, 100);
+    slider_StartTime->setValue(0);
     slider_StartTime->setStyleSheet("QSlider:horizontal {"
                                 "min-height: 30px;"
                                 "}"
@@ -59,6 +62,8 @@ CasterCuePicker::CasterCuePicker(int _startTime, int _stopTime)
                                 "margin: -8px 0px; "
                                 "} ");// Style the track bar (Touch Friendly)
     slider_StopTime = new QSlider(Qt::Horizontal);
+    slider_StopTime->setRange(0, 100);
+    slider_StopTime->setValue(100);
     slider_StopTime->setStyleSheet("QSlider:horizontal {"
                                 "min-height: 30px;"
                                 "}"
@@ -104,16 +109,18 @@ CasterCuePicker::CasterCuePicker(int _startTime, int _stopTime)
     connect(slider_StartTime,SIGNAL(valueChanged(int)),this,SLOT(slider_StartTime_valueChanged(int)));
     connect(slider_StopTime,SIGNAL(valueChanged(int)),this,SLOT(slider_StopTime_valueChanged(int)));
     connect(player,SIGNAL(positionChanged(qint64)),this,SLOT(playerPositionChanged(qint64)), Qt::QueuedConnection);//thread safe calls to player->stop()
+    connect(player, &QMediaPlayer::mediaStatusChanged, this, &CasterCuePicker::playerMediaStatusChanged, Qt::QueuedConnection);
 }
 
 
 void CasterCuePicker::slider_StartTime_valueChanged(int value)
 {
     if(value >= slider_StopTime->value()){
-        slider_StartTime->setValue(value - 1);
+        slider_StartTime->setValue(qMax(0, slider_StopTime->value() - 1));
+        return;
     }
 
-    this->startTime = (int)((slider_StartTime->value() * duration)/100.0);
+    this->startTime = (int)((value * (qint64)duration) / 100);
     this->label_StartTime->setText(this->getTimeString(this->startTime));
     player->setPosition(this->startTime);
 }
@@ -121,10 +128,11 @@ void CasterCuePicker::slider_StartTime_valueChanged(int value)
 void CasterCuePicker::slider_StopTime_valueChanged(int value)
 {
     if(value <= slider_StartTime->value()){
-        slider_StopTime->setValue(value + 1);
+        slider_StopTime->setValue(qMin(100, slider_StartTime->value() + 1));
+        return;
     }
 
-    this->stopTime = (int)((slider_StopTime->value() * duration)/100.0);
+    this->stopTime = (int)((value * (qint64)duration) / 100);
     this->label_StopTime->setText(this->getTimeString(this->stopTime));
 }
 
@@ -152,6 +160,7 @@ void CasterCuePicker::button_Accept_Clicked()
 
 void CasterCuePicker::button_Cancel_Clicked()
 {
+    ok = false;
     this->close();
 }
 
@@ -160,6 +169,7 @@ void CasterCuePicker::closeEvent(QCloseEvent *event)
 {
     Q_UNUSED(event);
     player->stop();
+    player->setMedia(QUrl());
     button_Preview->setText("Preview");
 }
 
@@ -171,7 +181,7 @@ QString CasterCuePicker::getTimeString(int timeInMilliseconds)
     //Current Time
     int seconds = (int) (timeInMilliseconds / 1000) % 60 ;
     int minutes = (int) ((timeInMilliseconds / (1000*60)) % 60);
-    QString time = QString("%1").arg(minutes,2,'i',0,'0') + ":" + QString("%1").arg(seconds,2,'i',0,'0');
+    QString time = QString("%1").arg(minutes, 2, 10, QChar('0')) + ":" + QString("%1").arg(seconds, 2, 10, QChar('0'));
     return time;
 }
 
@@ -193,28 +203,55 @@ void CasterCuePicker::setStartTime(int _startTime)
 {
     this->startTime = _startTime;
     this->label_StartTime->setText(this->getTimeString(this->startTime));
-    slider_StartTime->setValue(startTime / (float)duration * 100);
+    slider_StartTime->blockSignals(true);
+    slider_StartTime->setValue(duration > 0 ? (int)(startTime / (float)duration * 100) : 0);
+    slider_StartTime->blockSignals(false);
 }
 
 void CasterCuePicker::setStopTime(int _stopTime)
 {
     this->stopTime = _stopTime;
     this->label_StopTime->setText(this->getTimeString(this->stopTime));
-    slider_StopTime->setValue( stopTime / (float)duration * 100);
+    slider_StopTime->blockSignals(true);
+    slider_StopTime->setValue(duration > 0 ? (int)(stopTime / (float)duration * 100) : 100);
+    slider_StopTime->blockSignals(false);
 }
 
 void CasterCuePicker::playerPositionChanged(qint64 position)
 {
-    if (player->state() != QMediaPlayer::PlayingState
-            || position != player->position() || stopTime <= startTime)
+    if (player->position() < position && player->mediaStatus() != QMediaPlayer::EndOfMedia)
         return;
-    if((int)position >= this->stopTime)
+    if ((player->state() != QMediaPlayer::PlayingState
+            && player->mediaStatus() != QMediaPlayer::EndOfMedia)
+            || stopTime <= startTime)
+        return;
+    const qint64 currentPosition = (player->mediaStatus() == QMediaPlayer::EndOfMedia)
+            ? qMax(position, player->position())
+            : player->position();
+    if((int)currentPosition >= this->stopTime)
     {
         if(loop){
             player->setPosition(this->startTime);
+            player->play();
         } else {
             player->stop();//make sure to use Qt::QueuedConnection
+            button_Preview->setText("Preview");
         }
     }
 
+}
+
+void CasterCuePicker::playerMediaStatusChanged(QMediaPlayer::MediaStatus status)
+{
+    if (status != QMediaPlayer::EndOfMedia
+            || player->mediaStatus() != QMediaPlayer::EndOfMedia
+            || stopTime <= startTime)
+        return;
+    if (loop) {
+        player->setPosition(this->startTime);
+        player->play();
+    } else {
+        player->stop();
+        button_Preview->setText("Preview");
+    }
 }

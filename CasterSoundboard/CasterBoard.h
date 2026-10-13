@@ -40,6 +40,7 @@ class CasterBoard : public QWidget //inherit from QWidget
 public:
     //Constructor
     CasterBoard(QWidget* parent = 0); //don't forget to pass the parent
+    ~CasterBoard();
 
     //Properties
     bool isCurrentBoard = false;

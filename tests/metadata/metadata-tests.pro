@@ -1,5 +1,5 @@
 QT += core gui widgets multimedia network testlib
-CONFIG += c++11 console
+CONFIG += c++17 console
 CONFIG -= app_bundle
 TEMPLATE = app
 TARGET = metadata-tests

@@ -20,6 +20,12 @@ CasterPlayerState::CasterPlayerState()
     backgroundCSSChanged = false;
 }
 
+CasterPlayerState::~CasterPlayerState()
+{
+    delete filePath;
+    delete PlayerBackgroundCSS;
+}
+
 //Operator Overloading
 QDataStream &operator<<(QDataStream &ds, const CasterPlayerState &cps)
 {

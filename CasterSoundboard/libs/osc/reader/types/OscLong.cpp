@@ -50,9 +50,7 @@ bool OscLong::toBoolean()
 QByteArray OscLong::toBytes()
 {
 	qint64 l = get();
-	QByteArray bytes(8, 0);
-	bytes.insert(0, (char*)&l, 8);
-	return bytes;
+	return QByteArray(reinterpret_cast<const char*>(&l), sizeof(l));
 }
 
 char OscLong::toChar()
@@ -91,6 +89,10 @@ QString OscLong::toString()
 
 QDateTime OscLong::toTimetag()
 {
-	NtpTimestamp ntp( *(qint32*)(toBytes().constData()), *(qint32*)(toBytes().constData() + 4));
+	qint64 l = get();
+	quint32 secs, fracs;
+	std::memcpy(&secs, reinterpret_cast<const char*>(&l), sizeof(secs));
+	std::memcpy(&fracs, reinterpret_cast<const char*>(&l) + 4, sizeof(fracs));
+	NtpTimestamp ntp(secs, fracs);
 	return NtpTimestamp::toDateTime(ntp);
 }

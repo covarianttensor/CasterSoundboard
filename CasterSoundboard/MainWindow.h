@@ -43,6 +43,7 @@ class MainWindow : public QWidget //inherit from QWidget
 public:
     //Constructor
     MainWindow(QWidget* parent = 0); //don't forget to pass the parent
+    ~MainWindow();
     bool loadProfile(const QString &filePath, QString &errorMessage); // also called at startup
 
     //PROPERTIES
@@ -57,6 +58,7 @@ protected:
 
     //METHODS
     void keyReleaseEvent(QKeyEvent *event);//Capture Hot Keys
+    void changeEvent(QEvent *event) override;
 
     //WIDGETS
 
@@ -78,6 +80,12 @@ private:
     OscMessageComposer* writeOSCMessage(QString address, QString value);
     //Utility
     QString get_local_ip();
+    CasterBoard* findBoardByName(const QString &name) const;
+    CasterBoard* currentBoard() const;
+    void setAudioDuckingState(int state, bool notifyOSC = false);
+    bool isDarkTheme() const;
+    QIcon themedIcon(const QString &iconFileName) const;
+    void updateThemeIcons();
 
     //WIDGETS
     //Toolbar

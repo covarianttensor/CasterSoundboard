@@ -11,6 +11,7 @@ class CasterPlayerState
 public:
     //Constructor
     CasterPlayerState();
+    ~CasterPlayerState();
 
     // Properties
     QString *filePath;

@@ -7,31 +7,29 @@
 #include <QPushButton>
 #include <QLabel>
 #include <QMessageBox>
-#include <QRegExp>
-#include <QRegExpValidator>
+#include <QRegularExpression>
+#include <QRegularExpressionValidator>
 #include <QHostAddress>
 
 
-CasterOSCServerConfigPicker::CasterOSCServerConfigPicker(QString _inbound_ipv4, int _inbound_port, QString _outbound_ipv4, int _outbound_port)
+CasterOSCServerConfigPicker::CasterOSCServerConfigPicker(QString _inbound_ipv4, int _inbound_port, QString _outbound_ipv4, int _outbound_port, QWidget *parent) : QDialog(parent)
 {
     // Main Settings
     this->setMinimumWidth(400);
     this->setWindowTitle("Open Sound Control Server Settings");
     ok = false;
-    this->inbound_ipv4 = &_inbound_ipv4;
+    this->inbound_ipv4 = new QString(_inbound_ipv4);
     this->inbound_port = _inbound_port;
-    this->outbound_ipv4 = &_outbound_ipv4;
+    this->outbound_ipv4 = new QString(_outbound_ipv4);
     this->outbound_port = _outbound_port;
 
     // Validators
     // IPv4 Validator
-    QRegExpValidator *validator_ip = new QRegExpValidator(this);
-    QRegExp rx_ip("((1{0,1}[0-9]{0,2}|2[0-4]{1,1}[0-9]{1,1}|25[0-5]{1,1})\\.){3,3}(1{0,1}[0-9]{0,2}|2[0-4]{1,1}[0-9]{1,1}|25[0-5]{1,1})");
-    validator_ip->setRegExp(rx_ip);
+    QRegularExpression rx_ip("^((1{0,1}[0-9]{0,2}|2[0-4]{1,1}[0-9]{1,1}|25[0-5]{1,1})\\.){3,3}(1{0,1}[0-9]{0,2}|2[0-4]{1,1}[0-9]{1,1}|25[0-5]{1,1})$");
+    QRegularExpressionValidator *validator_ip = new QRegularExpressionValidator(rx_ip, this);
     // Port Number Validator
-    QRegExpValidator *validator_port = new QRegExpValidator(this);
-    QRegExp rx_port("^([0-9]{1,4}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])$");
-    validator_port->setRegExp(rx_port);
+    QRegularExpression rx_port("^([0-9]{1,4}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])$");
+    QRegularExpressionValidator *validator_port = new QRegularExpressionValidator(rx_port, this);
 
     // UI
     label_General = new QLabel("Open Sound Control server with one-way and two-way communication.\nTouchOSC app is recommended for two-way communication.\n(NOT AFFILIATED with TouchOSC).\n OSC api will be documented in the repo's wiki.");
@@ -90,6 +88,12 @@ CasterOSCServerConfigPicker::CasterOSCServerConfigPicker(QString _inbound_ipv4, 
     connect(button_ToggleServer,SIGNAL(clicked()),this,SLOT(button_ToggleServer_Clicked()));
 }
 
+CasterOSCServerConfigPicker::~CasterOSCServerConfigPicker()
+{
+    delete inbound_ipv4;
+    delete outbound_ipv4;
+}
+
 //=======Protected=======
 void CasterOSCServerConfigPicker::closeEvent(QCloseEvent *event)
 {
@@ -103,29 +107,20 @@ void CasterOSCServerConfigPicker::button_ToggleServer_Clicked(){
     if(server_is_running){
         ok = true;
         Result = CasterOSCServerConfigPicker::Action_Kill_Server;
-        textBox_Inbound_Port->setReadOnly(false);
-        textBox_Outbound_IPv4->setReadOnly(false);
-        textBox_Outbound_Port->setReadOnly(false);
-        button_ToggleServer->setText("Start");
         this->close();
     } else {
-        if(textBox_Inbound_Port->text().toUtf8() != ""
-                && textBox_Outbound_IPv4->text().toUtf8() != ""
-                && textBox_Outbound_Port->text().toUtf8() != ""){
+        if(!textBox_Inbound_Port->text().isEmpty()
+                && !textBox_Outbound_IPv4->text().isEmpty()
+                && !textBox_Outbound_Port->text().isEmpty()){
             inbound_port = textBox_Inbound_Port->text().toInt();
-            outbound_ipv4 = new QString(textBox_Outbound_IPv4->text().toUtf8());
+            *outbound_ipv4 = textBox_Outbound_IPv4->text();
             outbound_port = textBox_Outbound_Port->text().toInt();
             ok = true;
             Result = CasterOSCServerConfigPicker::Action_Start_Server;
-            textBox_Inbound_Port->setReadOnly(true);
-            textBox_Outbound_IPv4->setReadOnly(true);
-            textBox_Outbound_Port->setReadOnly(true);
-            button_ToggleServer->setText("Stop");
             this->close();
         } else {
-            QString *temp = new QString("IP and Port numbers can not be empty!");
             QMessageBox msgBox;
-            msgBox.setText(temp->toUtf8() + "\n");
+            msgBox.setText("IP and Port numbers can not be empty!\n");
             msgBox.setStandardButtons(QMessageBox::Close);
             msgBox.setDefaultButton(QMessageBox::Close);
             msgBox.setModal(true);
@@ -137,6 +132,8 @@ void CasterOSCServerConfigPicker::button_ToggleServer_Clicked(){
 }
 
 void CasterOSCServerConfigPicker::button_Cancel_Clicked(){
+    ok = false;
+    Result = CasterOSCServerConfigPicker::Action_Neutral;
     this->close();
 }
 
@@ -144,8 +141,8 @@ void CasterOSCServerConfigPicker::button_Cancel_Clicked(){
 //======Public Properties======
 //Inbound
 void CasterOSCServerConfigPicker::setInBoundIPv4(QString *ip){
-    inbound_ipv4 = ip;
-    textBox_Inbound_IPv4->setText(*ip);
+    *inbound_ipv4 = *ip;
+    textBox_Inbound_IPv4->setText(*inbound_ipv4);
 }
 
 void CasterOSCServerConfigPicker::setInBoundPort(int port){
@@ -159,8 +156,8 @@ int CasterOSCServerConfigPicker::getInboundPort(){
 
 //Outbound
 void CasterOSCServerConfigPicker::setOutBoundIPv4(QString *ip){
-    outbound_ipv4 = ip;
-    textBox_Outbound_IPv4->setText(*ip);
+    *outbound_ipv4 = *ip;
+    textBox_Outbound_IPv4->setText(*outbound_ipv4);
 }
 
 QString CasterOSCServerConfigPicker::getOutboundIPv4(){

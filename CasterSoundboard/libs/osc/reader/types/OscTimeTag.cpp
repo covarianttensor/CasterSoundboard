@@ -64,11 +64,10 @@ bool OscTimetag::toBoolean()
 QByteArray OscTimetag::toBytes()
 {
 	NtpTimestamp ntp = get();
-	QByteArray bytes(8, 0);
 	quint32 secs = ntp.rawSeconds();
 	quint32 fracs = ntp.rawFraction();
-	bytes.insert(0, (char*)&secs, 4);
-	bytes.insert(4, (char*)&fracs, 4);
+	QByteArray bytes(reinterpret_cast<const char*>(&secs), sizeof(secs));
+	bytes.append(reinterpret_cast<const char*>(&fracs), sizeof(fracs));
 	return bytes;
 }
 
@@ -100,19 +99,15 @@ qint64 OscTimetag::toLong()
 Midi OscTimetag::toMIDI()
 {
 	NtpTimestamp ntp = get();
-	QByteArray bytes(4, 0);
 	quint32 secs = ntp.seconds();
-	bytes.insert(0, (char*)&secs, 4);
-	return Midi(bytes);
+	return Midi(QByteArray(reinterpret_cast<const char*>(&secs), sizeof(secs)));
 }
 
 RGBA OscTimetag::toRGBA()
 {
 	NtpTimestamp ntp = get();
-	QByteArray bytes(4, 0);
 	quint32 secs = ntp.seconds();
-	bytes.insert(0, (char*)&secs, 4);
-	return RGBA(bytes);
+	return RGBA(QByteArray(reinterpret_cast<const char*>(&secs), sizeof(secs)));
 }
 
 QString OscTimetag::toString()

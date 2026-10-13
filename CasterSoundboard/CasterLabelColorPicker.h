@@ -37,7 +37,7 @@ class CasterLabelColorPicker : public QDialog //inherit from QWidget
     Q_OBJECT
 public:
     //Constructor
-    CasterLabelColorPicker();
+    CasterLabelColorPicker(QWidget *parent = nullptr);
 
     //PROPERTIES
     bool ok;
