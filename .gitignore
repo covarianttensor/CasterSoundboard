@@ -22,4 +22,5 @@ tests/metadata/metadata-application-tests
 build-flatpak/
 build-appimage/
 *.AppImage
+*.flatpak
 result

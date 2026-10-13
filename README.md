@@ -21,11 +21,16 @@ CasterSoundboard is written in C++ Qt6.
 ## How to Install
 
 ### Flatpak (Universal Linux)
-You can build and install the Flatpak on any Linux distribution with `flatpak` and `flatpak-builder`:
+Download the pre-built `CasterSoundboard.flatpak` bundle from the [Releases page](https://github.com/covarianttensor/CasterSoundboard/releases/latest), then install and run:
+```bash
+flatpak install --user CasterSoundboard.flatpak
+flatpak run io.github.covarianttensor.CasterSoundboard
+```
+
+Or build and install locally from source:
 ```bash
 flatpak install flathub org.kde.Platform//6.8 org.kde.Sdk//6.8
 flatpak-builder --user --install --force-clean build-flatpak io.github.covarianttensor.CasterSoundboard.yml
-flatpak run io.github.covarianttensor.CasterSoundboard
 ```
 
 ### AppImage (Standalone Portable)
