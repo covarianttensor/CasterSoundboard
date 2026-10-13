@@ -28,6 +28,12 @@ flatpak-builder --user --install --force-clean build-flatpak io.github.covariant
 flatpak run io.github.covarianttensor.CasterSoundboard
 ```
 
+### AppImage
+Build a standalone `CasterSoundboard-x86_64.AppImage` locally using:
+```bash
+./scripts/build-appimage.sh
+```
+
 ### Nix
 Build and run using `default.nix`:
 ```bash

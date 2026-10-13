@@ -20,4 +20,6 @@ tests/metadata/metadata-tests
 tests/metadata/metadata-application-tests
 .flatpak-builder/
 build-flatpak/
+build-appimage/
+*.AppImage
 result
