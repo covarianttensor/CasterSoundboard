@@ -39,6 +39,7 @@ class CasterOSCServerConfigPicker;
 class QComboBox;
 class QLabel;
 class QMediaDevices;
+class WebRemote;
 
 class MainWindow : public QWidget //inherit from QWidget
 {
@@ -67,6 +68,14 @@ protected:
     //WIDGETS
 
 private:
+    void openWebServerSettings();
+    void updateServerIndicators();
+    void showOSCStartError();
+    bool startWebServer(const QString &ip, int port);
+    WebRemote *webRemote = nullptr;
+    QWidget *serverIndicators = nullptr;
+    QPushButton *webServerStatus = nullptr;
+    QPushButton *oscServerStatus = nullptr;
     //PROPERTIES
     int audio_duck_state = 0;
     int previous_tab_index = 0;

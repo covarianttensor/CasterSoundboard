@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CasterSoundboard</title>
+<style>
+body{font:16px system-ui,sans-serif;margin:24px;background:#171a20;color:#f4f4f4}h1{font-size:24px}#status{color:#bbb}section{margin:28px 0}.grid{display:grid;gap:12px;overflow-x:auto;padding:5px}button{font:inherit;min-height:100px;padding:18px;border:2px solid #586174;border-radius:8px;background:var(--button-color,#292f3a);color:var(--button-text,#fff);cursor:pointer;overflow-wrap:anywhere}button.playing{border-color:#66e2a1;box-shadow:inset 0 0 0 3px #101820,0 0 0 3px #66e2a1}button.paused{border-color:#e2b866}button:focus-visible{outline:3px solid #fff;outline-offset:3px}button:disabled{opacity:.5;cursor:wait}small{display:block;margin-top:8px;color:inherit}#error{color:#ffb5b5}
+</style>
+<h1>CasterSoundboard</h1>
+<p id="status" role="status">Connecting…</p>
+<p id="error" role="alert"></p>
+<main id="boards"></main>
+<script>
+const root=document.querySelector('#boards'), status=document.querySelector('#status'), error=document.querySelector('#error');
+const buttons=new Map(), sections=new Map();
+let connected=false;
+function availability(){for(const b of buttons.values()) b.disabled=!connected||b.dataset.pending==='yes';}
+function textColor(hex){
+  const rgb=hex.slice(1).match(/../g).map(v=>parseInt(v,16)/255).map(v=>v<=0.04045?v/12.92:((v+0.055)/1.055)**2.4);
+  return 0.2126*rgb[0]+0.7152*rgb[1]+0.0722*rgb[2]>0.179?'#000':'#fff';
+}
+function render(data){
+  const seen=new Set(), boardIds=new Set();
+  for(const board of data.boards){
+    boardIds.add(board.id);
+    let section=sections.get(board.id);
+    if(!section){section=document.createElement('section');section.append(document.createElement('h2'),document.createElement('div'),document.createElement('p'));section.children[1].className='grid';sections.set(board.id,section);root.append(section);}
+    section.children[0].textContent='Tab: '+board.name;
+    section.children[1].style.gridTemplateColumns=`repeat(${board.columns},minmax(120px,1fr))`;
+    section.children[1].style.gridTemplateRows=board.players.length?`repeat(${board.rows},minmax(100px,auto))`:'';
+    section.children[2].textContent=board.players.length?'':'No sounds assigned.';
+    for(const player of board.players){
+      const id=board.id+'/'+player.key;seen.add(id);
+      let button=buttons.get(id);
+      if(!button){
+        button=document.createElement('button');button.type='button';button.append(document.createElement('span'),document.createElement('small'));buttons.set(id,button);section.children[1].append(button);
+        button.onclick=async()=>{
+          button.dataset.pending='yes';availability();error.textContent='';
+          try{const r=await fetch('/api/toggle/'+board.id+'/'+encodeURIComponent(player.key),{method:'POST',headers:{'X-Caster-Remote':'1'},signal:AbortSignal.timeout(5000)});if(!r.ok)throw new Error('Could not control this sound. It may have been removed.');}
+          catch(e){error.textContent=e.message;}
+          finally{button.dataset.pending='';availability();}
+        };
+      }
+      button.style.gridRow=String(player.row+1);
+      button.style.gridColumn=String(player.column+1);
+      const color=/^#[0-9a-f]{6}$/i.test(player.color)?player.color:'#292f3a';
+      button.style.setProperty('--button-color',color);
+      button.style.setProperty('--button-text',textColor(color));
+      button.children[0].textContent=player.name;
+      button.children[1].textContent=player.key+' · '+(player.error?'Error: '+player.error:player.state);
+      button.className=player.state.toLowerCase();button.setAttribute('aria-pressed',String(player.state==='Playing'));
+    }
+  }
+  for(const [id,b] of buttons)if(!seen.has(id)){b.remove();buttons.delete(id);}
+  for(const [id,s] of sections)if(!boardIds.has(id)){s.remove();sections.delete(id);}
+  status.textContent=data.boards.length?'Connected · Click a sound to play / stop':'Connected · Open a soundboard in Caster to begin.';
+  availability();
+}
+const events=new EventSource('/events');
+events.onmessage=e=>{connected=true;render(JSON.parse(e.data));};
+events.onerror=()=>{connected=false;status.textContent='Disconnected · Reconnecting…';availability();};
+</script>
+</html>

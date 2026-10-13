@@ -165,3 +165,6 @@ macx {
 
 target.path = $$BINDIR
 INSTALLS += target
+
+SOURCES += web/WebRemote.cpp
+HEADERS += web/WebRemote.h

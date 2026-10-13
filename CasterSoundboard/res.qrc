@@ -1,5 +1,7 @@
 <RCC>
     <qresource prefix="/">
+        <file>web/index.html</file>
+        <file>res/img/web_server.png</file>
         <file>res/img/Key.png</file>
         <file>res/img/down.png</file>
         <file>res/img/app.png</file>

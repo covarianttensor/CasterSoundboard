@@ -126,6 +126,15 @@ void CasterBoard::notifyApplicationAboutOSCMessage(OscMessageComposer* message){
         delete message; // No transport receiver owns messages from inactive tabs.
 }
 
+QPoint CasterBoard::playerGridPosition(const QString &key) const
+{
+    const int index = boardLayout->indexOf(players->value(key, nullptr));
+    if (index < 0) return QPoint(-1, -1);
+    int row, column, rowSpan, columnSpan;
+    boardLayout->getItemPosition(index, &row, &column, &rowSpan, &columnSpan);
+    return QPoint(column, row);
+}
+
 void CasterBoard::syncWithOSCClient()
 {
     if (!isCurrentBoard)

@@ -50,6 +50,8 @@ public:
     QMap<int,QString> *keyboard_key_to_player_key;
     QMap<QString, CasterPlayerWidget*> *players;
 
+    QPoint playerGridPosition(const QString &key) const; // x = column, y = row; -1 if absent
+
     //Methods
     void stopAllSounds();
     void reloadBoardFromPlayerStates();

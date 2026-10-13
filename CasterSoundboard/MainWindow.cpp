@@ -1,3 +1,7 @@
+#include "web/WebRemote.h"
+#include <QLineEdit>
+#include <QSpinBox>
+#include <QPainter>
 /*
  *
  *
@@ -154,6 +158,14 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent)
     mainToolbar->addWidget(stopAllSoundsButton);
     mainToolbar->addWidget(toggleAudioDuckingButton);
     mainToolbar->addWidget(openSoundControlButton);
+    auto webServerButton = new QPushButton;
+    webServerButton->setIcon(QIcon(":/res/img/web_server.png"));
+    webServerButton->setIconSize(QSize(40,40));
+    webServerButton->setToolTip(tr("Web Server Settings"));
+    webServerButton->setAccessibleName(tr("Web Server"));
+    webServerButton->setObjectName("webServerButton");
+    connect(webServerButton, &QPushButton::clicked, this, &MainWindow::openWebServerSettings);
+    mainToolbar->addWidget(webServerButton);
     mainToolbar->addWidget(settingsButton);
     mainToolbar->addWidget(aboutButton);
 
@@ -182,7 +194,55 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent)
     // Status Bar
     main_statusbar = new QStatusBar;
     main_statusbar->setSizeGripEnabled(false);
-    layout->addWidget(main_statusbar);
+    auto footer = new QHBoxLayout;
+    footer->setContentsMargins(0, 0, 0, 0);
+    footer->setSpacing(0);
+    serverIndicators = new QWidget;
+    auto indicatorsLayout = new QHBoxLayout(serverIndicators);
+    indicatorsLayout->setContentsMargins(10, 4, 0, 8);
+    indicatorsLayout->setSpacing(8);
+    footer->addWidget(serverIndicators);
+    footer->addWidget(main_statusbar, 1);
+    layout->addLayout(footer);
+    webServerStatus = new QPushButton;
+    webServerStatus->setObjectName("webServerStatus");
+    oscServerStatus = new QPushButton;
+    oscServerStatus->setObjectName("oscServerStatus");
+    for (auto indicator : {webServerStatus, oscServerStatus}) {
+        indicator->setCheckable(true);
+        indicator->setCursor(Qt::PointingHandCursor);
+        indicator->setStyleSheet("QPushButton { border: 1px solid palette(mid); padding: 4px 8px; }"
+                                "QPushButton:hover { background: palette(midlight); }"
+                                "QPushButton:pressed { background: palette(mid); }"
+                                "QPushButton:focus { border: 1px solid palette(highlight); }");
+        indicatorsLayout->addWidget(indicator);
+    }
+    webRemote = new WebRemote(mainTabContainer, this);
+    connect(webServerStatus, &QPushButton::clicked, this, [this] {
+        if (webRemote->isRunning()) {
+            webRemote->stop();
+            main_statusbar->showMessage(tr("Web Server stopped."), 5000);
+        } else {
+            QSettings settings("CasterSoundboard", "CasterSoundboard");
+            if (!startWebServer(settings.value("web/listenIp", "0.0.0.0").toString(),
+                                settings.value("web/port", 5052).toInt())) {
+                updateServerIndicators();
+                QMessageBox::warning(this, tr("Web Server Start Failed"), main_statusbar->currentMessage());
+            }
+        }
+    });
+    connect(oscServerStatus, &QPushButton::clicked, this, [this] {
+        if (isOSCServerRunning()) stopOSCServer();
+        else if (!startOSCServer()) {
+            updateServerIndicators();
+            showOSCStartError();
+        }
+        updateServerIndicators();
+    });
+    connect(webRemote, &WebRemote::runningChanged, this, &MainWindow::updateServerIndicators);
+    connect(socket, &QUdpSocket::stateChanged, this, &MainWindow::updateServerIndicators);
+    connect(mainTabContainer, &QTabWidget::currentChanged, this, &MainWindow::updateServerIndicators);
+    updateServerIndicators();
 
     //SET LAYOUT
     this->setLayout(layout);
@@ -218,12 +278,18 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent)
         startOSCServer();
     }
 
+    if (settings.value("web/autoStart", false).toBool()) {
+        startWebServer(settings.value("web/listenIp", "0.0.0.0").toString(),
+                       settings.value("web/port", 5052).toInt());
+    }
+
     // Properties
 
 }
 
 MainWindow::~MainWindow()
 {
+    disconnect(webRemote, nullptr, this, nullptr);
     delete outbound_ipv4;
 }
 
@@ -355,6 +421,144 @@ void MainWindow::tabContextMenuRequested(const QPoint &pos)
     menu.exec(mainTabContainer->tabBar()->mapToGlobal(pos));
 }
 
+void MainWindow::updateServerIndicators()
+{
+    serverIndicators->setVisible(mainTabContainer->currentIndex() >= 0);
+    auto update = [](QPushButton *button, const QString &name, bool running) {
+        const QString status = running ? tr("On") : tr("Off");
+        button->setText(name + ": " + status);
+        button->setAccessibleName(name + ": " + status);
+        button->setToolTip(running ? tr("Stop %1").arg(name) : tr("Start %1").arg(name));
+        const QSignalBlocker blocker(button);
+        button->setChecked(running);
+        QPixmap dot(24, 24);
+        dot.fill(Qt::transparent);
+        QPainter painter(&dot);
+        painter.setRenderHint(QPainter::Antialiasing);
+        painter.setPen(Qt::NoPen);
+        painter.setBrush(QColor(running ? "#228b22" : "#dc3545"));
+        painter.drawEllipse(2, 2, 20, 20);
+        painter.end();
+        button->setIcon(QIcon(dot));
+        button->setIconSize(QSize(12, 12));
+    };
+    update(webServerStatus, tr("Web Server"), webRemote->isRunning());
+    update(oscServerStatus, tr("OSC"), isOSCServerRunning());
+}
+
+bool MainWindow::startWebServer(const QString &ip, int port)
+{
+    QHostAddress address;
+    QString error;
+    QSettings settings("CasterSoundboard", "CasterSoundboard");
+    if (!address.setAddress(ip) || port < 1 || port > 65535) {
+        error = tr("Enter a valid listening IP and a port between 1 and 65535.");
+    } else if (!webRemote->start(static_cast<quint16>(port), address,
+                                 settings.value("web/user").toString(), settings.value("web/password").toString())) {
+        error = webRemote->errorString();
+    } else {
+        main_statusbar->showMessage(tr("Web Server listening on %1:%2").arg(ip).arg(port), 5000);
+        return true;
+    }
+    main_statusbar->showMessage(tr("Web Server could not start: %1").arg(error));
+    qWarning().noquote() << error;
+    return false;
+}
+
+void MainWindow::openWebServerSettings()
+{
+    QDialog dlg(this);
+    dlg.setObjectName("webServerSettings");
+    dlg.setWindowTitle(tr("Web Server Settings"));
+    dlg.setMinimumWidth(400);
+    auto layout = new QVBoxLayout(&dlg);
+    auto info = new QLabel(tr("Control your soundboards from a web browser.\n"
+                             "Use 0.0.0.0 to listen on all IPv4 interfaces."));
+    layout->addWidget(info);
+    auto fields = new QGridLayout;
+    auto ip = new QLineEdit;
+    ip->setObjectName("webListenIp");
+    auto port = new QSpinBox;
+    port->setObjectName("webListenPort");
+    port->setRange(1, 65535);
+    QSettings settings("CasterSoundboard", "CasterSoundboard");
+    ip->setText(settings.value("web/listenIp", "0.0.0.0").toString());
+    port->setValue(settings.value("web/port", 5052).toInt());
+    auto ipLabel = new QLabel(tr("Listening IP"));
+    ipLabel->setBuddy(ip);
+    auto portLabel = new QLabel(tr("Port"));
+    portLabel->setBuddy(port);
+    fields->addWidget(ipLabel, 0, 0);
+    fields->addWidget(portLabel, 0, 1);
+    fields->addWidget(ip, 1, 0);
+    fields->addWidget(port, 1, 1);
+    auto user = new QLineEdit(settings.value("web/user").toString());
+    user->setObjectName("webUser");
+    auto password = new QLineEdit(settings.value("web/password").toString());
+    password->setObjectName("webPassword");
+    auto userLabel = new QLabel(tr("User:"));
+    userLabel->setBuddy(user);
+    auto passwordLabel = new QLabel(tr("Password:"));
+    passwordLabel->setBuddy(password);
+    fields->addWidget(userLabel, 2, 0);
+    fields->addWidget(passwordLabel, 2, 1);
+    fields->addWidget(user, 3, 0);
+    fields->addWidget(password, 3, 1);
+    fields->setColumnStretch(0, 1);
+    layout->addLayout(fields);
+    auto error = new QLabel;
+    error->setWordWrap(true);
+    error->hide();
+    layout->addWidget(error);
+    auto buttons = new QHBoxLayout;
+    auto exit = new QPushButton(tr("Exit"));
+    auto toggle = new QPushButton;
+    toggle->setObjectName("webServerToggle");
+    buttons->addWidget(exit);
+    buttons->addWidget(toggle);
+    layout->addLayout(buttons);
+    auto refresh = [=] {
+        const bool running = webRemote->isRunning();
+        ip->setReadOnly(running);
+        user->setReadOnly(running);
+        password->setReadOnly(running);
+        port->setEnabled(!running);
+        toggle->setText(running ? tr("Stop") : tr("Start"));
+    };
+    refresh();
+    auto save = [&] {
+        QHostAddress address;
+        if (!address.setAddress(ip->text().trimmed())) {
+            error->setText(tr("Enter a valid listening IP address (0.0.0.0 for all IPv4 interfaces)."));
+            error->show();
+            return false;
+        }
+        settings.setValue("web/listenIp", address.toString());
+        settings.setValue("web/port", port->value());
+        settings.setValue("web/user", user->text());
+        settings.setValue("web/password", password->text());
+        return true;
+    };
+    connect(exit, &QPushButton::clicked, &dlg, [&] {
+        if (save()) dlg.accept();
+    });
+    connect(toggle, &QPushButton::clicked, &dlg, [&] {
+        error->hide();
+        if (webRemote->isRunning()) {
+            webRemote->stop();
+            main_statusbar->showMessage(tr("Web Server stopped."), 5000);
+        } else {
+            if (!save()) return;
+            if (!startWebServer(ip->text().trimmed(), port->value())) {
+                error->setText(tr("Could not start Web Server: %1").arg(webRemote->errorString()));
+                error->show();
+            }
+        }
+        refresh();
+    });
+    dlg.exec();
+}
+
 void MainWindow::openPreferences()
 {
     QDialog dlg(this);
@@ -401,6 +605,18 @@ void MainWindow::openPreferences()
     autoStartOscCheckbox->setChecked(settings.value("osc/autoStart", false).toBool());
     oscLayout->addWidget(autoStartOscCheckbox);
     mainLayout->addWidget(oscGroup);
+
+    QGroupBox *webGroup = new QGroupBox(tr("Web Server"), &dlg);
+    auto webLayout = new QVBoxLayout(webGroup);
+    auto autoStartWebCheckbox = new QCheckBox(tr("Automatically start web server on application startup"), webGroup);
+    autoStartWebCheckbox->setObjectName("autoStartWebCheckbox");
+    autoStartWebCheckbox->setChecked(settings.value("web/autoStart", false).toBool());
+    webLayout->addWidget(autoStartWebCheckbox);
+    mainLayout->addWidget(webGroup);
+    connect(autoStartWebCheckbox, &QCheckBox::toggled, this, [](bool checked) {
+        QSettings s("CasterSoundboard", "CasterSoundboard");
+        s.setValue("web/autoStart", checked);
+    });
 
     // Dialog buttons
     QHBoxLayout *bottomLayout = new QHBoxLayout;
@@ -894,6 +1110,13 @@ void MainWindow::openOSCSettings()
         }
 
     }
+}
+
+void MainWindow::showOSCStartError()
+{
+    QMessageBox::warning(this, tr("OSC Server Start Failed"),
+                         tr("Could not start OSC on port %1: %2")
+                             .arg(inbound_port).arg(socket->errorString()));
 }
 
 bool MainWindow::startOSCServer(int inboundPort, const QString &outboundIp, int outboundPort)

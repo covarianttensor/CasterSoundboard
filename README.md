@@ -54,3 +54,7 @@ nix-build
 
 ### Screenshot ###
 ![Alt text](/docs/img/screenshot.png?raw=true "Running on Ubuntu")
+
+## Web Control
+
+See [Web Control](docs/web-control.md) for functionality, setup and verification.
