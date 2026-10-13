@@ -269,37 +269,57 @@ void MainWindow::addNewTab()
 
 }
 
+// Display paths and filesystem errors literally, without interpreting rich text.
+static void showProfileError(QWidget *parent, const QString &message)
+{
+    QMessageBox box(QMessageBox::Warning, "CasterSoundboard", message,
+                    QMessageBox::Ok, parent);
+    box.setTextFormat(Qt::PlainText);
+    box.exec();
+}
+
 void MainWindow::openProfile()
 {
-    //File Diag
-    QString _filePath = QFileDialog::getOpenFileName(
-            Q_NULLPTR, "Open Sound Board Profile", "",
-            "Sound Board Profile (*.caster)");
+    const QString filePath = QFileDialog::getOpenFileName(
+                this, "Open Sound Board Profile", "", "Sound Board Profile (*.caster)");
+    if (filePath.isEmpty())
+        return;
 
-    if (!_filePath.isNull())
-    {
-        //Load Profile Data
-        CasterBoard *cb = new CasterBoard(this);
-        QFile file;
-        QDataStream in;
-        file.setFileName(_filePath);
-        file.open(QIODevice::ReadOnly);
-        in.setDevice(&file);
-        in.setVersion(QDataStream::Qt_DefaultCompiledVersion);
-        in >> *cb;
-        file.close();
+    QString error;
+    if (!loadProfile(filePath, error))
+        showProfileError(this, error);
+}
 
-        //Set Save Path
-        *cb->profileFilePath = _filePath;
-
-        // Load Profile Into New Board
-        cb->reloadBoardFromPlayerStates();
-        cb->setAllAudioDuckingStates(audio_duck_state);
-        connect(cb, SIGNAL(globalHotKeyReleasedEvent(QKeyEvent*)),this,SLOT(handleGlobalHotKeyEventFromCurrentWidget(QKeyEvent*)));
-        connect(cb, SIGNAL(_updateOSCClient(OscMessageComposer*)),this,SLOT(sendOSCMessageToClient(OscMessageComposer*)));
-        mainTabContainer->addTab(cb, cb->soundBoardName->toUtf8());
+bool MainWindow::loadProfile(const QString &filePath, QString &errorMessage)
+{
+    if (filePath.isEmpty()) {
+        errorMessage = "No profile file specified.";
+        return false;
     }
 
+    QFile file(filePath);
+    if (!file.open(QIODevice::ReadOnly)) {
+        errorMessage = "Cannot open profile:\n" + filePath + "\n" + file.errorString();
+        return false;
+    }
+
+    CasterBoard *cb = new CasterBoard(this);
+    QDataStream in(&file);
+    in.setVersion(QDataStream::Qt_DefaultCompiledVersion);
+    in >> *cb;
+    if (in.status() != QDataStream::Ok) {
+        delete cb;
+        errorMessage = "Cannot read profile:\n" + filePath;
+        return false;
+    }
+    *cb->profileFilePath = filePath;
+    cb->reloadBoardFromPlayerStates();
+    cb->setAllAudioDuckingStates(audio_duck_state);
+    connect(cb, SIGNAL(globalHotKeyReleasedEvent(QKeyEvent*)),this,SLOT(handleGlobalHotKeyEventFromCurrentWidget(QKeyEvent*)));
+    connect(cb, SIGNAL(_updateOSCClient(OscMessageComposer*)),this,SLOT(sendOSCMessageToClient(OscMessageComposer*)));
+    const int index = mainTabContainer->addTab(cb, *cb->soundBoardName);
+    mainTabContainer->setCurrentIndex(index);
+    return true;
 }
 
 void MainWindow::saveTab()

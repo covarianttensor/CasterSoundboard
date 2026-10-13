@@ -43,6 +43,7 @@ class MainWindow : public QWidget //inherit from QWidget
 public:
     //Constructor
     MainWindow(QWidget* parent = 0); //don't forget to pass the parent
+    bool loadProfile(const QString &filePath, QString &errorMessage); // also called at startup
 
     //PROPERTIES
 
