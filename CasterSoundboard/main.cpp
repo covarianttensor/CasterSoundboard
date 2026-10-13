@@ -25,7 +25,9 @@
 #include <QCommandLineParser>
 #include <QCommandLineOption>
 #include <QFileInfo>
+#include <QSettings>
 #include <QDebug>
+#include <cstring>
 
 
 int main(int argc, char *argv[])
@@ -33,6 +35,20 @@ int main(int argc, char *argv[])
     // Default to FFmpeg backend for Qt 6 Multimedia on Linux across all distributions
     if (qEnvironmentVariableIsEmpty("QT_MEDIA_BACKEND")) {
         qputenv("QT_MEDIA_BACKEND", "ffmpeg");
+    }
+
+    // Check for headless mode or absent display environment before initializing QApplication
+    bool headless = false;
+    for (int i = 1; i < argc; ++i) {
+        if (strcmp(argv[i], "--headless") == 0) {
+            headless = true;
+            break;
+        }
+    }
+    const bool noDisplay = qEnvironmentVariableIsEmpty("DISPLAY") && qEnvironmentVariableIsEmpty("WAYLAND_DISPLAY");
+    if ((headless || noDisplay) && qEnvironmentVariableIsEmpty("QT_QPA_PLATFORM")) {
+        qputenv("QT_QPA_PLATFORM", "offscreen");
+        headless = true;
     }
 
     //START APPLICATION
@@ -43,29 +59,108 @@ int main(int argc, char *argv[])
     QCommandLineParser parser;
     parser.setApplicationDescription("CasterSoundboard");
     parser.addHelpOption();
+
+    QCommandLineOption headlessOption("headless",
+                                      "Run in headless mode without showing the GUI window (ideal for Raspberry Pi/server OSC setups)");
+    parser.addOption(headlessOption);
+
     QCommandLineOption profileOption(QStringList() << "p" << "profile",
                                      "Load a .caster profile at startup", "file");
     parser.addOption(profileOption);
+
+    QCommandLineOption setDefaultProfileOption("set-default-profile",
+                                               "Set the specified .caster profile as the default startup profile in settings and exit", "file");
+    parser.addOption(setDefaultProfileOption);
+
+    QCommandLineOption clearDefaultProfileOption("clear-default-profile",
+                                                 "Clear the configured default startup profile from settings and exit");
+    parser.addOption(clearDefaultProfileOption);
+
+    QCommandLineOption showDefaultProfileOption("show-default-profile",
+                                                "Show the currently configured default startup profile and exit");
+    parser.addOption(showDefaultProfileOption);
+
+    QCommandLineOption oscPortOption("osc-port",
+                                     "Inbound UDP port for OSC commands (defaults to 5051)", "port");
+    parser.addOption(oscPortOption);
+
+    QCommandLineOption autoStartOscOption("auto-start-osc",
+                                          "Start the OSC server automatically on launch");
+    parser.addOption(autoStartOscOption);
+
     parser.addPositionalArgument("profile", "Optional .caster profile file", "[profile]");
     parser.process(a);
+
+    QSettings settings("CasterSoundboard", "CasterSoundboard");
+
+    if (parser.isSet(showDefaultProfileOption)) {
+        const QString def = settings.value("profile/defaultProfile").toString();
+        if (def.isEmpty()) {
+            qInfo() << "No default profile configured.";
+        } else {
+            qInfo().noquote() << def;
+        }
+        return 0;
+    }
+
+    if (parser.isSet(clearDefaultProfileOption)) {
+        settings.remove("profile/defaultProfile");
+        qInfo() << "Default profile cleared.";
+        return 0;
+    }
+
+    if (parser.isSet(setDefaultProfileOption)) {
+        const QString path = parser.value(setDefaultProfileOption);
+        if (path.isEmpty() || !QFileInfo::exists(path)) {
+            qCritical() << "Specified profile does not exist:" << path;
+            return 2;
+        }
+        const QString absPath = QFileInfo(path).absoluteFilePath();
+        settings.setValue("profile/defaultProfile", absPath);
+        qInfo().noquote() << "Default profile set to:" << absPath;
+        return 0;
+    }
 
     const QStringList positional = parser.positionalArguments();
     if (positional.size() > 1 || (parser.isSet(profileOption) && !positional.isEmpty())) {
         qCritical() << "Specify only one profile, either as --profile FILE or FILE.";
         return 2;
     }
-    const QString profile = parser.isSet(profileOption) ? parser.value(profileOption)
-                                                        : positional.value(0);
+    QString profile = parser.isSet(profileOption) ? parser.value(profileOption)
+                                                  : positional.value(0);
     if ((parser.isSet(profileOption) || !positional.isEmpty()) && profile.isEmpty()) {
         qCritical() << "Profile filename must not be empty.";
         return 2;
     }
+
+    if (parser.isSet(headlessOption)) {
+        headless = true;
+    }
+
+    // Resolve startup profile if none explicitly provided on CLI
+    if (profile.isEmpty()) {
+        const QString defaultProfile = settings.value("profile/defaultProfile").toString();
+        if (!defaultProfile.isEmpty() && QFileInfo::exists(defaultProfile)) {
+            profile = defaultProfile;
+        } else if (settings.value("profile/reopenLastOnStartup", false).toBool()) {
+            const QString lastProfile = settings.value("profile/lastOpenedProfile").toString();
+            if (!lastProfile.isEmpty() && QFileInfo::exists(lastProfile)) {
+                profile = lastProfile;
+            }
+        }
+    }
+
     //CREATE MAIN WINDOW
     MainWindow *w = new MainWindow;
-    //SET MAIN WINDOW SIZE
     w->resize(1000, 500);
-    //SHOW MAIN WINDOW
-    w->show();
+
+    if (headless) {
+        a.setQuitOnLastWindowClosed(false);
+        qInfo() << "Running CasterSoundboard in headless mode (display-less).";
+    } else {
+        w->show();
+    }
+
     if (!profile.isEmpty()) {
         const QString absolutePath = QFileInfo(profile).absoluteFilePath();
         QString error;
@@ -74,7 +169,30 @@ int main(int argc, char *argv[])
             delete w;
             return 1;
         }
+        qInfo().noquote() << "Loaded profile:" << absolutePath;
     }
+
+    int oscPort = -1;
+    if (parser.isSet(oscPortOption)) {
+        bool ok = false;
+        int p = parser.value(oscPortOption).toInt(&ok);
+        if (ok && p > 0 && p <= 65535) {
+            oscPort = p;
+        } else {
+            qWarning() << "Invalid --osc-port specified, using default.";
+        }
+    }
+
+    if (headless || parser.isSet(autoStartOscOption)) {
+        if (!w->isOSCServerRunning()) {
+            if (w->startOSCServer(oscPort)) {
+                qInfo() << "OSC server listening on port" << (oscPort > 0 ? oscPort : 5051);
+            } else {
+                qWarning() << "Could not start OSC server on port" << (oscPort > 0 ? oscPort : 5051);
+            }
+        }
+    }
+
     //END APPLICATION
     return a.exec();
 }

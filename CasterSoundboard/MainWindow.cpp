@@ -32,6 +32,11 @@
 #include <QPushButton>
 #include <QComboBox>
 #include <QLabel>
+#include <QMenu>
+#include <QTabBar>
+#include <QCheckBox>
+#include <QDialog>
+#include <QGroupBox>
 #include <QTableWidget>
 #include <QVBoxLayout>
 #include <QGridLayout>
@@ -126,6 +131,11 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent)
     openSoundControlButton->setIconSize(QSize(40,40));
     openSoundControlButton->setToolTip("OSC Settings");
 
+    //~~Preferences Button~~
+    settingsButton = new QPushButton;
+    settingsButton->setIconSize(QSize(40,40));
+    settingsButton->setToolTip("Preferences");
+
     //~~About Button~~
     aboutButton = new QPushButton;
     aboutButton->setIconSize(QSize(40,40));
@@ -144,6 +154,7 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent)
     mainToolbar->addWidget(stopAllSoundsButton);
     mainToolbar->addWidget(toggleAudioDuckingButton);
     mainToolbar->addWidget(openSoundControlButton);
+    mainToolbar->addWidget(settingsButton);
     mainToolbar->addWidget(aboutButton);
 
     // Audio Output Selector
@@ -178,9 +189,13 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent)
 
     //MAKE CONNECTIONS
     connect(aboutButton,SIGNAL(clicked()),this,SLOT(aboutBox()));
+    connect(settingsButton, &QPushButton::clicked, this, &MainWindow::openPreferences);
     connect(addNewTabButton,SIGNAL(clicked()),this,SLOT(addNewTab()));
     connect(mainTabContainer,SIGNAL(tabCloseRequested(int)),this,SLOT(mainTabContainerTabClosedRequested(int)));
     connect(mainTabContainer,SIGNAL(currentChanged(int)),this,SLOT(currentTabWasChanged(int)));
+    mainTabContainer->tabBar()->setContextMenuPolicy(Qt::CustomContextMenu);
+    connect(mainTabContainer->tabBar(), &QTabBar::customContextMenuRequested,
+            this, &MainWindow::tabContextMenuRequested);
     connect(saveTabButton,SIGNAL(clicked()),this,SLOT(saveTab()));
     connect(saveAsTabButton,SIGNAL(clicked()),this,SLOT(saveAsTab()));
     connect(openTabButton,SIGNAL(clicked()),this,SLOT(openProfile()));
@@ -197,6 +212,11 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent)
                 this, [this](Qt::ColorScheme) { this->updateThemeIcons(); });
     }
 #endif
+
+    QSettings settings("CasterSoundboard", "CasterSoundboard");
+    if (settings.value("osc/autoStart", false).toBool()) {
+        startOSCServer();
+    }
 
     // Properties
 
@@ -269,6 +289,174 @@ void MainWindow::aboutBox()
     msgBox.exec();
 }
 
+void MainWindow::updateTabToolTips()
+{
+    QSettings settings("CasterSoundboard", "CasterSoundboard");
+    const QString defaultProf = settings.value("profile/defaultProfile").toString();
+    for (int i = 0; i < mainTabContainer->count(); ++i) {
+        CasterBoard *board = qobject_cast<CasterBoard *>(mainTabContainer->widget(i));
+        if (!board)
+            continue;
+        if (!board->profileFilePath->isEmpty()) {
+            if (!defaultProf.isEmpty() && *board->profileFilePath == defaultProf) {
+                mainTabContainer->setTabToolTip(i, QString("%1 [Default Startup Profile]").arg(*board->profileFilePath));
+            } else {
+                mainTabContainer->setTabToolTip(i, *board->profileFilePath);
+            }
+        } else {
+            mainTabContainer->setTabToolTip(i, tr("Unsaved soundboard"));
+        }
+    }
+}
+
+void MainWindow::tabContextMenuRequested(const QPoint &pos)
+{
+    int tabIndex = mainTabContainer->tabBar()->tabAt(pos);
+    if (tabIndex < 0)
+        return;
+
+    CasterBoard *board = qobject_cast<CasterBoard *>(mainTabContainer->widget(tabIndex));
+    if (!board)
+        return;
+
+    QSettings settings("CasterSoundboard", "CasterSoundboard");
+    const QString defaultProf = settings.value("profile/defaultProfile").toString();
+    const bool isDefault = (!board->profileFilePath->isEmpty() && *board->profileFilePath == defaultProf);
+
+    QMenu menu(this);
+    if (isDefault) {
+        menu.addAction(tr("Clear as Default Startup Profile"), this, [this]() {
+            QSettings s("CasterSoundboard", "CasterSoundboard");
+            s.remove("profile/defaultProfile");
+            updateTabToolTips();
+        });
+    } else {
+        menu.addAction(tr("Set as Default Startup Profile"), this, [this, board]() {
+            if (board->profileFilePath->isEmpty()) {
+                QMessageBox::information(this, tr("Default Profile"),
+                    tr("Please save this soundboard tab to a .caster file before setting it as the default profile."));
+                return;
+            }
+            QSettings s("CasterSoundboard", "CasterSoundboard");
+            s.setValue("profile/defaultProfile", *board->profileFilePath);
+            updateTabToolTips();
+            QMessageBox::information(this, tr("Default Profile"),
+                tr("'%1' set as default startup profile.").arg(*board->profileFilePath));
+        });
+    }
+    menu.addSeparator();
+    menu.addAction(tr("Rename Tab"), this, [this, tabIndex]() {
+        mainTabContainer->setCurrentIndex(tabIndex);
+        renameCurrentTab();
+    });
+    menu.addAction(tr("Close Tab"), this, [this, tabIndex]() {
+        mainTabContainerTabClosedRequested(tabIndex);
+    });
+    menu.exec(mainTabContainer->tabBar()->mapToGlobal(pos));
+}
+
+void MainWindow::openPreferences()
+{
+    QDialog dlg(this);
+    dlg.setWindowTitle(tr("Preferences"));
+    dlg.setMinimumWidth(480);
+
+    QVBoxLayout *mainLayout = new QVBoxLayout(&dlg);
+
+    // Section: Startup Profile
+    QGroupBox *profileGroup = new QGroupBox(tr("Startup Soundboard Profile"), &dlg);
+    QVBoxLayout *groupLayout = new QVBoxLayout(profileGroup);
+
+    QSettings settings("CasterSoundboard", "CasterSoundboard");
+    QString defaultProfile = settings.value("profile/defaultProfile").toString();
+
+    QLabel *infoLabel = new QLabel(tr("Configure a soundboard profile to automatically load on startup (ideal for desktop autostart and headless Raspberry Pi / OSC setups):"), profileGroup);
+    infoLabel->setWordWrap(true);
+    groupLayout->addWidget(infoLabel);
+
+    QLabel *currentPathLabel = new QLabel(defaultProfile.isEmpty() ? tr("None (starts with empty soundboard)") : defaultProfile, profileGroup);
+    currentPathLabel->setWordWrap(true);
+    currentPathLabel->setStyleSheet("font-weight: bold; padding: 6px; border: 1px solid palette(mid); background: palette(alternate-base);");
+    groupLayout->addWidget(currentPathLabel);
+
+    QHBoxLayout *btnLayout = new QHBoxLayout;
+    QPushButton *useCurrentBtn = new QPushButton(tr("Use Current Tab"), profileGroup);
+    QPushButton *browseBtn = new QPushButton(tr("Browse..."), profileGroup);
+    QPushButton *clearBtn = new QPushButton(tr("Clear Default"), profileGroup);
+    btnLayout->addWidget(useCurrentBtn);
+    btnLayout->addWidget(browseBtn);
+    btnLayout->addWidget(clearBtn);
+    groupLayout->addLayout(btnLayout);
+
+    QCheckBox *reopenLastCheckbox = new QCheckBox(tr("Reopen last active profile on startup if no default profile is set"), profileGroup);
+    reopenLastCheckbox->setChecked(settings.value("profile/reopenLastOnStartup", false).toBool());
+    groupLayout->addWidget(reopenLastCheckbox);
+
+    mainLayout->addWidget(profileGroup);
+
+    // Section: OSC Server
+    QGroupBox *oscGroup = new QGroupBox(tr("OSC Network Control"), &dlg);
+    QVBoxLayout *oscLayout = new QVBoxLayout(oscGroup);
+    QCheckBox *autoStartOscCheckbox = new QCheckBox(tr("Automatically start OSC server on application startup"), oscGroup);
+    autoStartOscCheckbox->setChecked(settings.value("osc/autoStart", false).toBool());
+    oscLayout->addWidget(autoStartOscCheckbox);
+    mainLayout->addWidget(oscGroup);
+
+    // Dialog buttons
+    QHBoxLayout *bottomLayout = new QHBoxLayout;
+    bottomLayout->addStretch();
+    QPushButton *closeBtn = new QPushButton(tr("Close"), &dlg);
+    bottomLayout->addWidget(closeBtn);
+    mainLayout->addLayout(bottomLayout);
+
+    connect(closeBtn, &QPushButton::clicked, &dlg, &QDialog::accept);
+
+    connect(useCurrentBtn, &QPushButton::clicked, this, [this, currentPathLabel]() {
+        CasterBoard *board = currentBoard();
+        if (!board) {
+            QMessageBox::information(this, tr("Default Profile"), tr("Please create or open a soundboard tab first."));
+            return;
+        }
+        if (board->profileFilePath->isEmpty()) {
+            QMessageBox::information(this, tr("Default Profile"), tr("Please save this soundboard tab to a file before setting it as the default profile."));
+            return;
+        }
+        QSettings s("CasterSoundboard", "CasterSoundboard");
+        s.setValue("profile/defaultProfile", *board->profileFilePath);
+        currentPathLabel->setText(*board->profileFilePath);
+        updateTabToolTips();
+    });
+
+    connect(browseBtn, &QPushButton::clicked, this, [this, currentPathLabel]() {
+        const QString path = QFileDialog::getOpenFileName(this, tr("Select Default Profile"), "", "Sound Board Profile (*.caster)");
+        if (!path.isEmpty()) {
+            QSettings s("CasterSoundboard", "CasterSoundboard");
+            s.setValue("profile/defaultProfile", path);
+            currentPathLabel->setText(path);
+            updateTabToolTips();
+        }
+    });
+
+    connect(clearBtn, &QPushButton::clicked, this, [this, currentPathLabel]() {
+        QSettings s("CasterSoundboard", "CasterSoundboard");
+        s.remove("profile/defaultProfile");
+        currentPathLabel->setText(tr("None (starts with empty soundboard)"));
+        updateTabToolTips();
+    });
+
+    connect(reopenLastCheckbox, &QCheckBox::toggled, this, [](bool checked) {
+        QSettings s("CasterSoundboard", "CasterSoundboard");
+        s.setValue("profile/reopenLastOnStartup", checked);
+    });
+
+    connect(autoStartOscCheckbox, &QCheckBox::toggled, this, [](bool checked) {
+        QSettings s("CasterSoundboard", "CasterSoundboard");
+        s.setValue("osc/autoStart", checked);
+    });
+
+    dlg.exec();
+}
+
 void MainWindow::addNewTab()
 {
     //ASK FOR SOUNDBOARD TAB
@@ -297,9 +485,8 @@ void MainWindow::addNewTab()
         {
             mainTabContainer->addTab(cb, "No Name");
         }
-
+        updateTabToolTips();
     }
-
 }
 
 // Display paths and filesystem errors literally, without interpreting rich text.
@@ -346,12 +533,17 @@ bool MainWindow::loadProfile(const QString &filePath, QString &errorMessage)
         return false;
     }
     *cb->profileFilePath = filePath;
+    {
+        QSettings settings("CasterSoundboard", "CasterSoundboard");
+        settings.setValue("profile/lastOpenedProfile", filePath);
+    }
     cb->reloadBoardFromPlayerStates();
     cb->setAllAudioDuckingStates(audio_duck_state);
     connect(cb, SIGNAL(globalHotKeyReleasedEvent(QKeyEvent*)),this,SLOT(handleGlobalHotKeyEventFromCurrentWidget(QKeyEvent*)));
     connect(cb, SIGNAL(_updateOSCClient(OscMessageComposer*)),this,SLOT(sendOSCMessageToClient(OscMessageComposer*)));
     const int index = mainTabContainer->addTab(cb, *cb->soundBoardName);
     mainTabContainer->setCurrentIndex(index);
+    updateTabToolTips();
     return true;
 }
 
@@ -394,6 +586,13 @@ void MainWindow::saveTab()
                 *dynamic_cast<CasterBoard*>(mainTabContainer->currentWidget())->profileFilePath = _filePath.toUtf8() + ".caster";
             }
         }
+        if (CasterBoard *board = currentBoard()) {
+            if (!board->profileFilePath->isEmpty()) {
+                QSettings settings("CasterSoundboard", "CasterSoundboard");
+                settings.setValue("profile/lastOpenedProfile", *board->profileFilePath);
+            }
+        }
+        updateTabToolTips();
     }
 
 }
@@ -422,6 +621,9 @@ void MainWindow::saveAsTab()
 
             //Set Save Path
             *dynamic_cast<CasterBoard*>(mainTabContainer->currentWidget())->profileFilePath = _filePath.toUtf8() + ".caster";
+            QSettings settings("CasterSoundboard", "CasterSoundboard");
+            settings.setValue("profile/lastOpenedProfile", *dynamic_cast<CasterBoard*>(mainTabContainer->currentWidget())->profileFilePath);
+            updateTabToolTips();
         }
     }
 
@@ -651,14 +853,9 @@ void MainWindow::openOSCSettings()
     if(oscConfigPicker->ok == true)
     {
         if(oscConfigPicker->Result == CasterOSCServerConfigPicker::Action_Start_Server){
-            // Attempt To Start Server
-            inbound_port = oscConfigPicker->getInboundPort();
-            *outbound_ipv4 = oscConfigPicker->getOutboundIPv4();
-            outbound_port = oscConfigPicker->getOutboundPort();
-            if (socket->state() != QAbstractSocket::UnconnectedState) {
-                socket->close();
-            }
-            bool bind_success = socket->bind(QHostAddress::Any, inbound_port);
+            bool bind_success = startOSCServer(oscConfigPicker->getInboundPort(),
+                                               oscConfigPicker->getOutboundIPv4(),
+                                               oscConfigPicker->getOutboundPort());
             if(bind_success){
                 // Notify User
                 QMessageBox msgBox;
@@ -670,21 +867,9 @@ void MainWindow::openOSCSettings()
                 msgBox.setWindowIcon(QIcon(":/res/img/about.png"));
                 msgBox.exec();
 
-                // Connect Listener Server
-                connect(socket, SIGNAL(readyRead()), this, SLOT(executeOSCCommand()), Qt::UniqueConnection);
-
-                //Update Diag
-                oscConfigPicker->setIsServerRunning(true);
-
                 // Reset Result
                 oscConfigPicker->ok = false;
                 oscConfigPicker->Result = CasterOSCServerConfigPicker::Action_Neutral;
-
-                // Synchronize UI Info
-                if (CasterBoard *board = currentBoard()) {
-                    board->syncWithOSCClient();
-                }
-                this->syncWithOSCClient();
             } else {
                 QMessageBox msgBox;
                 msgBox.setText("Sorry, inbound port " + QString::number(inbound_port) + " appears to be in use.\nPlease try another port.\n");
@@ -695,22 +880,13 @@ void MainWindow::openOSCSettings()
                 msgBox.setWindowIcon(QIcon(":/res/img/about.png"));
                 msgBox.exec();
 
-                //Update Diag
-                oscConfigPicker->setIsServerRunning(false);
-
                 // Reset Result
                 oscConfigPicker->ok = false;
                 oscConfigPicker->Result = CasterOSCServerConfigPicker::Action_Neutral;
             }
 
         } else if (oscConfigPicker->Result == CasterOSCServerConfigPicker::Action_Kill_Server ){
-            // Disconnect Listener Server
-            disconnect(socket, SIGNAL(readyRead()), this, SLOT(executeOSCCommand()));
-            // Unbind socket from port
-            socket->close();
-
-            //Update Diag
-            oscConfigPicker->setIsServerRunning(false);
+            stopOSCServer();
 
             // Reset Result
             oscConfigPicker->ok = false;
@@ -718,6 +894,56 @@ void MainWindow::openOSCSettings()
         }
 
     }
+}
+
+bool MainWindow::startOSCServer(int inboundPort, const QString &outboundIp, int outboundPort)
+{
+    if (inboundPort > 0)
+        inbound_port = inboundPort;
+    if (!outboundIp.isEmpty())
+        *outbound_ipv4 = outboundIp;
+    if (outboundPort > 0)
+        outbound_port = outboundPort;
+
+    if (socket->state() != QAbstractSocket::UnconnectedState) {
+        socket->close();
+    }
+    bool bind_success = socket->bind(QHostAddress::Any, inbound_port);
+    if (bind_success) {
+        connect(socket, &QUdpSocket::readyRead, this, &MainWindow::executeOSCCommand, Qt::UniqueConnection);
+        if (oscConfigPicker) {
+            oscConfigPicker->setIsServerRunning(true);
+            oscConfigPicker->setInBoundPort(inbound_port);
+            oscConfigPicker->setOutBoundIPv4(outbound_ipv4);
+            oscConfigPicker->setOutBoundPort(outbound_port);
+        }
+        if (CasterBoard *board = currentBoard()) {
+            board->syncWithOSCClient();
+        }
+        this->syncWithOSCClient();
+        return true;
+    } else {
+        if (oscConfigPicker) {
+            oscConfigPicker->setIsServerRunning(false);
+        }
+        return false;
+    }
+}
+
+void MainWindow::stopOSCServer()
+{
+    disconnect(socket, &QUdpSocket::readyRead, this, &MainWindow::executeOSCCommand);
+    if (socket->state() != QAbstractSocket::UnconnectedState) {
+        socket->close();
+    }
+    if (oscConfigPicker) {
+        oscConfigPicker->setIsServerRunning(false);
+    }
+}
+
+bool MainWindow::isOSCServerRunning() const
+{
+    return socket && (socket->state() == QAbstractSocket::BoundState);
 }
 
 void MainWindow::executeOSCCommand()
@@ -1011,6 +1237,7 @@ void MainWindow::updateThemeIcons()
     stopAllSoundsButton->setIcon(themedIcon("stopAll.png"));
     toggleAudioDuckingButton->setIcon(themedIcon(audio_duck_state == 0 ? "duck.png" : "unduck.png"));
     openSoundControlButton->setIcon(themedIcon("open_sound_control.png"));
+    settingsButton->setIcon(themedIcon("cog.png"));
     aboutButton->setIcon(themedIcon("about.png"));
 }
 

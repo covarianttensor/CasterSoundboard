@@ -162,6 +162,82 @@ private slots:
             settings.remove("audio/outputDeviceId");
         }
     }
+
+    void oscServerProgrammaticControl() {
+        MainWindow window;
+        QVERIFY(!window.isOSCServerRunning());
+
+        QUdpSocket probe;
+        QVERIFY(probe.bind(QHostAddress::LocalHost, quint16(0)));
+        const quint16 inboundPort = probe.localPort();
+        probe.close();
+
+        QVERIFY(window.startOSCServer(inboundPort, "127.0.0.1", 5052));
+        QVERIFY(window.isOSCServerRunning());
+
+        // Stop server
+        window.stopOSCServer();
+        QVERIFY(!window.isOSCServerRunning());
+    }
+
+    void defaultProfileAndSettings() {
+        QSettings settings("CasterSoundboard", "CasterSoundboard");
+        const QString origDefault = settings.value("profile/defaultProfile").toString();
+        const QString origLast = settings.value("profile/lastOpenedProfile").toString();
+        const bool origReopen = settings.value("profile/reopenLastOnStartup", false).toBool();
+        const bool origAutoOsc = settings.value("osc/autoStart", false).toBool();
+
+        MainWindow window;
+        auto addTab = [&] {
+            QTimer::singleShot(0, [] {
+                auto dialog = qobject_cast<QInputDialog *>(QApplication::activeModalWidget());
+                Q_ASSERT(dialog);
+                dialog->setTextValue("ProfileTest");
+                dialog->accept();
+            });
+            window.addNewTab();
+        };
+        addTab();
+        auto tabs = window.findChild<QTabWidget *>();
+        QVERIFY(tabs);
+        QCOMPARE(tabs->count(), 1);
+
+        auto board = qobject_cast<CasterBoard *>(tabs->widget(0));
+        QVERIFY(board);
+
+        // Before setting default profile, tab tooltip is "Unsaved soundboard"
+        QCOMPARE(tabs->tabToolTip(0), QString("Unsaved soundboard"));
+
+        const QString dummyPath = "/tmp/test_default_profile.caster";
+        *board->profileFilePath = dummyPath;
+        window.updateTabToolTips();
+        QCOMPARE(tabs->tabToolTip(0), dummyPath);
+
+        // Mark as default profile
+        settings.setValue("profile/defaultProfile", dummyPath);
+        window.updateTabToolTips();
+        QCOMPARE(tabs->tabToolTip(0), dummyPath + " [Default Startup Profile]");
+
+        // Clear default profile
+        settings.remove("profile/defaultProfile");
+        window.updateTabToolTips();
+        QCOMPARE(tabs->tabToolTip(0), dummyPath);
+
+        // Test QSettings keys for reopen and autoStart
+        settings.setValue("profile/reopenLastOnStartup", true);
+        QCOMPARE(settings.value("profile/reopenLastOnStartup").toBool(), true);
+
+        settings.setValue("osc/autoStart", true);
+        QCOMPARE(settings.value("osc/autoStart").toBool(), true);
+
+        // Restore settings
+        if (origDefault.isEmpty()) settings.remove("profile/defaultProfile");
+        else settings.setValue("profile/defaultProfile", origDefault);
+        if (origLast.isEmpty()) settings.remove("profile/lastOpenedProfile");
+        else settings.setValue("profile/lastOpenedProfile", origLast);
+        settings.setValue("profile/reopenLastOnStartup", origReopen);
+        settings.setValue("osc/autoStart", origAutoOsc);
+    }
 };
 QTEST_MAIN(ApplicationTest)
 #include "test_application.moc"
