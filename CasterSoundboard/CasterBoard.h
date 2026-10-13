@@ -23,6 +23,7 @@
 #ifndef CASTERBOARD_H
 #define CASTERBOARD_H
 #include <QWidget>
+#include "actions/ActionProfile.h"
 #include <QDataStream>
 #include <QString>
 #include <QMap>
@@ -49,6 +50,13 @@ public:
     QMap<int,QString> *int_to_player_key;
     QMap<int,QString> *keyboard_key_to_player_key;
     QMap<QString, CasterPlayerWidget*> *players;
+
+    QVector<Actions::Profile> actionProfiles;
+    int selectedAction = -1;
+    bool actionsDirty = false;
+    Actions::Profile activeAction() const { return selectedAction >= 0 && selectedAction < actionProfiles.size() && actionProfiles[selectedAction].attached ? actionProfiles[selectedAction] : Actions::Profile(); }
+
+    bool hasAttachedActions() const { for (const auto &p : actionProfiles) if (p.attached) return true; return false; }
 
     //Methods
     void stopAllSounds();

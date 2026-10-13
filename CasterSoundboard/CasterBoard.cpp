@@ -77,6 +77,7 @@ CasterBoard::CasterBoard(QWidget* parent) : QWidget(parent)
     for(int i=0; i < int_to_player_key->count(); i++){
         // Initialize player
         players->insert(int_to_player_key->value(i), new CasterPlayerWidget(boardWidget));
+        players->value(int_to_player_key->value(i))->actionProfile = [this] { return activeAction(); };
         players->value(int_to_player_key->value(i))->setHotKeyLetter(int_to_player_key->value(i));
 
         // Connect OSC Events
@@ -218,6 +219,7 @@ QDataStream &operator<<(QDataStream &ds, const CasterBoard &cb)
     foreach(QString _letter, cb.players->keys()){
         ds << *cb.players->value(_letter)->playerState;
     }
+    Actions::write(ds, cb.actionProfiles, cb.selectedAction);
     return ds;
 }
 
@@ -231,5 +233,6 @@ QDataStream &operator>>(QDataStream &ds, CasterBoard &cb)
     foreach(QString _letter, cb.players->keys()){
         ds >> *cb.players->value(_letter)->playerState;
     }
+    Actions::read(ds, cb.actionProfiles, cb.selectedAction);
     return ds;
 }

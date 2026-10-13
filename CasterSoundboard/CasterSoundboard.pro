@@ -165,3 +165,10 @@ macx {
 
 target.path = $$BINDIR
 INSTALLS += target
+
+SOURCES += actions/ActionProfile.cpp \
+    actions/ActionEngine.cpp \
+    actions/ActionsDialog.cpp
+HEADERS += actions/ActionProfile.h \
+    actions/ActionEngine.h \
+    actions/ActionsDialog.h

@@ -1,3 +1,8 @@
+#include "actions/ActionEngine.h"
+#include "actions/ActionsDialog.h"
+#include <QSaveFile>
+#include <QTabBar>
+#include <QCloseEvent>
 /*
  *
  *
@@ -154,6 +159,13 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent)
     mainToolbar->addWidget(stopAllSoundsButton);
     mainToolbar->addWidget(toggleAudioDuckingButton);
     mainToolbar->addWidget(openSoundControlButton);
+    auto actionsButton = new QPushButton;
+    actionsButton->setIcon(QIcon(":/res/img/actions.png"));
+    actionsButton->setIconSize(QSize(40,40));
+    actionsButton->setToolTip(tr("Actions"));
+    actionsButton->setAccessibleName(tr("Actions"));
+    actionsButton->setObjectName("actionsButton");
+    mainToolbar->addWidget(actionsButton);
     mainToolbar->addWidget(settingsButton);
     mainToolbar->addWidget(aboutButton);
 
@@ -178,6 +190,16 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent)
     mainTabContainer = new QTabWidget;
     mainTabContainer->setTabsClosable(true);
     layout->addWidget(mainTabContainer, 1);
+
+    connect(actionsButton, &QPushButton::clicked, this, [this] {
+        auto board = qobject_cast<CasterBoard*>(mainTabContainer->currentWidget());
+        if (!board) { showActionsError(tr("Open a tab before configuring Actions.")); return; }
+        if (Actions::editProfiles(board, this, mainTabContainer)) refreshActions();
+    });
+    connect(Actions::Engine::instance(), &Actions::Engine::error, this, [this](QString error) {
+        showActionsError(error);
+    });
+    refreshActions();
 
     // Status Bar
     main_statusbar = new QStatusBar;
@@ -230,6 +252,15 @@ MainWindow::~MainWindow()
 //SLOTS
 void MainWindow::mainTabContainerTabClosedRequested(int tabIndex)
 {
+    auto board = qobject_cast<CasterBoard*>(mainTabContainer->widget(tabIndex));
+    if (board && board->hasAttachedActions()) {
+        showActionsError(tr("Remove attached Actions before closing this tab.")); return;
+    }
+    if (board && board->actionsDirty) {
+        auto answer = QMessageBox::question(this, "Unsaved Actions", "Save the Caster profile before closing?",
+            QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel, QMessageBox::Save);
+        if (answer == QMessageBox::Cancel || (answer == QMessageBox::Save && !saveBoard(board, false))) return;
+    }
     //CONFIRM TAB CLOSE
     QMessageBox msgBox;
     msgBox.setText("Are you sure you want to close this tab");
@@ -260,6 +291,7 @@ void MainWindow::mainTabContainerTabClosedRequested(int tabIndex)
 void MainWindow::currentTabWasChanged(int tabIndex)
 {
     this->updateCurrentOSCTab(tabIndex);
+    refreshActions();
 }
 
 void MainWindow::updateCurrentOSCTab(int tabIndex)
@@ -547,88 +579,65 @@ bool MainWindow::loadProfile(const QString &filePath, QString &errorMessage)
     return true;
 }
 
-void MainWindow::saveTab()
+bool MainWindow::saveBoard(CasterBoard *board, bool saveAs)
 {
-    if(mainTabContainer->count() > 0)
-    {
-        if(dynamic_cast<CasterBoard*>(mainTabContainer->currentWidget())->profileFilePath->toUtf8() != ""){
-            /* Save */
-            QFile file;
-            QDataStream out;
-
-            file.setFileName(dynamic_cast<CasterBoard*>(mainTabContainer->currentWidget())->profileFilePath->toUtf8());
-            file.open(QIODevice::WriteOnly);
-            out.setDevice(&file);
-            out.setVersion(QDataStream::Qt_DefaultCompiledVersion);
-            out << *dynamic_cast<CasterBoard*>(mainTabContainer->currentWidget());
-            file.flush();
-            file.close();
-        } else {
-            /* Save As.. */
-            QString _filePath = QFileDialog::getSaveFileName(Q_NULLPTR, "Save Sound Board Profile As...", "",
-                                                             "Sound Board Profile (*.caster)");
-
-            if (!_filePath.isNull())
-            {
-                /* Save Profile As... */
-                QFile file;
-                QDataStream out;
-
-                file.setFileName(_filePath.toUtf8() + ".caster");
-                file.open(QIODevice::WriteOnly);
-                out.setDevice(&file);
-                out.setVersion(QDataStream::Qt_DefaultCompiledVersion);
-                out << *dynamic_cast<CasterBoard*>(mainTabContainer->currentWidget());
-                file.flush();
-                file.close();
-
-                //Set Save Path
-                *dynamic_cast<CasterBoard*>(mainTabContainer->currentWidget())->profileFilePath = _filePath.toUtf8() + ".caster";
-            }
-        }
-        if (CasterBoard *board = currentBoard()) {
-            if (!board->profileFilePath->isEmpty()) {
-                QSettings settings("CasterSoundboard", "CasterSoundboard");
-                settings.setValue("profile/lastOpenedProfile", *board->profileFilePath);
-            }
-        }
-        updateTabToolTips();
+    if (!board) return false;
+    QString path = *board->profileFilePath;
+    if (saveAs || path.isEmpty()) {
+        path = QFileDialog::getSaveFileName(this, "Save Caster Profile", path, "Caster Profile (*.caster)");
+        if (path.isEmpty()) return false;
+        if (!path.endsWith(".caster", Qt::CaseInsensitive)) path += ".caster";
     }
+    QSaveFile file(path);
+    if (!file.open(QIODevice::WriteOnly)) { showProfileError(this, file.errorString()); return false; }
+    QDataStream out(&file); out.setVersion(QDataStream::Qt_DefaultCompiledVersion);
+    out << *board;
+    if (out.status() != QDataStream::Ok) { file.cancelWriting(); showProfileError(this, "Cannot write Caster profile."); return false; }
+    if (!file.commit()) { showProfileError(this, file.errorString()); return false; }
+    *board->profileFilePath = path; board->actionsDirty = false; refreshActions();
+    QSettings settings("CasterSoundboard", "CasterSoundboard");
+    settings.setValue("profile/lastOpenedProfile", path);
+    updateTabToolTips();
+    return true;
+}
+void MainWindow::saveTab() { saveBoard(qobject_cast<CasterBoard*>(mainTabContainer->currentWidget()), false); }
+void MainWindow::saveAsTab() { saveBoard(qobject_cast<CasterBoard*>(mainTabContainer->currentWidget()), true); }
 
+void MainWindow::showActionsError(const QString &error)
+{
+    auto message = new QMessageBox(QMessageBox::Warning, tr("Actions"), error,
+                                  QMessageBox::Ok, this);
+    message->setTextFormat(Qt::PlainText);
+    message->setAttribute(Qt::WA_DeleteOnClose);
+    message->setModal(false);
+    message->show();
 }
 
-void MainWindow::saveAsTab()
+void MainWindow::refreshActions()
 {
-
-    if(mainTabContainer->count() > 0)
-    {
-        QString _filePath = QFileDialog::getSaveFileName(Q_NULLPTR, "Save Sound Board Profile As...", "",
-                                                         "Sound Board Profile (*.caster)");
-
-        if (!_filePath.isNull())
-        {
-            /* Save Profile As... */
-            QFile file;
-            QDataStream out;
-
-            file.setFileName(_filePath.toUtf8() + ".caster");
-            file.open(QIODevice::WriteOnly);
-            out.setDevice(&file);
-            out.setVersion(QDataStream::Qt_DefaultCompiledVersion);
-            out << *dynamic_cast<CasterBoard*>(mainTabContainer->currentWidget());
-            file.flush();
-            file.close();
-
-            //Set Save Path
-            *dynamic_cast<CasterBoard*>(mainTabContainer->currentWidget())->profileFilePath = _filePath.toUtf8() + ".caster";
-            QSettings settings("CasterSoundboard", "CasterSoundboard");
-            settings.setValue("profile/lastOpenedProfile", *dynamic_cast<CasterBoard*>(mainTabContainer->currentWidget())->profileFilePath);
-            updateTabToolTips();
+    for (int i = 0; i < mainTabContainer->count(); ++i) {
+        auto board = qobject_cast<CasterBoard*>(mainTabContainer->widget(i));
+        if (!board) continue;
+        const bool attached = board->hasAttachedActions();
+        for (auto side : {QTabBar::LeftSide, QTabBar::RightSide}) {
+            if (auto button = mainTabContainer->tabBar()->tabButton(i, side)) {
+                button->setEnabled(!attached);
+                button->setToolTip(attached ? "Remove attached Actions before closing this tab." : "Close tab");
+            }
         }
     }
-
-
-
+}
+void MainWindow::closeEvent(QCloseEvent *event)
+{
+    for (int i = 0; i < mainTabContainer->count(); ++i) {
+        auto board = qobject_cast<CasterBoard*>(mainTabContainer->widget(i));
+        if (!board || !board->actionsDirty) continue;
+        auto answer = QMessageBox::question(this, "Unsaved Actions", "Save changes to " + *board->soundBoardName + "?",
+            QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel, QMessageBox::Save);
+        if (answer == QMessageBox::Cancel || (answer == QMessageBox::Save && !saveBoard(board, false))) { event->ignore(); return; }
+    }
+    Actions::Engine::instance()->shutdown();
+    event->accept();
 }
 
 void MainWindow::renameCurrentTab()
@@ -655,6 +664,7 @@ void MainWindow::renameCurrentTab()
 
 void MainWindow::stopAllSounds()
 {
+    Actions::Engine::instance()->shutdown();
     // Iterate through boards
     for(int i = 0; i < mainTabContainer->count(); i++)
     {

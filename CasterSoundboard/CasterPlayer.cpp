@@ -1,3 +1,4 @@
+#include "actions/ActionEngine.h"
 /*
  *
  *
@@ -320,6 +321,7 @@ CasterPlayerWidget::CasterPlayerWidget(QWidget* parent) : QWidget(parent)
 
 CasterPlayerWidget::~CasterPlayerWidget()
 {
+    Actions::Engine::instance()->cancel(this);
     player->stop();
     player->setMedia(QUrl());
     delete playStateImage;
@@ -701,68 +703,43 @@ int CasterPlayerWidget::getProgressWidth()
 
 //Public Methods
 //===============Player Methods=================
+
+void CasterPlayerWidget::startPlayback(bool resume)
+{
+    volumeSlider->setValue(playerState->volume);
+    if (!resume) player->setPosition(playerState->startTime);
+    player->play();
+}
 void CasterPlayerWidget::playSound()
 {
-    if (player->source().isEmpty())
-        return;
-    volumeSlider->setValue(playerState->volume);
-    player->setPosition(playerState->startTime);
-    player->play();
+    if (player->source().isEmpty()) return;
+    Actions::Engine::instance()->start(this, actionProfile ? actionProfile() : Actions::Profile(), false);
 }
-
 void CasterPlayerWidget::resumeSound()
 {
-    if (player->source().isEmpty())
-        return;
-    volumeSlider->setValue(playerState->volume);
-    player->play();
+    if (player->source().isEmpty()) return;
+    Actions::Engine::instance()->start(this, actionProfile ? actionProfile() : Actions::Profile(), true);
 }
-
 void CasterPlayerWidget::pauseSound()
 {
-    volumeSlider->setValue(playerState->volume);
+    Actions::Engine::instance()->cancel(this);
     player->pause();
 }
-
 void CasterPlayerWidget::stopSound()
 {
-    volumeSlider->setValue(playerState->volume);
+    Actions::Engine::instance()->cancel(this);
     player->stop();
 }
-
 void CasterPlayerWidget::play_stop_toggle()
 {
-    // Toggle play state
-    // Play/Pause
-    //CURRENT PLAY STATE TOGGLE LOGIC
-    if(player->state() == QMediaPlayer::PlayingState)
-    {
-        stopSound();
-    }
-    else if (player->state() == QMediaPlayer::StoppedState
-             || player->state() == QMediaPlayer::PausedState)
-    {
-        playSound();
-    }
+    if (actionPending || player->state() == QMediaPlayer::PlayingState) stopSound();
+    else playSound();
 }
-
 void CasterPlayerWidget::resume_pause_toggle()
 {
-    // Toggle play state
-    // Play/Pause
-    //CURRENT PLAY STATE TOGGLE LOGIC
-    if(player->state() == QMediaPlayer::PlayingState)
-    {
-        pauseSound();
-    }
-    else if (player->state() == QMediaPlayer::StoppedState)
-    {
-        playSound();
-    }
-    else if(player->state() == QMediaPlayer::PausedState)
-    {
-        resumeSound();
-    }
+    if (actionPending || player->state() == QMediaPlayer::PlayingState) pauseSound();
+    else if (player->state() == QMediaPlayer::PausedState) resumeSound();
+    else playSound();
 }
 
 void CasterPlayerWidget::setLoopState(int state)
@@ -861,6 +838,7 @@ bool CasterPlayerWidget::openFiles(const QStringList& pathList)
             suffix == "mpg" ||
             suffix == "wmv")
     {
+        stopSound(); // Cancel pending Actions before replacing media.
         *soundFilePath = pathList[0];//Sets File Path
         //Update Player Save State
         *playerState->filePath = *soundFilePath; // Save file path to player state

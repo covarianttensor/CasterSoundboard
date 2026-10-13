@@ -23,6 +23,8 @@
 #ifndef CASTERPLAYER_H
 #define CASTERPLAYER_H
 #include <QWidget>
+#include <functional>
+#include "actions/ActionProfile.h"
 #include <QDropEvent>
 #include <QUrl>
 #include <QtMultimedia/QMediaPlayer>
@@ -83,7 +85,12 @@ class CasterPlayerWidget : public QWidget //inherit from QWidget
 public:
     //Constructor
     CasterPlayerWidget(QWidget* parent = 0); //don't forget to pass the parent
-    ~CasterPlayerWidget();
+
+    ~CasterPlayerWidget() override;
+    std::function<Actions::Profile()> actionProfile;
+    bool actionPending = false;
+    QString actionError;
+    void startPlayback(bool resume); // Called only after the action lead-in.
 
     //Set Properties
     void setHotKeyLetter(QString hotKey);

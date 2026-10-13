@@ -54,3 +54,7 @@ nix-build
 
 ### Screenshot ###
 ![Alt text](/docs/img/screenshot.png?raw=true "Running on Ubuntu")
+
+## Actions
+
+See [Actions](docs/actions.md) for functionality, setup and verification.

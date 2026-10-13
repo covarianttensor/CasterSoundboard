@@ -13,3 +13,5 @@ SOURCES += $$files($$CASTER/libs/*.cpp, true)
 HEADERS += $$CASTER/CasterBoard.h $$CASTER/CasterPlayer.h \
     $$CASTER/CasterLabelColorPicker.h $$CASTER/CasterCuePicker.h
 RESOURCES += $$CASTER/res.qrc
+SOURCES += $$CASTER/actions/ActionProfile.cpp $$CASTER/actions/ActionEngine.cpp
+HEADERS += $$CASTER/actions/ActionProfile.h $$CASTER/actions/ActionEngine.h
