@@ -30,6 +30,11 @@
 
 int main(int argc, char *argv[])
 {
+    // Default to FFmpeg backend for Qt 6 Multimedia on Linux across all distributions
+    if (qEnvironmentVariableIsEmpty("QT_MEDIA_BACKEND")) {
+        qputenv("QT_MEDIA_BACKEND", "ffmpeg");
+    }
+
     //START APPLICATION
     QApplication a(argc, argv);
 

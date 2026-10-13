@@ -32,7 +32,8 @@ jobs:
             qmake6 \
             qt6-base-dev \
             qt6-multimedia-dev \
-            qt6-wayland
+            qt6-wayland \
+            qt6-wayland-dev
 
       - name: Build AppImage
         run: |

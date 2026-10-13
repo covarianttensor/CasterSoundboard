@@ -36,17 +36,36 @@ if [ ! -x "${LINUXDEPLOY_QT}" ]; then
     chmod +x "${LINUXDEPLOY_QT}"
 fi
 
-# 3. Bundle Qt 6, Wayland, and Multimedia plugins into AppImage
+# 3. Copy Wayland platform plugins into AppDir if available
+QT_PLUGINS_DIR="$(${QMAKE_BIN} -query QT_INSTALL_PLUGINS 2>/dev/null || echo /usr/lib/x86_64-linux-gnu/qt6/plugins)"
+if [ -d "${QT_PLUGINS_DIR}/platforms" ]; then
+    mkdir -p "${APPDIR}/usr/plugins/platforms"
+    for wp in "${QT_PLUGINS_DIR}/platforms"/*wayland*.so; do
+        if [ -f "$wp" ]; then
+            cp -n "$wp" "${APPDIR}/usr/plugins/platforms/" || true
+        fi
+    done
+fi
+
 export PATH="${TOOLS_DIR}:${PATH}"
 export APPIMAGE_EXTRACT_AND_RUN=1
 export NO_STRIP=1
 export EXTRA_QT_PLUGINS="multimedia;wayland-decoration-client;wayland-graphics-integration-client;wayland-shell-integration"
 
 pushd "${REPO_ROOT}" >/dev/null
+# Deploy Qt plugins and libraries
 "${LINUXDEPLOY}" \
     --appdir "${APPDIR}" \
     --desktop-file "${APPDIR}/usr/share/applications/io.github.covarianttensor.CasterSoundboard.desktop" \
     --icon-file "${APPDIR}/usr/share/icons/hicolor/256x256/apps/io.github.covarianttensor.CasterSoundboard.png" \
-    --plugin qt \
+    --plugin qt
+
+# Clean up broken GStreamer plugin so QtMultimedia reliably uses bundled FFmpeg
+rm -f "${APPDIR}/usr/plugins/multimedia/libgstreamermediaplugin.so"
+rm -f "${APPDIR}/usr/lib/libgst"*
+
+# Generate final AppImage
+"${LINUXDEPLOY}" \
+    --appdir "${APPDIR}" \
     --output appimage
 popd >/dev/null
