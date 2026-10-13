@@ -27,6 +27,7 @@
 #include <QUrl>
 #include <QtMultimedia/QMediaPlayer>
 #include <QtMultimedia/QAudioOutput>
+#include <QtMultimedia/QAudioDevice>
 #include "libs/osc/composer/OscMessageComposer.h"
 
 //forward declarations
@@ -48,36 +49,21 @@ class CasterMediaPlayer : public QMediaPlayer
 public:
     using State = QMediaPlayer::PlaybackState;
 
-    explicit CasterMediaPlayer(QObject *parent = nullptr)
-        : QMediaPlayer(parent),
-          m_audioOutput(new QAudioOutput(this)),
-          m_volume(100)
-    {
-        setAudioOutput(m_audioOutput);
-        m_audioOutput->setVolume(1.0f);
-        connect(this, &QMediaPlayer::playbackStateChanged,
-                this, &CasterMediaPlayer::stateChanged);
-    }
+    explicit CasterMediaPlayer(QObject *parent = nullptr);
+    ~CasterMediaPlayer() override;
+
+    static void setGlobalAudioDevice(const QAudioDevice &device);
+    static QAudioDevice globalAudioDevice();
+
+    QAudioDevice audioDevice() const;
+    QAudioOutput *audioOutput() const { return m_audioOutput; }
 
     QMediaPlayer::PlaybackState state() const { return playbackState(); }
 
     int volume() const { return m_volume; }
 
-    void setVolume(int volume)
-    {
-        m_volume = qBound(0, volume, 100);
-        m_audioOutput->setVolume(m_volume / 100.0f);
-    }
-
-    void setMedia(const QUrl &url)
-    {
-        if (url.isEmpty() || (url.isLocalFile() && url.toLocalFile().isEmpty())) {
-            setSource(QUrl());
-        } else {
-            setSource(url);
-        }
-    }
-
+    void setVolume(int volume);
+    void setMedia(const QUrl &url);
     void setNotifyInterval(int) {}
 
 signals:
@@ -86,6 +72,9 @@ signals:
 private:
     QAudioOutput *m_audioOutput;
     int m_volume;
+
+    static QList<CasterMediaPlayer *> s_allPlayers;
+    static QAudioDevice s_globalAudioDevice;
 };
 
 class CasterPlayerWidget : public QWidget //inherit from QWidget

@@ -7,6 +7,9 @@
 #include <QInputDialog>
 #include <QMessageBox>
 #include <QTabWidget>
+#include <QComboBox>
+#include <QSettings>
+#include <QtMultimedia/QMediaDevices>
 #include <QTimer>
 #include <QUdpSocket>
 #include <QTest>
@@ -116,6 +119,48 @@ private slots:
         OscMessageComposer volume("/cbp/,/m/vol"); volume.pushFloat(0.42f);
         receiver.writeDatagram(*volume.getBytes(), QHostAddress::LocalHost, inboundPort);
         QTRY_COMPARE(player->player->volume(), 42);
+    }
+
+    void audioOutputDeviceSelection() {
+        QSettings settings("CasterSoundboard", "CasterSoundboard");
+        settings.remove("audio/outputDeviceId");
+
+        MainWindow window;
+        auto comboBox = window.findChild<QComboBox *>();
+        QVERIFY(comboBox);
+        QVERIFY(comboBox->count() >= 1);
+        QCOMPARE(comboBox->itemText(0), QString("Default System Output"));
+        QCOMPARE(comboBox->currentIndex(), 0);
+        QVERIFY(CasterMediaPlayer::globalAudioDevice().isNull());
+
+        const QList<QAudioDevice> devices = QMediaDevices::audioOutputs();
+        if (!devices.isEmpty()) {
+            // Select the first real device
+            comboBox->setCurrentIndex(1);
+            const QByteArray expectedId = devices.at(0).id();
+            QCOMPARE(settings.value("audio/outputDeviceId").toByteArray(), expectedId);
+            QCOMPARE(CasterMediaPlayer::globalAudioDevice().id(), expectedId);
+
+            // A newly created player should inherit this device
+            CasterMediaPlayer newPlayer;
+            QCOMPARE(newPlayer.audioDevice().id(), expectedId);
+
+            // Switching back to default output
+            comboBox->setCurrentIndex(0);
+            QVERIFY(settings.value("audio/outputDeviceId").toByteArray().isEmpty());
+            QVERIFY(CasterMediaPlayer::globalAudioDevice().isNull());
+
+            // Test persistence across new MainWindow instance
+            settings.setValue("audio/outputDeviceId", expectedId);
+            MainWindow restoredWindow;
+            auto restoredCombo = restoredWindow.findChild<QComboBox *>();
+            QVERIFY(restoredCombo);
+            QCOMPARE(restoredCombo->currentData().toByteArray(), expectedId);
+            QCOMPARE(CasterMediaPlayer::globalAudioDevice().id(), expectedId);
+
+            // Cleanup
+            settings.remove("audio/outputDeviceId");
+        }
     }
 };
 QTEST_MAIN(ApplicationTest)

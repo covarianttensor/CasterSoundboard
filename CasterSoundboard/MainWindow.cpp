@@ -30,6 +30,8 @@
 #include <QInputDialog>
 #include <QToolBar>
 #include <QPushButton>
+#include <QComboBox>
+#include <QLabel>
 #include <QTableWidget>
 #include <QVBoxLayout>
 #include <QGridLayout>
@@ -41,6 +43,11 @@
 #include <QStatusBar>
 #include <QUdpSocket>
 #include <QByteArray>
+#include <QSettings>
+#include <QSignalBlocker>
+#include <QMap>
+#include <QtMultimedia/QMediaDevices>
+#include <QtMultimedia/QAudioDevice>
 #include <QNetworkInterface>
 #include <QGuiApplication>
 #include <QStyleHints>
@@ -138,6 +145,21 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent)
     mainToolbar->addWidget(toggleAudioDuckingButton);
     mainToolbar->addWidget(openSoundControlButton);
     mainToolbar->addWidget(aboutButton);
+
+    // Audio Output Selector
+    mediaDevices = new QMediaDevices(this);
+    audioOutputLabel = new QLabel(tr("Output:"));
+    audioOutputLabel->setContentsMargins(8, 0, 4, 0);
+
+    audioOutputComboBox = new QComboBox;
+    audioOutputComboBox->setMinimumWidth(160);
+    audioOutputComboBox->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
+    audioOutputComboBox->setToolTip(tr("Select audio output device for playback"));
+
+    mainToolbar->addSeparator();
+    mainToolbar->addWidget(audioOutputLabel);
+    mainToolbar->addWidget(audioOutputComboBox);
+
     // Add toolbar to layout
     layout->addWidget(mainToolbar, 0, Qt::AlignLeft);
 
@@ -166,6 +188,9 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent)
     connect(stopAllSoundsButton,SIGNAL(clicked()),this,SLOT(stopAllSounds()));
     connect(toggleAudioDuckingButton,SIGNAL(clicked()),this,SLOT(toggleAudioDucking()));
     connect(openSoundControlButton, SIGNAL(clicked()), this, SLOT(openOSCSettings()) );
+    populateAudioOutputs();
+    connect(mediaDevices, &QMediaDevices::audioOutputsChanged, this, &MainWindow::populateAudioOutputs);
+    connect(audioOutputComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &MainWindow::onAudioOutputChanged);
 #if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
     if (QGuiApplication::styleHints()) {
         connect(QGuiApplication::styleHints(), &QStyleHints::colorSchemeChanged,
@@ -464,6 +489,88 @@ void MainWindow::setAudioDuckingState(int state, bool notifyOSC)
 void MainWindow::toggleAudioDucking()
 {
     setAudioDuckingState(audio_duck_state == 0 ? 1 : 0, true);
+}
+
+void MainWindow::populateAudioOutputs()
+{
+    if (!audioOutputComboBox)
+        return;
+
+    QSignalBlocker blocker(audioOutputComboBox);
+
+    // Prefer currently selected ID if combobox was already populated,
+    // otherwise fallback to saved QSettings
+    QByteArray activeId = audioOutputComboBox->currentData().toByteArray();
+    if (activeId.isEmpty()) {
+        QSettings settings("CasterSoundboard", "CasterSoundboard");
+        activeId = settings.value("audio/outputDeviceId").toByteArray();
+    }
+
+    audioOutputComboBox->clear();
+    audioOutputComboBox->addItem(tr("Default System Output"), QByteArray());
+
+    const QList<QAudioDevice> devices = QMediaDevices::audioOutputs();
+
+    // Disambiguate duplicate descriptions if any exist
+    QMap<QString, int> descCounts;
+    for (const QAudioDevice &dev : devices) {
+        descCounts[dev.description()]++;
+    }
+    QMap<QString, int> descIndex;
+
+    int targetIndex = 0;
+    for (const QAudioDevice &dev : devices) {
+        QString label = dev.description();
+        if (descCounts[dev.description()] > 1) {
+            descIndex[dev.description()]++;
+            label += QString(" (%1)").arg(descIndex[dev.description()]);
+        }
+        if (dev.isDefault()) {
+            label += tr(" (Default)");
+        }
+        audioOutputComboBox->addItem(label, dev.id());
+        if (!activeId.isEmpty() && dev.id() == activeId) {
+            targetIndex = audioOutputComboBox->count() - 1;
+        }
+    }
+
+    audioOutputComboBox->setCurrentIndex(targetIndex);
+
+    // Apply the resolved device to all players
+    QByteArray chosenId = audioOutputComboBox->currentData().toByteArray();
+    QAudioDevice chosenDevice;
+    if (!chosenId.isEmpty()) {
+        for (const QAudioDevice &dev : devices) {
+            if (dev.id() == chosenId) {
+                chosenDevice = dev;
+                break;
+            }
+        }
+    }
+    CasterMediaPlayer::setGlobalAudioDevice(chosenDevice);
+}
+
+void MainWindow::onAudioOutputChanged(int index)
+{
+    Q_UNUSED(index);
+    if (!audioOutputComboBox)
+        return;
+
+    const QByteArray selectedId = audioOutputComboBox->currentData().toByteArray();
+    QSettings settings("CasterSoundboard", "CasterSoundboard");
+    settings.setValue("audio/outputDeviceId", selectedId);
+
+    QAudioDevice chosenDevice;
+    if (!selectedId.isEmpty()) {
+        const QList<QAudioDevice> devices = QMediaDevices::audioOutputs();
+        for (const QAudioDevice &dev : devices) {
+            if (dev.id() == selectedId) {
+                chosenDevice = dev;
+                break;
+            }
+        }
+    }
+    CasterMediaPlayer::setGlobalAudioDevice(chosenDevice);
 }
 
 // Tab Switching

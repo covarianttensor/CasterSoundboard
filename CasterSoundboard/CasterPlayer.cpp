@@ -21,6 +21,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 #include "CasterPlayer.h"
+#include <QtMultimedia/QMediaDevices>
 #include "CasterLabelColorPicker.h"
 #include "CasterCuePicker.h"
 #include "CasterPlayerState.h"
@@ -48,6 +49,68 @@
 #include <QGraphicsDropShadowEffect>
 #include <QFileDialog>
 #include "libs/osc/composer/OscMessageComposer.h"
+
+QList<CasterMediaPlayer *> CasterMediaPlayer::s_allPlayers;
+QAudioDevice CasterMediaPlayer::s_globalAudioDevice;
+
+CasterMediaPlayer::CasterMediaPlayer(QObject *parent)
+    : QMediaPlayer(parent),
+      m_audioOutput(new QAudioOutput(this)),
+      m_volume(100)
+{
+    setAudioOutput(m_audioOutput);
+    m_audioOutput->setVolume(1.0f);
+    if (!s_globalAudioDevice.isNull()) {
+        m_audioOutput->setDevice(s_globalAudioDevice);
+    }
+    s_allPlayers.append(this);
+
+    connect(this, &QMediaPlayer::playbackStateChanged,
+            this, &CasterMediaPlayer::stateChanged);
+}
+
+CasterMediaPlayer::~CasterMediaPlayer()
+{
+    s_allPlayers.removeAll(this);
+}
+
+void CasterMediaPlayer::setVolume(int volume)
+{
+    m_volume = qBound(0, volume, 100);
+    m_audioOutput->setVolume(m_volume / 100.0f);
+}
+
+void CasterMediaPlayer::setMedia(const QUrl &url)
+{
+    if (url.isEmpty() || (url.isLocalFile() && url.toLocalFile().isEmpty())) {
+        setSource(QUrl());
+    } else {
+        setSource(url);
+    }
+}
+
+void CasterMediaPlayer::setGlobalAudioDevice(const QAudioDevice &device)
+{
+    s_globalAudioDevice = device;
+    const QAudioDevice target = device.isNull() ? QMediaDevices::defaultAudioOutput() : device;
+    if (!target.isNull()) {
+        for (CasterMediaPlayer *player : s_allPlayers) {
+            if (player && player->m_audioOutput) {
+                player->m_audioOutput->setDevice(target);
+            }
+        }
+    }
+}
+
+QAudioDevice CasterMediaPlayer::globalAudioDevice()
+{
+    return s_globalAudioDevice;
+}
+
+QAudioDevice CasterMediaPlayer::audioDevice() const
+{
+    return m_audioOutput ? m_audioOutput->device() : QAudioDevice();
+}
 
 //Constructor
 CasterPlayerWidget::CasterPlayerWidget(QWidget* parent) : QWidget(parent)

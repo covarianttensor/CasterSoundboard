@@ -36,6 +36,9 @@ class QUdpSocket;
 class QByteArray;
 class OscMessage;
 class CasterOSCServerConfigPicker;
+class QComboBox;
+class QLabel;
+class QMediaDevices;
 
 class MainWindow : public QWidget //inherit from QWidget
 {
@@ -106,6 +109,10 @@ private:
     QStatusBar *main_statusbar;
     // UDP Server
     QUdpSocket *socket;
+    // Audio Output
+    QMediaDevices *mediaDevices = nullptr;
+    QLabel *audioOutputLabel = nullptr;
+    QComboBox *audioOutputComboBox = nullptr;
 
 
 signals:
@@ -122,6 +129,8 @@ public slots:
     void stopAllSounds();
     void renameCurrentTab();
     void toggleAudioDucking();
+    void populateAudioOutputs();
+    void onAudioOutputChanged(int index);
     // Tab Switching
     void switchToNextTab();
     void switchToPrevTab();

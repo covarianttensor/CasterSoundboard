@@ -37,6 +37,8 @@ int main(int argc, char *argv[])
 
     //START APPLICATION
     QApplication a(argc, argv);
+    a.setOrganizationName("CasterSoundboard");
+    a.setApplicationName("CasterSoundboard");
 
     QCommandLineParser parser;
     parser.setApplicationDescription("CasterSoundboard");
