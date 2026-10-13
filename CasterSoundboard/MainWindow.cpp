@@ -21,6 +21,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 #include "MainWindow.h"
+#include <QSaveFile>
+#include <QCloseEvent>
 #include <memory>
 #include "CasterBoard.h"
 #include "CasterPlayer.h"
@@ -240,6 +242,7 @@ void MainWindow::mainTabContainerTabClosedRequested(int tabIndex)
     if(msgBox.exec() == QMessageBox::Yes)
     {
         CasterBoard *toBeDeleted = dynamic_cast<CasterBoard*>(mainTabContainer->widget(tabIndex));
+        if (!rememberWindowSize(toBeDeleted)) return;
         //CLOSE REQUESTED TAB
         if(toBeDeleted) {
             toBeDeleted->stopAllSounds();
@@ -544,7 +547,58 @@ bool MainWindow::loadProfile(const QString &filePath, QString &errorMessage)
     const int index = mainTabContainer->addTab(cb, *cb->soundBoardName);
     mainTabContainer->setCurrentIndex(index);
     updateTabToolTips();
+    if (!cb->mainWindowSize.isEmpty()) resize(cb->mainWindowSize);
     return true;
+}
+
+QSize MainWindow::profileWindowSize() const
+{
+    return (isMaximized() || isFullScreen() || isMinimized()) ? normalGeometry().size() : size();
+}
+
+bool MainWindow::rememberWindowSize(CasterBoard *board)
+{
+    // Headless runs and unnamed boards must not persist window geometry.
+    if (!isVisible() || !board || board->profileFilePath->isEmpty()) return true;
+    const QString path = *board->profileFilePath;
+    QFile input(path);
+    if (!input.open(QIODevice::ReadOnly)) { showProfileError(this, input.errorString()); return false; }
+    // Read the saved board, not the live board: automatic size persistence must
+    // not save edits the user has not saved (including edits to labels or sounds).
+    CasterBoard saved;
+    QDataStream in(&input);
+    in.setVersion(QDataStream::Qt_DefaultCompiledVersion);
+    in >> saved;
+    input.close();
+    if (in.status() != QDataStream::Ok) {
+        showProfileError(this, tr("Cannot read profile:\n") + path);
+        return false;
+    }
+    saved.mainWindowSize = profileWindowSize();
+    QSaveFile output(path);
+    if (!output.open(QIODevice::WriteOnly)) { showProfileError(this, output.errorString()); return false; }
+    QDataStream out(&output);
+    out.setVersion(QDataStream::Qt_DefaultCompiledVersion);
+    out << saved;
+    if (out.status() != QDataStream::Ok) {
+        output.cancelWriting();
+        showProfileError(this, tr("Cannot save window size to profile:\n") + path);
+        return false;
+    }
+    if (!output.commit()) { showProfileError(this, output.errorString()); return false; }
+    board->mainWindowSize = saved.mainWindowSize;
+    return true;
+}
+
+void MainWindow::closeEvent(QCloseEvent *event)
+{
+    for (int i = 0; i < mainTabContainer->count(); ++i) {
+        if (!rememberWindowSize(qobject_cast<CasterBoard*>(mainTabContainer->widget(i)))) {
+            event->ignore();
+            return;
+        }
+    }
+    event->accept();
 }
 
 void MainWindow::saveTab()
@@ -560,6 +614,7 @@ void MainWindow::saveTab()
             file.open(QIODevice::WriteOnly);
             out.setDevice(&file);
             out.setVersion(QDataStream::Qt_DefaultCompiledVersion);
+            currentBoard()->mainWindowSize = profileWindowSize();
             out << *dynamic_cast<CasterBoard*>(mainTabContainer->currentWidget());
             file.flush();
             file.close();
@@ -578,6 +633,7 @@ void MainWindow::saveTab()
                 file.open(QIODevice::WriteOnly);
                 out.setDevice(&file);
                 out.setVersion(QDataStream::Qt_DefaultCompiledVersion);
+                currentBoard()->mainWindowSize = profileWindowSize();
                 out << *dynamic_cast<CasterBoard*>(mainTabContainer->currentWidget());
                 file.flush();
                 file.close();
@@ -615,6 +671,7 @@ void MainWindow::saveAsTab()
             file.open(QIODevice::WriteOnly);
             out.setDevice(&file);
             out.setVersion(QDataStream::Qt_DefaultCompiledVersion);
+            currentBoard()->mainWindowSize = profileWindowSize();
             out << *dynamic_cast<CasterBoard*>(mainTabContainer->currentWidget());
             file.flush();
             file.close();

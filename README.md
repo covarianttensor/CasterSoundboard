@@ -14,6 +14,19 @@ CasterSoundboard is written in C++ Qt6.
 + [Control CasterSoundboard with your phone or tablet via a network](https://github.com/covarianttensor/CasterSoundboard/wiki/Guide:-How-to-Control-CasterSoundboard-Using-Your-Phone-or-Tablet "CasterSoundboard's Wiki")
 ---
 
+## Profile window size
+
+The main window size is stored only in saved `.caster` profiles. Saving a
+profile, closing its tab, or closing the visible app updates that size;
+loading the profile restores it. When several saved tabs are open, closing
+the app stores the final window size in each profile. Automatic size updates
+preserve saved soundboard content without saving other pending edits.
+Unsaved tabs and headless runs do not automatically store a window size.
+Maximized, minimized, and fullscreen windows store their normal window size.
+Older profiles without size metadata retain the existing window size on load.
+
+See [window-size validation](docs/window-size-persistence.md) for test commands.
+
 ## Libraries Used
 + [osc-cpp-qt](https://github.com/MugenSAS/osc-cpp-qt)
 ---
