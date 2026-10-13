@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>Set up audio device management</title></head><body>
+<h2>Audio device management setup</h2>
+<p>If device management is unavailable, you can still play sounds using the <b>Output</b> selector in the main window.
+To manage devices and share microphone/soundboard audio here, CasterSoundboard needs:</p>
+<ul>
+<li><b>pactl</b>, the command-line tool used to control your desktop audio, with JSON support.</li>
+<li>A running <b>PulseAudio</b> server, or <b>PipeWire with its PulseAudio compatibility service (pipewire-pulse)</b>.
+PipeWire alone does not provide this connection.</li>
+</ul>
+<p>The Diagnostics section below shows the actual failure. A connection error does not necessarily mean packages are missing.</p>
+<h3>1. Check what is missing</h3>
+<p>Run these in a terminal as your normal desktop user:</p>
+<pre>command -v pactl
+pactl info
+pactl --format=json list sinks</pre>
+<p>If pactl is not found, install the client tools. If it reports a connection error,
+check your desktop audio service using the distribution guide below. If JSON is unsupported,
+update the client tools and audio server using your distribution's packages.</p>
+<h3>2. Installation examples for Ubuntu and Debian</h3>
+<p>If only pactl is missing, install its tools package. This also works with an existing PipeWire desktop:</p>
+<pre>sudo apt update
+sudo apt install pulseaudio-utils</pre>
+<p>If you are setting up a PipeWire audio desktop on <b>Ubuntu 24.04 or newer, or Debian 12 or newer</b>,
+the audio metapackage supplies the PulseAudio compatibility service and session manager:</p>
+<pre>sudo apt install pipewire-audio pulseaudio-utils</pre>
+<p>This can replace PulseAudio packages. Read your distribution's guide and review apt's proposed changes first.
+An already working PulseAudio desktop does not need to switch to PipeWire.</p>
+<p>For a system intentionally using native PulseAudio instead, the alternative is:</p>
+<pre>sudo apt install pulseaudio pulseaudio-utils</pre>
+<p>Choose the setup appropriate to your distribution and desktop, then follow its activation or login/reboot instructions.
+These commands are examples for you to run; CasterSoundboard does not install software.</p>
+<h3>3. Distribution-maintained guides</h3>
+<ul>
+<li><a href="https://wiki.ubuntu.com/Audio_on_Ubuntu">Ubuntu: how desktop audio works</a></li>
+<li><a href="https://wiki.debian.org/PipeWire">Debian: PipeWire installation and configuration</a></li>
+<li><a href="https://docs.fedoraproject.org/en-US/quick-docs/how-to-troubleshoot-sound-problems/">Fedora: troubleshooting sound problems</a></li>
+<li><a href="https://wiki.nixos.org/wiki/PipeWire">NixOS: PipeWire configuration and missing pactl</a></li>
+</ul>
+<p>The apt examples do not apply to Fedora or NixOS. Follow their own package and service instructions.
+Installing CasterSoundboard with Nix on another distribution does not configure that distribution's audio service.</p>
+<h3>4. Try again</h3>
+<p>After <code>pactl info</code> and the JSON check succeed, click <b>Refresh devices</b>.
+The device controls will replace this guide, and the main-window Output selector will disappear.</p>
+<p>If the commands work in your terminal but not here, the app may have a different PATH or be sandboxed
+(for example, Flatpak). Its package must include pactl and allow access to the desktop audio service;
+installing packages only on the host may not fix that. See Diagnostics below.</p>
+</body></html>

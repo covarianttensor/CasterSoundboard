@@ -126,7 +126,7 @@ private slots:
         settings.remove("audio/outputDeviceId");
 
         MainWindow window;
-        auto comboBox = window.findChild<QComboBox *>();
+        auto comboBox = window.findChild<QComboBox *>("audioOutputComboBox");
         QVERIFY(comboBox);
         QVERIFY(comboBox->count() >= 1);
         QCOMPARE(comboBox->itemText(0), QString("Default System Output"));
@@ -153,7 +153,7 @@ private slots:
             // Test persistence across new MainWindow instance
             settings.setValue("audio/outputDeviceId", expectedId);
             MainWindow restoredWindow;
-            auto restoredCombo = restoredWindow.findChild<QComboBox *>();
+            auto restoredCombo = restoredWindow.findChild<QComboBox *>("audioOutputComboBox");
             QVERIFY(restoredCombo);
             QCOMPARE(restoredCombo->currentData().toByteArray(), expectedId);
             QCOMPARE(CasterMediaPlayer::globalAudioDevice().id(), expectedId);
