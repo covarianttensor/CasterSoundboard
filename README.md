@@ -2,7 +2,6 @@
 
 CasterSoundboard
 ================
-[![Snap Status](https://build.snapcraft.io/badge/JupiterBroadcasting/CasterSoundboard.svg)](https://build.snapcraft.io/user/JupiterBroadcasting/CasterSoundboard)
 [![License](https://img.shields.io/github/license/JupiterBroadcasting/CasterSoundboard.svg)](https://github.com/JupiterBroadcasting/CasterSoundboard/blob/master/LICENSE)
 
 A soundboard for hot-keying and playing back sounds. (For podcasting)
@@ -20,16 +19,6 @@ CasterSoundboard is written in C++ Qt5.
 ---
 
 ## How to Install
-
-### Snap
-
-Install CasterSoundboard in seconds on [Ubuntu and other snap supported Linux 
-distributions](https://snapcraft.io/docs/core/install) with:
-
-    snap install castersoundboard
-
-Installing a snap is very quick. Snaps are secure. They are isolated with all 
-of their dependencies. Snaps also auto update when a new version is released.
 
 ### Arch AUR
 Thanks to [@j605](https://github.com/j605 "Jagannathan Tiruvallur Eachambadi") for creating a `PKGBUILD` for people on Arch who want to try this software:
