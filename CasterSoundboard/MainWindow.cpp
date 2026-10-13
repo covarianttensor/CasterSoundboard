@@ -166,10 +166,12 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent)
     connect(stopAllSoundsButton,SIGNAL(clicked()),this,SLOT(stopAllSounds()));
     connect(toggleAudioDuckingButton,SIGNAL(clicked()),this,SLOT(toggleAudioDucking()));
     connect(openSoundControlButton, SIGNAL(clicked()), this, SLOT(openOSCSettings()) );
+#if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
     if (QGuiApplication::styleHints()) {
         connect(QGuiApplication::styleHints(), &QStyleHints::colorSchemeChanged,
                 this, [this](Qt::ColorScheme) { this->updateThemeIcons(); });
     }
+#endif
 
     // Properties
 
@@ -873,6 +875,7 @@ QString MainWindow::get_local_ip(){
 
 bool MainWindow::isDarkTheme() const
 {
+#if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
     if (const QStyleHints *hints = QGuiApplication::styleHints()) {
         const Qt::ColorScheme scheme = hints->colorScheme();
         if (scheme == Qt::ColorScheme::Dark)
@@ -880,6 +883,7 @@ bool MainWindow::isDarkTheme() const
         if (scheme == Qt::ColorScheme::Light)
             return false;
     }
+#endif
     const QPalette pal = this->palette();
     return pal.color(QPalette::Window).lightness() < pal.color(QPalette::WindowText).lightness();
 }
