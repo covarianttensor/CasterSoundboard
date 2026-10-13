@@ -26,6 +26,11 @@
   <url type="bugtracker">https://github.com/covarianttensor/CasterSoundboard/issues</url>
   <content_rating type="oars-1.1" />
   <releases>
+    <release version="0.7.0" date="2026-10-13">
+      <description>
+        <p>Added audio output device selection dropdown with dynamic routing and persistent device preferences.</p>
+      </description>
+    </release>
     <release version="0.6.0" date="2026-10-13" />
   </releases>
   <update_contact>oscar.cerna@outlook.com</update_contact>
