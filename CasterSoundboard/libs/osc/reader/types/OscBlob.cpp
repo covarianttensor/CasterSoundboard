@@ -52,19 +52,18 @@ QByteArray& OscBlob::get()
 	try
 	{
 		mBlobSize = mPacket->getInt(mPos);
+        // Validate the length and padding before allocating from network input.
+        const qint32 remaining = mPacket->getCapacity() - mPos - 4;
+        if (mBlobSize < 0 || mBlobSize > remaining)
+            throw BufferUnderflowException();
+        const qint32 padding = (4 - (mBlobSize % 4)) % 4;
+        if (padding > remaining - mBlobSize)
+            throw BufferUnderflowException();
 
-        if (mBlobSize != 0)
-        {
-            mData = QByteArray(mBlobSize, 0);
-            mPacket->setPosition(mPos + 4);
-            mPacket->get(&mData, 0, mBlobSize);
-
-            qint32 rem = 4 - (mBlobSize % 4);
-            if (rem == 4)
-                rem = 0;
-
-            mPacket->setPosition(mPos + 4 + mBlobSize + rem);
-        }
+        mData = QByteArray(mBlobSize, 0);
+        mPacket->setPosition(mPos + 4);
+        mPacket->get(&mData, 0, mBlobSize);
+        mPacket->setPosition(mPos + 4 + mBlobSize + padding);
 
 		return mData;
 	}

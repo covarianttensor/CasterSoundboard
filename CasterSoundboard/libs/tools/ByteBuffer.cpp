@@ -23,6 +23,7 @@
 #include <libs/tools/ByteBuffer.h>
 
 #include <QtCore/QString>
+#include <cstring>
 
 ByteBuffer::ByteBuffer(QByteArray* src, bool owner)
 : mArray(src)
@@ -197,7 +198,9 @@ qint32 ByteBuffer::compareTo(ByteBuffer* otherBuffer)
  */
 char ByteBuffer::get()
 {
-	return (mArray->data()[mPosition++]);
+	if (mPosition < 0 || mPosition >= mLimit)
+		throw BufferUnderflowException();
+	return mArray->data()[mPosition++];
 }
 
 /**
@@ -273,8 +276,9 @@ ByteBuffer* ByteBuffer::get(QByteArray* dest, qint32 off, qint32 len)
  */
 char ByteBuffer::get(qint32 index)
 {
-	char* s = mArray->data();
-	return s[index];
+	if (index < 0 || index >= mLimit)
+		throw IndexOutOfBoundsException();
+	return mArray->data()[index];
 }
 
 /**
@@ -426,7 +430,10 @@ qint32 ByteBuffer::getInt()
  */
 qint32 ByteBuffer::getInt(qint32 index)
 {
-	qint32 data = *(qint32*)(mArray->data() + index);
+	if (index < 0 || index > mLimit - 4)
+		throw IndexOutOfBoundsException();
+	qint32 data;
+	std::memcpy(&data, mArray->constData() + index, sizeof(data));
 	if (mOrder == ByteOrder::endianness())
 		return data;
 	else
@@ -467,7 +474,10 @@ qint64 ByteBuffer::getLong()
  */
 qint64 ByteBuffer::getLong(qint32 index)
 {
-	qint64 data = *(qint64*)(mArray->data() + index);
+	if (index < 0 || index > mLimit - 8)
+		throw IndexOutOfBoundsException();
+	qint64 data;
+	std::memcpy(&data, mArray->constData() + index, sizeof(data));
 	if (mOrder == ByteOrder::endianness())
 		return data;
 	else
@@ -510,7 +520,10 @@ short ByteBuffer::getShort()
  */
 short ByteBuffer::getShort(qint32 index)
 {
-	short data = *(short*)(mArray->data() + index);
+	if (index < 0 || index > mLimit - 2)
+		throw IndexOutOfBoundsException();
+	short data;
+	std::memcpy(&data, mArray->constData() + index, sizeof(data));
 	if (mOrder == ByteOrder::endianness())
 		return data;
 	else

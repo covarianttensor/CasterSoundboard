@@ -41,6 +41,8 @@
 #include <QUdpSocket>
 #include <QByteArray>
 #include <QNetworkInterface>
+#include <QDebug>
+#include <memory>
 #include "CasterOSCServerConfigPicker.h"
 #include "libs/osc/reader/OscReader.h"
 #include "libs/osc/reader/OscMessage.h"
@@ -599,45 +601,63 @@ void MainWindow::openOSCSettings()
 
 void MainWindow::executeOSCCommand()
 {
-    // Get UDP Datagram //
-    QByteArray datagram;
-    datagram.resize(socket->pendingDatagramSize());
-    QHostAddress sender;
-    quint16 senderPort;
-    socket->readDatagram(datagram.data(), datagram.size(), &sender, &senderPort);
-    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-    // Read OSC Packet //
-    OscReader reader(&datagram);
-    // Check if direct message (we are ignoring bundles)
-    if(reader.getMessage() != 0){
-        // Get Message //
-        OscMessage* msg = reader.getMessage();
-        QString address = msg->getAddress();
-        QStringList address_params = address.split("/");
-        //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-        // Print OSC Command //
-        QString values("");
-        for(int i = 0; i < (int)msg->getNumValues(); i++){
-            if(i == 0){ values = msg->getValue(i)->toString(); } else { values += " | " + msg->getValue(i)->toString(); }
+    // OSC is transported via UDP. Limit allocations and drain queued datagrams.
+    const qint64 maxPacketSize = 8192;
+    while (socket->hasPendingDatagrams()) {
+        const qint64 size = socket->pendingDatagramSize();
+        if (size < 8 || size > maxPacketSize || (size % 4) != 0) {
+            char discard;
+            if (socket->readDatagram(&discard, 1) < 0)
+                break; // Avoid spinning on a socket error; the datagram is otherwise discarded.
+            qWarning() << "OSC: rejected packet size" << size;
+            continue;
         }
-        main_statusbar->showMessage("[OSC Message] Address: " + address.toUtf8() + " Value(s): " + values.toUtf8() , 500);
-        //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-        // Resolve OSC Address //
-        if(address_params.value(1) == "castersoundboard")
-        {
-            // Is One-Way Address
-            this->executeOneWayOSCCommand(msg, address_params);
-        }//END_IF CASTERSOUNDBOARD
-        else {//TWO WAY ADDRESS
-            this->executeTwoWayOSCCommand(msg, address_params);
+        QByteArray datagram(static_cast<int>(size), 0);
+        if (socket->readDatagram(datagram.data(), datagram.size()) != size) {
+            qWarning() << "OSC: failed to read datagram";
+            break;
         }
-        delete msg; return;//EXIT
-    }//END_IF DIRECT MESSAGE
-    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+        // The application only handles direct OSC messages, not bundles.
+        // Check the address and type-tag strings before invoking the parser.
+        if (datagram.at(0) != '/')
+            continue;
+        const int addressEnd = datagram.indexOf('\0');
+        if (addressEnd < 1)
+            continue;
+        const int tagsStart = (addressEnd + 4) & ~3;
+        if (tagsStart >= datagram.size() || datagram.at(tagsStart) != ',' ||
+            datagram.indexOf('\0', tagsStart) < 0) {
+            qWarning() << "OSC: invalid address or type tags";
+            continue;
+        }
+
+        try {
+            OscReader reader(&datagram);
+            std::unique_ptr<OscMessage> msg(reader.getMessage());
+            if (!msg || msg->getNumValues() == 0)
+                continue;
+
+            QString address = msg->getAddress();
+            QStringList address_params = address.split("/");
+            QString values("");
+            for (size_t i = 0; i < msg->getNumValues(); ++i) {
+                if (i != 0) values += " | ";
+                values += msg->getValue(i)->toString();
+            }
+            main_statusbar->showMessage("[OSC Message] Address: " + address +
+                                        " Value(s): " + values, 500);
+
+            if (address_params.value(1) == "castersoundboard")
+                executeOneWayOSCCommand(msg.get(), address_params);
+            else
+                executeTwoWayOSCCommand(msg.get(), address_params);
+        } catch (...) {
+            // Never allow malformed network input to escape a Qt slot.
+            qWarning() << "OSC: rejected malformed packet";
+        }
+    }
 }
 
 void MainWindow::executeOneWayOSCCommand(OscMessage *msg, QStringList address_params)
