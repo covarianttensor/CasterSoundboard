@@ -63,10 +63,13 @@ protected:
     //METHODS
     void keyReleaseEvent(QKeyEvent *event);//Capture Hot Keys
     void changeEvent(QEvent *event) override;
+    void closeEvent(QCloseEvent *event) override;
 
     //WIDGETS
 
 private:
+    bool rememberWindowSize(CasterBoard *board);
+    QSize profileWindowSize() const;
     //PROPERTIES
     int audio_duck_state = 0;
     int previous_tab_index = 0;

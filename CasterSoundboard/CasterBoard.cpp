@@ -218,6 +218,8 @@ QDataStream &operator<<(QDataStream &ds, const CasterBoard &cb)
     foreach(QString _letter, cb.players->keys()){
         ds << *cb.players->value(_letter)->playerState;
     }
+    if (!cb.mainWindowSize.isEmpty())
+        ds << quint32(0x4357535a) << quint32(1) << cb.mainWindowSize; // CWSZ v1
     return ds;
 }
 
@@ -230,6 +232,14 @@ QDataStream &operator>>(QDataStream &ds, CasterBoard &cb)
     // Iterate through players
     foreach(QString _letter, cb.players->keys()){
         ds >> *cb.players->value(_letter)->playerState;
+    }
+    cb.mainWindowSize = QSize();
+    // Older profiles end after the player states.
+    if (ds.status() == QDataStream::Ok && !ds.device()->atEnd()) {
+        quint32 magic = 0, version = 0;
+        ds >> magic >> version >> cb.mainWindowSize;
+        if (magic != 0x4357535a || version != 1 || cb.mainWindowSize.isEmpty())
+            ds.setStatus(QDataStream::ReadCorruptData);
     }
     return ds;
 }
