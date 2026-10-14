@@ -6,6 +6,7 @@
 #include <QApplication>
 #include <QInputDialog>
 #include <QMessageBox>
+#include <QAbstractButton>
 #include <QTabWidget>
 #include <QComboBox>
 #include <QSettings>
@@ -253,7 +254,10 @@ private slots:
         QTimer::singleShot(0, [] {
             auto dialog = qobject_cast<QMessageBox *>(QApplication::activeModalWidget());
             Q_ASSERT(dialog);
-            dialog->done(QMessageBox::Yes);
+            if (auto yes = dialog->button(QMessageBox::Yes))
+                yes->click();
+            else
+                dialog->done(QMessageBox::Yes);
         });
         window.mainTabContainerTabClosedRequested(0);
         QCOMPARE(tabs->count(), 0);
