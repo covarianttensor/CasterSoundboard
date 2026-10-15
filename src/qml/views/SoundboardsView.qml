@@ -132,12 +132,14 @@ Item {
                 property real cellH: Math.max(160, 230 * root.tileScale)
                 property int totalTiles: root.currentGrid ? (root.currentGrid.count + 1) : 0
                 property int minCols: totalTiles >= 2 ? 2 : 1
-                property real availW: soundboardFlickable.width - (soundboardScrollbarV.visible ? soundboardScrollbarV.width : 0)
-                property real availH: soundboardFlickable.height - (soundboardScrollbarH.visible ? soundboardScrollbarH.height : 0)
-                property int cols: Math.max(minCols, Math.floor(availW / cellW))
+                // Reserve 28px for vertical scrollbar to prevent cyclic layout jitter
+                property int cols: Math.max(minCols, Math.floor((soundboardFlickable.width - 28) / cellW))
 
-                contentWidth: Math.max(availW, soundboardGrid.width)
-                contentHeight: Math.max(availH, soundboardGrid.height)
+                readonly property bool vNeeded: soundboardGrid.height > soundboardFlickable.height
+                readonly property bool hNeeded: soundboardGrid.width > (soundboardFlickable.width - (vNeeded ? 28 : 0))
+
+                contentWidth: Math.max(soundboardFlickable.width, soundboardGrid.width + (vNeeded ? 28 : 0))
+                contentHeight: Math.max(soundboardFlickable.height, soundboardGrid.height + (hNeeded ? 28 : 0))
 
                 // Touch-Friendly Vertical ScrollBar (Oversized 28px width)
                 ScrollBar.vertical: ScrollBar {
@@ -145,13 +147,10 @@ Item {
                     objectName: "soundboardScrollbarV"
                     width: 28
                     policy: ScrollBar.AsNeeded
-                    visible: size < 1.0
+                    visible: soundboardFlickable.vNeeded
                     interactive: true
-                    active: size < 1.0
-                    onActiveChanged: {
-                        if (!active && size < 1.0) active = true;
-                    }
-                    bottomPadding: soundboardScrollbarH.visible ? soundboardScrollbarH.height : 0
+                    active: visible
+                    bottomPadding: soundboardFlickable.hNeeded ? 28 : 0
 
                     background: Rectangle {
                         color: "#16181B"
@@ -159,7 +158,7 @@ Item {
                         border.color: "#2C3036"
                         border.width: 1
                         anchors.fill: parent
-                        anchors.bottomMargin: soundboardScrollbarH.visible ? soundboardScrollbarH.height : 0
+                        anchors.bottomMargin: soundboardFlickable.hNeeded ? 28 : 0
                     }
 
                     contentItem: Rectangle {
@@ -194,13 +193,10 @@ Item {
                     objectName: "soundboardScrollbarH"
                     height: 28
                     policy: ScrollBar.AsNeeded
-                    visible: size < 1.0
+                    visible: soundboardFlickable.hNeeded
                     interactive: true
-                    active: size < 1.0
-                    onActiveChanged: {
-                        if (!active && size < 1.0) active = true;
-                    }
-                    rightPadding: soundboardScrollbarV.visible ? soundboardScrollbarV.width : 0
+                    active: visible
+                    rightPadding: soundboardFlickable.vNeeded ? 28 : 0
 
                     background: Rectangle {
                         color: "#16181B"
@@ -208,7 +204,7 @@ Item {
                         border.color: "#2C3036"
                         border.width: 1
                         anchors.fill: parent
-                        anchors.rightMargin: soundboardScrollbarV.visible ? soundboardScrollbarV.width : 0
+                        anchors.rightMargin: soundboardFlickable.vNeeded ? 28 : 0
                     }
 
                     contentItem: Rectangle {
