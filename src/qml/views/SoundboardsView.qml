@@ -129,7 +129,7 @@ Item {
                 flickableDirection: Flickable.HorizontalAndVerticalFlick
 
                 property real cellW: Math.max(160, 230 * root.tileScale)
-                property real cellH: Math.max(160, 230 * root.tileScale)
+                property real cellH: Math.max(170, 240 * root.tileScale)
                 property int totalTiles: root.currentGrid ? (root.currentGrid.count + 1) : 0
                 property int minCols: totalTiles >= 2 ? 2 : 1
                 // Reserve 28px for vertical scrollbar to prevent cyclic layout jitter
@@ -278,8 +278,8 @@ Item {
                             Rectangle {
                                 visible: delegateRoot.isAddTile
                                 anchors.centerIn: parent
-                                width: Math.max(150, 210 * root.tileScale)
-                                height: Math.max(150, 210 * root.tileScale)
+                                width: Math.max(150, 220 * root.tileScale)
+                                height: Math.max(150, 230 * root.tileScale)
                                 radius: 12
                                 color: addDropArea.containsDrag ? "#1E824C" : (addMouse.containsMouse ? "#2A2536" : "#1F2126")
                                 border.color: addDropArea.containsDrag ? "#2ECC71" : (addMouse.containsMouse ? "#8E2DE2" : "#353942")

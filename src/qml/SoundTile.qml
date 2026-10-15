@@ -14,7 +14,7 @@ Rectangle {
     signal extraFilesDropped(var urls)
 
     implicitWidth: 220 * scaleFactor
-    implicitHeight: 220 * scaleFactor
+    implicitHeight: 230 * scaleFactor
     radius: 12
     color: "#202327"
 
@@ -250,7 +250,7 @@ Rectangle {
             Rectangle {
                 id: triggerBtn
                 anchors.centerIn: parent
-                width: Math.max(50, 64 * scaleFactor)
+                width: Math.max(46, 54 * scaleFactor)
                 height: width
                 radius: width / 2
                 color: {
@@ -462,15 +462,15 @@ Rectangle {
             }
         }
 
-        // --- Footer Controls: Loop, Cue Badge, Stop, Volume Slider ---
+        // --- Transport Controls: Loop, Cue Badge, Stop ---
         RowLayout {
             Layout.fillWidth: true
-            spacing: 4
+            spacing: 6
 
             // Loop Toggle Button
             Button {
-                Layout.preferredWidth: 26
-                Layout.preferredHeight: 26
+                Layout.preferredWidth: 28
+                Layout.preferredHeight: 24
                 flat: true
                 onClicked: {
                     if (tile) tile.isLooped = !tile.isLooped;
@@ -519,8 +519,8 @@ Rectangle {
 
             // Stop Button
             Button {
-                Layout.preferredWidth: 26
-                Layout.preferredHeight: 26
+                Layout.preferredWidth: 28
+                Layout.preferredHeight: 24
                 flat: true
                 onClicked: {
                     if (tile) tile.stop();
@@ -544,20 +544,123 @@ Rectangle {
             }
 
             Item { Layout.fillWidth: true }
+        }
 
-            // Mini Volume Slider
+        // --- Bottom Row: Dedicated Touch-Friendly Volume Slider (Original Development Branch Style) ---
+        Item {
+            id: volumeRow
+            Layout.fillWidth: true
+            Layout.preferredHeight: Math.max(26, 28 * scaleFactor)
+
             Slider {
-                id: volSlider
-                Layout.preferredWidth: Math.max(50, 70 * scaleFactor)
-                Layout.preferredHeight: 22
+                id: volumeSlider
+                anchors.fill: parent
                 from: 0.0
                 to: 1.0
+                stepSize: 0.01
                 value: tile ? tile.volume : 1.0
                 onMoved: {
                     if (tile) tile.volume = value;
                 }
-                ToolTip.visible: hovered
-                ToolTip.text: qsTr("Tile Volume: %1%").arg(Math.round(volSlider.value * 100))
+
+                // VU Meter Gradient Track (Green -> Yellow -> Red audio level emulating original development branch)
+                background: Rectangle {
+                    x: volumeSlider.leftPadding
+                    y: volumeSlider.topPadding + (volumeSlider.availableHeight - height) / 2
+                    width: volumeSlider.availableWidth
+                    height: Math.max(12, 14 * scaleFactor)
+                    radius: height / 2
+                    color: "#181A1D"
+                    border.color: volumeTouchArea.pressed ? "#8E2DE2" : (volumeTouchArea.containsMouse ? "#4A505C" : "#2C3036")
+                    border.width: 1
+                    clip: true
+
+                    // Filled Volume Bar with Broadcast Audio VU Meter Gradient
+                    Rectangle {
+                        anchors.left: parent.left
+                        anchors.top: parent.top
+                        anchors.bottom: parent.bottom
+                        width: Math.max(0, volumeSlider.visualPosition * parent.width)
+                        radius: parent.radius
+                        gradient: Gradient {
+                            orientation: Gradient.Horizontal
+                            GradientStop { position: 0.0; color: "#2ECC71" } // Green
+                            GradientStop { position: 0.7; color: "#F1C40F" } // Yellow
+                            GradientStop { position: 1.0; color: "#E74C3C" } // Red
+                        }
+                    }
+                }
+
+                // Oversized Touch Handle with Dark Metallic Gradient and Volume Level Percentage
+                handle: Rectangle {
+                    id: volumeHandle
+                    x: volumeSlider.leftPadding + volumeSlider.visualPosition * (volumeSlider.availableWidth - width)
+                    y: volumeSlider.topPadding + (volumeSlider.availableHeight - height) / 2
+                    width: Math.max(48, 54 * scaleFactor)
+                    height: Math.max(22, 24 * scaleFactor)
+                    radius: 5
+                    border.color: volumeTouchArea.pressed ? "#8E2DE2" : (volumeTouchArea.containsMouse ? "#FFFFFF" : "#7A828E")
+                    border.width: volumeTouchArea.pressed ? 2 : 1.5
+
+                    gradient: Gradient {
+                        GradientStop { position: 0.0; color: "#4B4E54" }
+                        GradientStop { position: 1.0; color: "#23262A" }
+                    }
+
+                    // Tactile center grip line
+                    Rectangle {
+                        anchors.centerIn: parent
+                        width: parent.width - 10
+                        height: 2
+                        color: volumeTouchArea.pressed ? "#8E2DE2" : "#555A64"
+                        opacity: 0.4
+                    }
+
+                    // Volume Level Percentage Text
+                    Text {
+                        anchors.centerIn: parent
+                        color: "#FFFFFF"
+                        font.bold: true
+                        font.pointSize: Math.max(8, 9 * Math.max(0.8, scaleFactor * 0.9))
+                        text: Math.round(volumeSlider.value * 100) + "%"
+                    }
+                }
+
+                // Touch-Friendly Drag Area with flickable theft prevention
+                MouseArea {
+                    id: volumeTouchArea
+                    anchors.fill: parent
+                    preventStealing: true
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+
+                    function updateVolume(mouseX) {
+                        var handleW = volumeHandle.width;
+                        var trackW = volumeSlider.availableWidth - handleW;
+                        if (trackW <= 0) return;
+                        var relX = mouseX - volumeSlider.leftPadding - (handleW / 2);
+                        var frac = Math.max(0.0, Math.min(1.0, relX / trackW));
+                        volumeSlider.value = frac;
+                        if (tile) tile.volume = frac;
+                    }
+
+                    onPressed: (mouse) => updateVolume(mouse.x)
+                    onPositionChanged: (mouse) => {
+                        if (pressed) updateVolume(mouse.x);
+                    }
+                }
+
+                Connections {
+                    target: tile
+                    function onVolumeChanged() {
+                        if (tile && !volumeTouchArea.pressed) {
+                            volumeSlider.value = tile.volume;
+                        }
+                    }
+                }
+
+                ToolTip.visible: volumeTouchArea.containsMouse || volumeTouchArea.pressed
+                ToolTip.text: qsTr("Tile Volume: %1%").arg(Math.round(volumeSlider.value * 100))
             }
         }
     }
