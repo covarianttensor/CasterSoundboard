@@ -1,0 +1,110 @@
+{
+    "version": "2.0.0",
+    "generator": "CasterSoundboard",
+    "workspace": {
+        "windowWidth": 1200,
+        "windowHeight": 800,
+        "isFullScreen": false,
+        "tileScale": 1.0,
+        "masterVolume": 1.0,
+        "isDuckingActive": false,
+        "duckingVolumeRatio": 0.25,
+        "outputDeviceName": "Default System Audio Output"
+    },
+    "tabs": [
+        {
+            "id": "tab-main-show",
+            "name": "Main Show",
+            "sounds": [
+                {
+                    "id": "tile-1",
+                    "displayName": "Chime SFX",
+                    "filePath": "/home/oscarc/Documents/CasterSoundboard/tests/cues/test_loop_chime.wav",
+                    "hotkey": "P",
+                    "volume": 0.9,
+                    "isLooped": true,
+                    "triggerStyle": 0,
+                    "hasCueRegion": false,
+                    "cueBeginMs": 0,
+                    "cueEndMs": 0,
+                    "color": "#2ECC71"
+                },
+                {
+                    "id": "tile-2",
+                    "displayName": "Intro Theme",
+                    "filePath": "/home/oscarc/Documents/CasterSoundboard/tests/cues/test_loop_chime.wav",
+                    "hotkey": "Ctrl+Alt+1",
+                    "volume": 0.85,
+                    "isLooped": false,
+                    "triggerStyle": 1,
+                    "hasCueRegion": true,
+                    "cueBeginMs": 100,
+                    "cueEndMs": 2500,
+                    "color": "#8E2DE2"
+                },
+                {
+                    "id": "tile-3",
+                    "displayName": "Crowd Applause",
+                    "filePath": "",
+                    "hotkey": "Ctrl+Alt+2",
+                    "volume": 1.0,
+                    "isLooped": false,
+                    "triggerStyle": 0,
+                    "hasCueRegion": false,
+                    "cueBeginMs": 0,
+                    "cueEndMs": 0,
+                    "color": "#E74C3C"
+                },
+                {
+                    "id": "tile-4",
+                    "displayName": "Rimshot Drum",
+                    "filePath": "",
+                    "hotkey": "R",
+                    "volume": 0.95,
+                    "isLooped": false,
+                    "triggerStyle": 0,
+                    "hasCueRegion": false,
+                    "cueBeginMs": 0,
+                    "cueEndMs": 0,
+                    "color": "#E67E22"
+                },
+                {
+                    "id": "tile-5",
+                    "displayName": "Dramatic Stinger",
+                    "filePath": "",
+                    "hotkey": "Ctrl+Alt+3",
+                    "volume": 0.75,
+                    "isLooped": false,
+                    "triggerStyle": 0,
+                    "hasCueRegion": false,
+                    "cueBeginMs": 0,
+                    "cueEndMs": 0,
+                    "color": "#3498DB"
+                },
+                {
+                    "id": "tile-6",
+                    "displayName": "Outro Theme",
+                    "filePath": "",
+                    "hotkey": "Ctrl+Alt+4",
+                    "volume": 0.8,
+                    "isLooped": false,
+                    "triggerStyle": 2,
+                    "hasCueRegion": false,
+                    "cueBeginMs": 0,
+                    "cueEndMs": 0,
+                    "color": "#E91E63"
+                }
+            ]
+        },
+        {
+            "id": "tab-stingers",
+            "name": "Commercials & Stingers",
+            "sounds": []
+        },
+        {
+            "id": "tab-loops",
+            "name": "Background Loops",
+            "sounds": []
+        }
+    ]
+}

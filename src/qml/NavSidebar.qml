@@ -126,8 +126,8 @@ Rectangle {
             onClicked: btnItem.clicked()
         }
 
-        ToolTip.visible: mouseArea.containsMouse
+        ToolTip.visible: mouseArea.containsMouse && !btnItem.isActive
         ToolTip.text: btnItem.tooltipText
-        ToolTip.delay: 300
+        ToolTip.delay: 600
     }
 }

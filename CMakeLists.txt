@@ -76,6 +76,8 @@ qt_add_qml_module(CasterSoundboard
         src/qml/NavSidebar.qml
         src/qml/TopActionBar.qml
         src/qml/SoundboardTabBar.qml
+        src/qml/SoundTile.qml
+        src/qml/SoundTileDrawer.qml
         src/qml/views/SoundboardsView.qml
         src/qml/views/AudioRoutingView.qml
         src/qml/views/OscView.qml

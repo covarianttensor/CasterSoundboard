@@ -107,6 +107,17 @@ private slots:
         QCOMPARE(tile2.cueBeginMs(), 250);
         QCOMPARE(tile2.cueEndMs(), 3500);
     }
+
+    void testVideoSupport()
+    {
+        SoundTileController tile;
+        QCOMPARE(tile.hasVideo(), false);
+        QCOMPARE(tile.videoOutput(), nullptr);
+
+        QObject dummyOutput;
+        tile.setVideoOutput(&dummyOutput);
+        QCOMPARE(tile.videoOutput(), &dummyOutput);
+    }
 };
 
 QTEST_MAIN(TestSoundTile)

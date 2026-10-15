@@ -29,6 +29,7 @@ class SoundTileController : public QObject
     Q_PROPERTY(qint64 positionMs READ positionMs NOTIFY positionMsChanged)
     Q_PROPERTY(qint64 durationMs READ durationMs NOTIFY durationMsChanged)
     Q_PROPERTY(QObject* player READ playerObject CONSTANT)
+    Q_PROPERTY(QObject* videoOutput READ videoOutput WRITE setVideoOutput NOTIFY videoOutputChanged)
 
 public:
     enum TriggerStyle {
@@ -85,6 +86,9 @@ public:
     QMediaPlayer* mediaPlayer() const { return m_player; }
     QAudioOutput* audioOutput() const { return m_audioOutput; }
 
+    Q_INVOKABLE void setVideoOutput(QObject *output);
+    Q_INVOKABLE QObject* videoOutput() const;
+
     // Serialization
     QJsonObject toJson() const;
     bool fromJson(const QJsonObject &json);
@@ -113,6 +117,7 @@ signals:
     void playbackStateChanged();
     void positionMsChanged();
     void durationMsChanged();
+    void videoOutputChanged();
     void playbackFinished();
 
 private slots:

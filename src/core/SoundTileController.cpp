@@ -360,3 +360,16 @@ bool SoundTileController::fromJson(const QJsonObject &json)
 
     return true;
 }
+
+void SoundTileController::setVideoOutput(QObject *output)
+{
+    if (m_player) {
+        m_player->setVideoOutput(output);
+        emit videoOutputChanged();
+    }
+}
+
+QObject* SoundTileController::videoOutput() const
+{
+    return m_player ? m_player->videoOutput() : nullptr;
+}

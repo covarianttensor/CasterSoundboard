@@ -6,6 +6,10 @@ import ".."
 Item {
     id: root
 
+    property real tileScale: typeof projectController !== "undefined" ? projectController.tileScale : 1.0
+    property var currentGrid: (typeof projectController !== "undefined" && projectController.tabModel)
+                              ? projectController.tabModel.currentGridModel : null
+
     ColumnLayout {
         anchors.fill: parent
         spacing: 0
@@ -33,43 +37,51 @@ Item {
             }
         }
 
-        // Soundboard Grid Area (Phase 2 Container)
+        // Soundboard Grid Area
         Rectangle {
             id: gridArea
             Layout.fillWidth: true
             Layout.fillHeight: true
             color: "#181A1B"
+            clip: true
 
+            // Empty State (when grid has 0 tiles)
             ColumnLayout {
                 anchors.centerIn: parent
-                spacing: 12
+                spacing: 14
+                visible: !root.currentGrid || root.currentGrid.count === 0
 
-                Text {
-                    id: statusHeader
-                    text: typeof projectController !== "undefined" && projectController.tabModel && projectController.tabModel.currentGridModel
-                          ? qsTr("Active Tab: %1").arg(projectController.tabModel.tabNameAt(projectController.tabModel.currentIndex))
-                          : qsTr("Soundboard Workspace")
-                    color: "#FFFFFF"
-                    font.bold: true
-                    font.pointSize: 18
-                    horizontalAlignment: Text.AlignHCenter
+                Image {
+                    source: "../icons/openMusic.png"
+                    sourceSize.width: 56
+                    sourceSize.height: 56
+                    Layout.alignment: Qt.AlignHCenter
+                    opacity: 0.6
                 }
 
                 Text {
-                    text: qsTr("Tiles in active set: %1 | Zoom Scale: %2%").arg(
-                              typeof projectController !== "undefined" && projectController.tabModel && projectController.tabModel.currentGridModel
-                              ? projectController.tabModel.currentGridModel.count : 0
-                          ).arg(Math.round((typeof projectController !== "undefined" ? projectController.tileScale : 1.0) * 100))
-                    color: "#888888"
-                    font.pointSize: 12
-                    horizontalAlignment: Text.AlignHCenter
+                    text: root.currentGrid
+                          ? qsTr("Tab '%1' is Empty").arg(projectController.tabModel.tabNameAt(projectController.tabModel.currentIndex))
+                          : qsTr("No Soundboard Selected")
+                    color: "#FFFFFF"
+                    font.bold: true
+                    font.pointSize: 16
+                    Layout.alignment: Qt.AlignHCenter
+                }
+
+                Text {
+                    text: qsTr("Drag and drop audio/video files here, or add tiles manually.")
+                    color: "#7E8590"
+                    font.pointSize: 11
+                    Layout.alignment: Qt.AlignHCenter
                 }
 
                 Rectangle {
-                    Layout.preferredWidth: 260
+                    Layout.preferredWidth: 220
                     Layout.preferredHeight: 44
+                    Layout.alignment: Qt.AlignHCenter
                     radius: 8
-                    color: "#25282B"
+                    color: addBtnMouse.containsMouse ? "#3A2B50" : "#25282B"
                     border.color: "#8E2DE2"
                     border.width: 1
 
@@ -93,14 +105,171 @@ Item {
                     }
 
                     MouseArea {
+                        id: addBtnMouse
                         anchors.fill: parent
+                        hoverEnabled: true
                         cursorShape: Qt.PointingHandCursor
                         onClicked: {
-                            if (projectController && projectController.tabModel && projectController.tabModel.currentGridModel) {
-                                projectController.tabModel.currentGridModel.appendTile();
+                            if (root.currentGrid) {
+                                root.currentGrid.appendTile();
                             }
                         }
                     }
+                }
+            }
+
+            // Populated Grid of Sound Tiles
+            ScrollView {
+                id: scrollView
+                anchors.fill: parent
+                anchors.margins: 14
+                visible: root.currentGrid && root.currentGrid.count > 0
+                clip: true
+                ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
+                ScrollBar.vertical.policy: ScrollBar.AsNeeded
+
+                GridView {
+                    id: gridView
+                    width: scrollView.width
+                    height: Math.max(scrollView.height, contentHeight)
+                    cellWidth: Math.max(160, 230 * root.tileScale)
+                    cellHeight: Math.max(160, 230 * root.tileScale)
+                    model: root.currentGrid
+                    clip: true
+
+                    delegate: Item {
+                        width: gridView.cellWidth
+                        height: gridView.cellHeight
+
+                        SoundTile {
+                            anchors.centerIn: parent
+                            tile: model.tile
+                            scaleFactor: root.tileScale
+                            onSettingsRequested: (t) => {
+                                tileDrawer.tile = t;
+                                tileDrawer.open();
+                            }
+                        }
+                    }
+
+                    // Footer with "+ Add Tile" Button card
+                    footer: Item {
+                        width: gridView.cellWidth
+                        height: gridView.cellHeight
+
+                        Rectangle {
+                            anchors.centerIn: parent
+                            width: Math.max(150, 210 * root.tileScale)
+                            height: Math.max(150, 210 * root.tileScale)
+                            radius: 12
+                            color: footerMouse.containsMouse ? "#2A2536" : "#1F2126"
+                            border.color: footerMouse.containsMouse ? "#8E2DE2" : "#353942"
+                            border.width: 1
+
+                            ColumnLayout {
+                                anchors.centerIn: parent
+                                spacing: 8
+                                Image {
+                                    source: "../icons/add_player.png"
+                                    sourceSize.width: 36 * root.tileScale
+                                    sourceSize.height: 36 * root.tileScale
+                                    Layout.alignment: Qt.AlignHCenter
+                                    opacity: footerMouse.containsMouse ? 1.0 : 0.7
+                                }
+                                Text {
+                                    text: qsTr("Add Sound Tile")
+                                    color: footerMouse.containsMouse ? "#FFFFFF" : "#AAAAAA"
+                                    font.bold: true
+                                    font.pointSize: 10 * Math.max(0.8, root.tileScale * 0.9)
+                                    Layout.alignment: Qt.AlignHCenter
+                                }
+                            }
+
+                            MouseArea {
+                                id: footerMouse
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: {
+                                    if (root.currentGrid) {
+                                        root.currentGrid.appendTile();
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Global Drag & Drop Overlay on Board Area
+            DropArea {
+                id: boardDropArea
+                anchors.fill: parent
+                onEntered: (drag) => {
+                    if (drag.hasUrls) {
+                        drag.acceptProposedAction();
+                        boardDropOverlay.visible = true;
+                    }
+                }
+                onExited: boardDropOverlay.visible = false
+                onDropped: (drop) => {
+                    boardDropOverlay.visible = false;
+                    if (drop.hasUrls && root.currentGrid) {
+                        for (var i = 0; i < drop.urls.length; ++i) {
+                            var url = drop.urls[i].toString();
+                            if (url.indexOf("file://") === 0) url = url.substring(7);
+                            var tile = root.currentGrid.appendTile();
+                            if (tile) {
+                                tile.filePath = url;
+                                var filename = url.substring(url.lastIndexOf('/') + 1);
+                                var dotIdx = filename.lastIndexOf('.');
+                                if (dotIdx > 0) filename = filename.substring(0, dotIdx);
+                                tile.displayName = filename;
+                            }
+                        }
+                        drop.acceptProposedAction();
+                    }
+                }
+            }
+
+            // Drag Over Visual Banner
+            Rectangle {
+                id: boardDropOverlay
+                anchors.fill: parent
+                color: "#1E824C"
+                opacity: 0.85
+                visible: false
+
+                ColumnLayout {
+                    anchors.centerIn: parent
+                    spacing: 12
+                    Image {
+                        source: "../icons/openMusic.png"
+                        sourceSize.width: 64
+                        sourceSize.height: 64
+                        Layout.alignment: Qt.AlignHCenter
+                    }
+                    Text {
+                        text: qsTr("Drop Media Files to Add as New Tiles")
+                        color: "#FFFFFF"
+                        font.bold: true
+                        font.pointSize: 18
+                        Layout.alignment: Qt.AlignHCenter
+                    }
+                }
+            }
+        }
+    }
+
+    // Sound Tile Properties Drawer / Modal Dialog
+    SoundTileDrawer {
+        id: tileDrawer
+        onRemoveTileRequested: (t) => {
+            if (!t || !root.currentGrid) return;
+            for (var i = 0; i < root.currentGrid.count; ++i) {
+                if (root.currentGrid.tileAt(i) === t) {
+                    root.currentGrid.removeTile(i);
+                    break;
                 }
             }
         }
@@ -133,6 +302,15 @@ Item {
         onAccepted: {
             if (targetIndex >= 0 && projectController && projectController.tabModel) {
                 projectController.tabModel.renameTab(targetIndex, renameField.text);
+            }
+        }
+    }
+
+    Component.onCompleted: {
+        if (typeof openDrawerOnStart !== "undefined" && openDrawerOnStart) {
+            if (root.currentGrid && root.currentGrid.count > 0) {
+                tileDrawer.tile = root.currentGrid.tileAt(0);
+                tileDrawer.open();
             }
         }
     }

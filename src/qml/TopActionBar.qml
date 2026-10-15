@@ -166,7 +166,7 @@ Rectangle {
             id: duckingBtn
             property bool isDucking: typeof projectController !== "undefined" ? projectController.isDuckingActive : false
             Layout.preferredHeight: 44
-            Layout.preferredWidth: 110
+            Layout.preferredWidth: 125
             onClicked: root.toggleDuckingRequested()
 
             background: Rectangle {
@@ -199,7 +199,7 @@ Rectangle {
         Button {
             id: stopAllBtn
             Layout.preferredHeight: 44
-            Layout.preferredWidth: 115
+            Layout.preferredWidth: 120
             onClicked: root.stopAllRequested()
 
             background: Rectangle {

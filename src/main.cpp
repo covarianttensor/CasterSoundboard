@@ -54,7 +54,9 @@ int main(int argc, char *argv[])
     parser.addHelpOption();
     parser.addVersionOption();
     QCommandLineOption screenshotOption(QStringList() << "s" << "screenshot", "Capture window screenshot to path and exit.", "path");
+    QCommandLineOption drawerOption("open-drawer", "Open tile settings drawer on startup for testing.");
     parser.addOption(screenshotOption);
+    parser.addOption(drawerOption);
     parser.addPositionalArgument("project", "Project file (.caster) to open on launch.", "[project]");
     parser.process(app);
 
@@ -80,6 +82,7 @@ int main(int argc, char *argv[])
     QQmlApplicationEngine engine;
     engine.rootContext()->setContextProperty("projectController", &projectController);
     engine.rootContext()->setContextProperty("hotkeyManager", &hotkeyManager);
+    engine.rootContext()->setContextProperty("openDrawerOnStart", parser.isSet(drawerOption));
 
     // Install application-wide hotkey event filter
     GlobalHotkeyFilter hotkeyFilter(&hotkeyManager, &app);
