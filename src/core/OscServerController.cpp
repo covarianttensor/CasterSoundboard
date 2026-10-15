@@ -5,6 +5,7 @@
 #include "SoundTileController.h"
 
 #include <QtEndian>
+#include <QSettings>
 #include <QDebug>
 #include <cstring>
 
@@ -12,6 +13,7 @@ OscServerController::OscServerController(QObject *parent)
     : QObject(parent)
 {
     m_socket = new QUdpSocket(this);
+    loadSettings();
 }
 
 OscServerController::~OscServerController()
@@ -19,9 +21,30 @@ OscServerController::~OscServerController()
     stopServer();
 }
 
+void OscServerController::loadSettings()
+{
+    QSettings s("CasterSoundboard", "OscSettings");
+    m_inboundPort = s.value("inboundPort", 5051).toInt();
+    m_outboundHost = s.value("outboundHost", "127.0.0.1").toString();
+    m_outboundPort = s.value("outboundPort", 9000).toInt();
+    m_autoStart = s.value("autoStart", false).toBool();
+    m_feedbackEnabled = s.value("feedbackEnabled", true).toBool();
+}
+
+void OscServerController::saveSettings()
+{
+    QSettings s("CasterSoundboard", "OscSettings");
+    s.setValue("inboundPort", m_inboundPort);
+    s.setValue("outboundHost", m_outboundHost);
+    s.setValue("outboundPort", m_outboundPort);
+    s.setValue("autoStart", m_autoStart);
+    s.setValue("feedbackEnabled", m_feedbackEnabled);
+}
+
 void OscServerController::setProjectController(SoundboardProjectController *project)
 {
     m_project = project;
+    connectProjectSignals();
 }
 
 bool OscServerController::isRunning() const
@@ -29,11 +52,30 @@ bool OscServerController::isRunning() const
     return m_socket && (m_socket->state() == QAbstractSocket::BoundState);
 }
 
+void OscServerController::setAutoStart(bool autoStart)
+{
+    if (m_autoStart == autoStart)
+        return;
+    m_autoStart = autoStart;
+    saveSettings();
+    emit autoStartChanged();
+}
+
+void OscServerController::setFeedbackEnabled(bool enabled)
+{
+    if (m_feedbackEnabled == enabled)
+        return;
+    m_feedbackEnabled = enabled;
+    saveSettings();
+    emit feedbackEnabledChanged();
+}
+
 void OscServerController::setInboundPort(int port)
 {
     if (m_inboundPort == port || port < 1 || port > 65535)
         return;
     m_inboundPort = port;
+    saveSettings();
     emit inboundPortChanged();
 
     if (isRunning()) {
@@ -47,6 +89,7 @@ void OscServerController::setOutboundHost(const QString &host)
     if (m_outboundHost == host)
         return;
     m_outboundHost = host;
+    saveSettings();
     emit outboundHostChanged();
 }
 
@@ -55,6 +98,7 @@ void OscServerController::setOutboundPort(int port)
     if (m_outboundPort == port || port < 1 || port > 65535)
         return;
     m_outboundPort = port;
+    saveSettings();
     emit outboundPortChanged();
 }
 
@@ -68,6 +112,9 @@ bool OscServerController::startServer()
         m_statusMessage = tr("Listening on UDP port %1").arg(m_inboundPort);
         emit runningChanged();
         emit statusMessageChanged();
+        if (m_feedbackEnabled) {
+            syncClients();
+        }
         return true;
     } else {
         m_statusMessage = tr("Failed to bind UDP port %1: %2").arg(m_inboundPort).arg(m_socket->errorString());
@@ -95,6 +142,86 @@ void OscServerController::toggleServer()
         stopServer();
     } else {
         startServer();
+    }
+}
+
+void OscServerController::connectProjectSignals()
+{
+    if (!m_project)
+        return;
+
+    connect(m_project, &SoundboardProjectController::isDuckingActiveChanged, this, [this]() {
+        if (m_feedbackEnabled && isRunning()) {
+            sendOscMessage("/glo/s/audio_d_s", m_project->isDuckingActive() ? 1 : 0);
+            sendOscMessage("/castersoundboard/ducking", m_project->isDuckingActive() ? 1.0f : 0.0f);
+        }
+    });
+
+    if (m_project->tabModel()) {
+        auto rebindCurrentTiles = [this]() {
+            if (!m_project || !m_project->tabModel())
+                return;
+
+            if (m_feedbackEnabled && isRunning()) {
+                sendOscMessage("/glo/s/current_tab", m_project->tabModel()->currentIndex() + 1);
+            }
+
+            SoundboardGridModel *grid = m_project->tabModel()->currentGridModel();
+            if (!grid)
+                return;
+
+            for (int i = 0; i < grid->tiles().size(); ++i) {
+                SoundTileController *tile = grid->tiles().at(i);
+                int tileIdx = i + 1;
+                QString boardName = m_project->tabModel()->tabNameAt(m_project->tabModel()->currentIndex());
+                QString tileName = tile->displayName();
+                connect(tile, &SoundTileController::playbackStateChanged, this, [this, tile, tileIdx, boardName, tileName]() {
+                    if (m_feedbackEnabled && isRunning()) {
+                        int state = (tile->playbackState() == QMediaPlayer::PlayingState) ? 1 :
+                                    ((tile->playbackState() == QMediaPlayer::PausedState) ? 2 : 0);
+                        sendOscMessage(QString("/cbp/%1/s/p_s").arg(tileIdx), state);
+                        sendOscMessage(QString("/castersoundboard/board/%1/player/%2/status/play_state").arg(boardName, tileName), state);
+                    }
+                });
+
+                connect(tile, &SoundTileController::volumeChanged, this, [this, tile, tileIdx]() {
+                    if (m_feedbackEnabled && isRunning()) {
+                        sendOscMessage(QString("/cbp/%1/s/vol").arg(tileIdx), static_cast<float>(tile->volume()));
+                    }
+                });
+            }
+        };
+
+        connect(m_project->tabModel(), &SoundboardTabModel::currentGridModelChanged, this, rebindCurrentTiles);
+        connect(m_project->tabModel(), &SoundboardTabModel::currentIndexChanged, this, rebindCurrentTiles);
+        connect(m_project, &SoundboardProjectController::projectLoaded, this, rebindCurrentTiles);
+
+        rebindCurrentTiles();
+    }
+}
+
+void OscServerController::syncClients()
+{
+    if (!isRunning() || !m_project)
+        return;
+
+    sendOscMessage("/glo/s/audio_d_s", m_project->isDuckingActive() ? 1 : 0);
+    sendOscMessage("/castersoundboard/ducking", m_project->isDuckingActive() ? 1.0f : 0.0f);
+
+    if (m_project->tabModel()) {
+        sendOscMessage("/glo/s/current_tab", m_project->tabModel()->currentIndex() + 1);
+        SoundboardGridModel *grid = m_project->tabModel()->currentGridModel();
+        if (grid) {
+            QString boardName = m_project->tabModel()->tabNameAt(m_project->tabModel()->currentIndex());
+            for (int i = 0; i < grid->tiles().size(); ++i) {
+                SoundTileController *t = grid->tiles().at(i);
+                int state = (t->playbackState() == QMediaPlayer::PlayingState) ? 1 :
+                            ((t->playbackState() == QMediaPlayer::PausedState) ? 2 : 0);
+                sendOscMessage(QString("/cbp/%1/s/p_s").arg(i + 1), state);
+                sendOscMessage(QString("/cbp/%1/s/vol").arg(i + 1), static_cast<float>(t->volume()));
+                sendOscMessage(QString("/castersoundboard/board/%1/player/%2/status/play_state").arg(boardName, t->displayName()), state);
+            }
+        }
     }
 }
 
@@ -279,6 +406,14 @@ void OscServerController::dispatchCommand(const QString &address, const QVariant
     QStringList parts = address.split('/', Qt::SkipEmptyParts);
     if (parts.isEmpty())
         return;
+
+    // 0. Full client sync request: /sync, /glo/sync, /castersoundboard/sync
+    if (address == "/sync" || address == "/glo/sync" || address == "/castersoundboard/sync" ||
+        (parts.size() >= 2 && parts[0] == "glo" && parts[1] == "sync") ||
+        (parts.size() >= 3 && parts[0] == "castersoundboard" && parts[1] == "global" && parts[2] == "sync")) {
+        syncClients();
+        return;
+    }
 
     // 1. Stop all sounds: /castersoundboard/stop_all or /stop_all or /glo/m/all_p_s/stop
     if (address == "/stop_all" ||

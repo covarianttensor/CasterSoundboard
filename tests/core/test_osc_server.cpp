@@ -1,6 +1,7 @@
 #include <QTest>
 #include <QSignalSpy>
 #include <QUdpSocket>
+#include <QSettings>
 #include <QtEndian>
 #include <cstring>
 
@@ -33,6 +34,18 @@ private:
     }
 
 private slots:
+    void initTestCase()
+    {
+        QSettings s("CasterSoundboard", "OscSettings");
+        s.clear();
+    }
+
+    void cleanupTestCase()
+    {
+        QSettings s("CasterSoundboard", "OscSettings");
+        s.clear();
+    }
+
     void testInitialState()
     {
         OscServerController osc;
@@ -147,6 +160,67 @@ private slots:
 
         project.setOutputDeviceName(outputs.first());
         QCOMPARE(project.outputDeviceName(), outputs.first());
+    }
+
+    void testAutoStartAndFeedbackSettings()
+    {
+        OscServerController osc;
+        QSignalSpy autoStartSpy(&osc, &OscServerController::autoStartChanged);
+        QSignalSpy feedbackSpy(&osc, &OscServerController::feedbackEnabledChanged);
+
+        osc.setAutoStart(true);
+        QCOMPARE(osc.autoStart(), true);
+        QCOMPARE(autoStartSpy.count(), 1);
+
+        osc.setFeedbackEnabled(false);
+        QCOMPARE(osc.feedbackEnabled(), false);
+        QCOMPARE(feedbackSpy.count(), 1);
+
+        // Reset
+        osc.setAutoStart(false);
+        osc.setFeedbackEnabled(true);
+    }
+
+    void testTwoWayFeedbackAndSync()
+    {
+        QUdpSocket feedbackListener;
+        QVERIFY(feedbackListener.bind(QHostAddress::LocalHost, 58995));
+
+        SoundboardProjectController project;
+        project.newProject();
+
+        OscServerController osc;
+        osc.setProjectController(&project);
+        osc.setInboundPort(58996);
+        osc.setOutboundHost("127.0.0.1");
+        osc.setOutboundPort(58995);
+        osc.setFeedbackEnabled(true);
+        QVERIFY(osc.startServer());
+
+        // Test manual syncClients
+        osc.syncClients();
+        QTRY_VERIFY(feedbackListener.hasPendingDatagrams());
+
+        QByteArray rxDatagram;
+        rxDatagram.resize(feedbackListener.pendingDatagramSize());
+        feedbackListener.readDatagram(rxDatagram.data(), rxDatagram.size());
+        QVERIFY(rxDatagram.startsWith("/glo/s/") || rxDatagram.startsWith("/castersoundboard/"));
+
+        // Clear socket
+        while (feedbackListener.hasPendingDatagrams()) {
+            QByteArray discard;
+            discard.resize(feedbackListener.pendingDatagramSize());
+            feedbackListener.readDatagram(discard.data(), discard.size());
+        }
+
+        // Test receiving /glo/sync command triggers sync
+        QUdpSocket remoteClient;
+        QByteArray syncPacket = makeOscMessage("/glo/sync", "");
+        remoteClient.writeDatagram(syncPacket, QHostAddress::LocalHost, 58996);
+
+        QTRY_VERIFY(feedbackListener.hasPendingDatagrams());
+
+        osc.stopServer();
     }
 };
 

@@ -29,12 +29,22 @@ set(CORE_SOURCES
     src/core/HotkeyManager.cpp
     src/core/OscServerController.h
     src/core/OscServerController.cpp
+    src/core/AudioRoutingController.h
+    src/core/AudioRoutingController.cpp
+    CasterSoundboard/audio/AudioBackend.h
+    CasterSoundboard/audio/AudioDeviceController.h
+    CasterSoundboard/audio/AudioDeviceController.cpp
+    CasterSoundboard/audio/PulseCompatBackend.h
+    CasterSoundboard/audio/PulseCompatBackend.cpp
+    CasterSoundboard/audio/CasterPlaybackRouter.h
+    CasterSoundboard/audio/CasterPlaybackRouter.cpp
 )
 
 add_library(CasterCore STATIC ${CORE_SOURCES})
 
 target_include_directories(CasterCore PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/src/core
+    ${CMAKE_CURRENT_SOURCE_DIR}/CasterSoundboard/audio
 )
 
 target_link_libraries(CasterCore PUBLIC
@@ -138,3 +148,4 @@ add_caster_test(test_tab_model tests/core/test_tab_model.cpp)
 add_caster_test(test_project_serialization tests/core/test_project_serialization.cpp)
 add_caster_test(test_hotkey_manager tests/core/test_hotkey_manager.cpp)
 add_caster_test(test_osc_server tests/core/test_osc_server.cpp)
+add_caster_test(test_audio_routing tests/core/test_audio_routing.cpp)

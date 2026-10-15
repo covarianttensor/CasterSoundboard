@@ -15,6 +15,7 @@
 #include "SoundboardGridModel.h"
 #include "SoundTileController.h"
 #include "OscServerController.h"
+#include "AudioRoutingController.h"
 
 class GlobalHotkeyFilter : public QObject
 {
@@ -57,9 +58,15 @@ int main(int argc, char *argv[])
     QCommandLineOption screenshotOption(QStringList() << "s" << "screenshot", "Capture window screenshot to path and exit.", "path");
     QCommandLineOption drawerOption("open-drawer", "Open tile settings drawer on startup for testing.");
     QCommandLineOption viewOption("view", "Initial view index (0=Soundboards, 1=Audio, 2=OSC, 3=Preferences).", "index", "0");
+    QCommandLineOption autoStartOscOption("auto-start-osc", "Automatically start OSC server on startup.");
+    QCommandLineOption widthOption("window-width", "Initial window width in pixels.", "width");
+    QCommandLineOption heightOption("window-height", "Initial window height in pixels.", "height");
     parser.addOption(screenshotOption);
     parser.addOption(drawerOption);
     parser.addOption(viewOption);
+    parser.addOption(autoStartOscOption);
+    parser.addOption(widthOption);
+    parser.addOption(heightOption);
     parser.addPositionalArgument("project", "Project file (.caster) to open on launch.", "[project]");
     parser.process(app);
 
@@ -70,6 +77,7 @@ int main(int argc, char *argv[])
     qmlRegisterType<SoundboardGridModel>("CasterCore", 1, 0, "SoundboardGridModel");
     qmlRegisterType<SoundTileController>("CasterCore", 1, 0, "SoundTileController");
     qmlRegisterType<OscServerController>("CasterCore", 1, 0, "OscServerController");
+    qmlRegisterType<AudioRoutingController>("CasterCore", 1, 0, "AudioRoutingController");
 
     SoundboardProjectController projectController;
     HotkeyManager hotkeyManager;
@@ -77,6 +85,12 @@ int main(int argc, char *argv[])
 
     OscServerController oscController;
     oscController.setProjectController(&projectController);
+    if (parser.isSet(autoStartOscOption) || oscController.autoStart()) {
+        oscController.startServer();
+    }
+
+    AudioRoutingController audioRoutingController;
+    audioRoutingController.setProjectController(&projectController);
 
     // Load initial project from CLI or create a fresh default project
     const QStringList posArgs = parser.positionalArguments();
@@ -86,10 +100,18 @@ int main(int argc, char *argv[])
         projectController.newProject();
     }
 
+    if (parser.isSet(widthOption)) {
+        projectController.setWindowWidth(parser.value(widthOption).toInt());
+    }
+    if (parser.isSet(heightOption)) {
+        projectController.setWindowHeight(parser.value(heightOption).toInt());
+    }
+
     QQmlApplicationEngine engine;
     engine.rootContext()->setContextProperty("projectController", &projectController);
     engine.rootContext()->setContextProperty("hotkeyManager", &hotkeyManager);
     engine.rootContext()->setContextProperty("oscController", &oscController);
+    engine.rootContext()->setContextProperty("audioRoutingController", &audioRoutingController);
     engine.rootContext()->setContextProperty("openDrawerOnStart", parser.isSet(drawerOption));
     engine.rootContext()->setContextProperty("initialViewIndex", parser.value(viewOption).toInt());
 
