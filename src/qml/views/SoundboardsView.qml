@@ -134,16 +134,21 @@ Item {
                     height: Math.max(scrollView.height, contentHeight)
                     cellWidth: Math.max(160, 230 * root.tileScale)
                     cellHeight: Math.max(160, 230 * root.tileScale)
-                    model: root.currentGrid
+                    model: root.currentGrid ? (root.currentGrid.count + 1) : 0
                     clip: true
 
                     delegate: Item {
+                        id: delegateRoot
                         width: gridView.cellWidth
                         height: gridView.cellHeight
 
+                        readonly property bool isAddTile: index === (root.currentGrid ? root.currentGrid.count : 0)
+
+                        // 1. Existing Sound Tile
                         SoundTile {
+                            visible: !delegateRoot.isAddTile
                             anchors.centerIn: parent
-                            tile: model.tile
+                            tile: delegateRoot.isAddTile ? null : (root.currentGrid ? root.currentGrid.tileAt(index) : null)
                             scaleFactor: root.tileScale
                             onSettingsRequested: (t) => {
                                 tileDrawer.tile = t;
@@ -165,35 +170,41 @@ Item {
                                 }
                             }
                         }
-                    }
 
-                    // Footer with "+ Add Tile" Button card
-                    footer: Item {
-                        width: gridView.cellWidth
-                        height: gridView.cellHeight
-
+                        // 2. Add Sound Tile Card (inline in the grid flow)
                         Rectangle {
+                            visible: delegateRoot.isAddTile
                             anchors.centerIn: parent
                             width: Math.max(150, 210 * root.tileScale)
                             height: Math.max(150, 210 * root.tileScale)
                             radius: 12
-                            color: footerDropArea.containsDrag ? "#1E824C" : (footerMouse.containsMouse ? "#2A2536" : "#1F2126")
-                            border.color: footerDropArea.containsDrag ? "#2ECC71" : (footerMouse.containsMouse ? "#8E2DE2" : "#353942")
-                            border.width: footerDropArea.containsDrag ? 2 : 1
+                            color: addDropArea.containsDrag ? "#1E824C" : (addMouse.containsMouse ? "#2A2536" : "#1F2126")
+                            border.color: addDropArea.containsDrag ? "#2ECC71" : (addMouse.containsMouse ? "#8E2DE2" : "#353942")
+                            border.width: addDropArea.containsDrag ? 2 : 1
 
                             ColumnLayout {
                                 anchors.centerIn: parent
                                 spacing: 8
-                                Image {
-                                    source: "../icons/add_player.png"
-                                    sourceSize.width: 36 * root.tileScale
-                                    sourceSize.height: 36 * root.tileScale
+                                Rectangle {
+                                    width: 42 * root.tileScale
+                                    height: 42 * root.tileScale
+                                    radius: 21 * root.tileScale
+                                    color: (addMouse.containsMouse || addDropArea.containsDrag) ? "#8E2DE2" : "#2E333C"
+                                    border.color: (addMouse.containsMouse || addDropArea.containsDrag) ? "#FFFFFF" : "#555A64"
+                                    border.width: 1
                                     Layout.alignment: Qt.AlignHCenter
-                                    opacity: (footerMouse.containsMouse || footerDropArea.containsDrag) ? 1.0 : 0.7
+
+                                    Text {
+                                        anchors.centerIn: parent
+                                        text: "+"
+                                        color: "#FFFFFF"
+                                        font.pixelSize: Math.round(26 * root.tileScale)
+                                        font.bold: true
+                                    }
                                 }
                                 Text {
-                                    text: footerDropArea.containsDrag ? qsTr("Drop to Add New Tiles") : qsTr("Add Sound Tile")
-                                    color: (footerMouse.containsMouse || footerDropArea.containsDrag) ? "#FFFFFF" : "#AAAAAA"
+                                    text: addDropArea.containsDrag ? qsTr("Drop to Add New Tiles") : qsTr("Add Sound Tile")
+                                    color: (addMouse.containsMouse || addDropArea.containsDrag) ? "#FFFFFF" : "#AAAAAA"
                                     font.bold: true
                                     font.pointSize: 10 * Math.max(0.8, root.tileScale * 0.9)
                                     Layout.alignment: Qt.AlignHCenter
@@ -201,8 +212,9 @@ Item {
                             }
 
                             DropArea {
-                                id: footerDropArea
+                                id: addDropArea
                                 anchors.fill: parent
+                                enabled: delegateRoot.isAddTile
                                 onEntered: (drag) => {
                                     if (drag.hasUrls) drag.acceptProposedAction();
                                 }
@@ -226,8 +238,9 @@ Item {
                             }
 
                             MouseArea {
-                                id: footerMouse
+                                id: addMouse
                                 anchors.fill: parent
+                                enabled: delegateRoot.isAddTile
                                 hoverEnabled: true
                                 cursorShape: Qt.PointingHandCursor
                                 onClicked: {

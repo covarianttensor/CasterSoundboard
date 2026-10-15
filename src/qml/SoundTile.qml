@@ -6,7 +6,7 @@ import QtMultimedia
 Rectangle {
     id: root
 
-    required property var tile
+    property var tile: null
     property real scaleFactor: (typeof projectController !== "undefined") ? projectController.tileScale : 1.0
 
     signal settingsRequested(var tile)
