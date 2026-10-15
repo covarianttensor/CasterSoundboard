@@ -32,10 +32,14 @@
 
 int main(int argc, char *argv[])
 {
-    // Default to FFmpeg backend for Qt 6 Multimedia on Linux across all distributions
+    // Qt 6.4's FFmpeg backend can truncate successive plays after seeking.
+    // On Linux, keep Qt's native backend default for that release series.
+    // Preserve explicit QT_MEDIA_BACKEND overrides and other Qt versions.
+#if !defined(Q_OS_LINUX) || QT_VERSION < QT_VERSION_CHECK(6, 4, 0) || QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
     if (qEnvironmentVariableIsEmpty("QT_MEDIA_BACKEND")) {
         qputenv("QT_MEDIA_BACKEND", "ffmpeg");
     }
+#endif
 
     // Check for headless mode or absent display environment before initializing QApplication
     bool headless = false;
