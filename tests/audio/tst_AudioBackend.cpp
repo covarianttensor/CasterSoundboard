@@ -319,6 +319,19 @@ private slots:
         }, [](unsigned long) {}, [&](const QStringList &) { ++serviceCalls; return CommandResult{true, "loaded\nloaded\nloaded", {}}; });
         QVERIFY(!b.probe().capabilities.serviceRestart); QVERIFY(!b.validateServiceRestart().error.isEmpty()); QCOMPARE(serviceCalls, 0);
     }
+    void serviceRestartDisabledWhenSystemctlMissing() {
+        FakeServer f;
+        const auto oldPath = qgetenv("PATH");
+        QTemporaryDir emptyDir;
+        qputenv("PATH", emptyDir.path().toUtf8());
+        PulseCompatBackend b([&](const QStringList &a) { return f.run(a); });
+        auto d = b.probe();
+        auto restartPlan = b.validateServiceRestart();
+        qputenv("PATH", oldPath);
+        QVERIFY(!d.capabilities.serviceRestart);
+        QVERIFY(!restartPlan.error.isEmpty());
+        QVERIFY(restartPlan.error.contains("systemctl"));
+    }
     void ga104RecoveryCyclesUnavailableProfilesAndResolvesRenamedSink() {
         FakeServer f; f.lists["cards"] = fixture("ga104-cards"); f.lists["sinks"] = {};
         const QString id = "card.ga104|output|hdmi-output-0";

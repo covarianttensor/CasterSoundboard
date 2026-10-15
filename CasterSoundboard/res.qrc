@@ -53,5 +53,6 @@
         <file>res/img/white/duck.png</file>
         <file>res/img/white/unduck.png</file>
         <file>res/img/white/33_percent.png</file>
+        <file>res/img/white/audio_devices.png</file>
     </qresource>
 </RCC>

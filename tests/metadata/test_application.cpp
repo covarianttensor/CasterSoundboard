@@ -9,6 +9,7 @@
 #include <QAbstractButton>
 #include <QTabWidget>
 #include <QComboBox>
+#include <QPushButton>
 #include <QSettings>
 #include <QTemporaryDir>
 #include <QFile>
@@ -368,6 +369,49 @@ private slots:
         else settings.setValue("profile/lastOpenedProfile", origLast);
         settings.setValue("profile/reopenLastOnStartup", origReopen);
         settings.setValue("osc/autoStart", origAutoOsc);
+    }
+
+    void audioDevicesToolbarAndThemeSupport() {
+        MainWindow window;
+        window.show();
+
+        // Verify audioDevicesButton exists on the toolbar
+        auto *audioBtn = window.findChild<QPushButton *>("audioDevicesButton");
+        QVERIFY(audioBtn != nullptr);
+        QCOMPARE(audioBtn->toolTip(), QString("Audio Devices"));
+
+        // Verify both light and dark theme icon assets exist and are valid pixmaps
+        QPixmap lightIcon(":/res/img/audio_devices.png");
+        QVERIFY(!lightIcon.isNull());
+        QCOMPARE(lightIcon.size(), QSize(64, 64));
+
+        QPixmap darkIcon(":/res/img/white/audio_devices.png");
+        QVERIFY(!darkIcon.isNull());
+        QCOMPARE(darkIcon.size(), QSize(64, 64));
+
+        // Test light theme icon resolution
+        QPalette lightPal;
+        lightPal.setColor(QPalette::Window, QColor(240, 240, 240));
+        lightPal.setColor(QPalette::WindowText, QColor(20, 20, 20));
+        window.setPalette(lightPal);
+        window.updateThemeIcons();
+        QVERIFY(!audioBtn->icon().isNull());
+
+        // Test dark theme icon resolution
+        QPalette darkPal;
+        darkPal.setColor(QPalette::Window, QColor(30, 30, 30));
+        darkPal.setColor(QPalette::WindowText, QColor(230, 230, 230));
+        window.setPalette(darkPal);
+        window.updateThemeIcons();
+        QVERIFY(!audioBtn->icon().isNull());
+
+        // Verify audioOutputComboBox remains on the toolbar and ready
+        auto *outputCombo = window.findChild<QComboBox *>("audioOutputComboBox");
+        QVERIFY(outputCombo != nullptr);
+        QVERIFY(outputCombo->isEnabled());
+        QVERIFY(outputCombo->toolTip().contains("Select audio output"));
+        QVERIFY(outputCombo->count() >= 1);
+        QCOMPARE(outputCombo->itemText(0), QString("Default System Output"));
     }
 };
 QTEST_MAIN(ApplicationTest)

@@ -147,6 +147,16 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent)
     aboutButton->setIconSize(QSize(40,40));
     aboutButton->setToolTip("About");
 
+    //~~Audio Devices Button~~
+    audioController = new Audio::AudioDeviceController(this);
+    auto audioDialog = new Audio::AudioDevicesDialog(audioController, this);
+    audioButton = new QPushButton;
+    audioButton->setIconSize(QSize(40,40));
+    audioButton->setToolTip(tr("Audio Devices"));
+    audioButton->setAccessibleName(tr("Audio Devices"));
+    audioButton->setObjectName("audioDevicesButton");
+    connect(audioButton, &QPushButton::clicked, audioDialog, &Audio::AudioDevicesDialog::openSettings);
+
     this->updateThemeIcons();
 
     //======Main Toolbar=========
@@ -160,16 +170,6 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent)
     mainToolbar->addWidget(stopAllSoundsButton);
     mainToolbar->addWidget(toggleAudioDuckingButton);
     mainToolbar->addWidget(openSoundControlButton);
-    auto audioController = new Audio::AudioDeviceController(QCoreApplication::instance());
-    auto audioDialog = new Audio::AudioDevicesDialog(audioController, this);
-    auto audioButton = new QPushButton;
-    audioButton->setIcon(QIcon(":/res/img/audio_devices.png"));
-    audioButton->setIconSize(QSize(40,40));
-    audioButton->setToolTip(tr("Audio Devices"));
-    audioButton->setAccessibleName(tr("Audio Devices"));
-    audioButton->setObjectName("audioDevicesButton");
-    connect(audioButton, &QPushButton::clicked, audioDialog, &Audio::AudioDevicesDialog::openSettings);
-
     mainToolbar->addWidget(audioButton);
     mainToolbar->addWidget(settingsButton);
     mainToolbar->addWidget(aboutButton);
@@ -185,25 +185,17 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent)
     audioOutputComboBox->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
     audioOutputComboBox->setToolTip(tr("Select audio output device for playback"));
 
-    auto outputSeparator = mainToolbar->addSeparator();
-    auto outputLabelAction = mainToolbar->addWidget(audioOutputLabel);
-    auto outputSelectorAction = mainToolbar->addWidget(audioOutputComboBox);
-    // Keep the basic selector only as a fallback when Devices cannot manage audio.
-    auto updateOutputVisibility = [outputSeparator, outputLabelAction, outputSelectorAction](const Audio::Discovery &d) {
-        const bool fallback = !d.error.isEmpty() || !d.capabilities.defaults;
-        for (auto action : {outputSeparator, outputLabelAction, outputSelectorAction})
-            action->setVisible(fallback);
-    };
-    updateOutputVisibility(audioController->devices());
-    connect(audioController, &Audio::AudioDeviceController::devicesChanged,
-            this, updateOutputVisibility);
+    mainToolbar->addSeparator();
+    mainToolbar->addWidget(audioOutputLabel);
+    mainToolbar->addWidget(audioOutputComboBox);
+
     connect(audioController, &Audio::AudioDeviceController::playbackRoutingChanged,
             this, [this](bool active) {
         audioOutputComboBox->setEnabled(!active);
         audioOutputComboBox->setToolTip(active
-            ? tr("Playback is routed by Audio Devices. Stop that routing to select an output here.")
+            ? tr("Playback is routed to Caster Soundboard virtual sink by Audio Devices. Stop audio sharing to change output.")
             : tr("Select audio output device for playback"));
-        if (!active) populateAudioOutputs();
+        QTimer::singleShot(50, this, &MainWindow::populateAudioOutputs);
     });
 
     // Add toolbar to layout
@@ -803,6 +795,9 @@ void MainWindow::populateAudioOutputs()
 
     const QList<QAudioDevice> devices = QMediaDevices::audioOutputs();
 
+    const bool managed = audioController && audioController->isRouting();
+    const QString managedSink = audioController ? audioController->playbackSinkName() : QString();
+
     // Disambiguate duplicate descriptions if any exist
     QMap<QString, int> descCounts;
     for (const QAudioDevice &dev : devices) {
@@ -811,8 +806,13 @@ void MainWindow::populateAudioOutputs()
     QMap<QString, int> descIndex;
 
     int targetIndex = 0;
+    int managedIndex = -1;
     for (const QAudioDevice &dev : devices) {
         QString label = dev.description();
+        const bool isManagedSink = managed && (
+            (!managedSink.isEmpty() && (dev.id().contains(managedSink.toUtf8()) || dev.description().contains(managedSink))) ||
+            dev.description().contains("Caster_Soundboard") || dev.description().contains("Caster Soundboard")
+        );
         if (descCounts[dev.description()] > 1) {
             descIndex[dev.description()]++;
             label += QString(" (%1)").arg(descIndex[dev.description()]);
@@ -820,10 +820,19 @@ void MainWindow::populateAudioOutputs()
         if (dev.isDefault()) {
             label += tr(" (Default)");
         }
+        if (isManagedSink) {
+            label = tr("Caster Soundboard (Virtual Sink)");
+        }
         audioOutputComboBox->addItem(label, dev.id());
-        if (!activeId.isEmpty() && dev.id() == activeId) {
+        if (isManagedSink) {
+            managedIndex = audioOutputComboBox->count() - 1;
+        } else if (!managed && !activeId.isEmpty() && dev.id() == activeId) {
             targetIndex = audioOutputComboBox->count() - 1;
         }
+    }
+
+    if (managed && managedIndex >= 0) {
+        targetIndex = managedIndex;
     }
 
     audioOutputComboBox->setCurrentIndex(targetIndex);
@@ -1327,6 +1336,8 @@ void MainWindow::updateThemeIcons()
     stopAllSoundsButton->setIcon(themedIcon("stopAll.png"));
     toggleAudioDuckingButton->setIcon(themedIcon(audio_duck_state == 0 ? "duck.png" : "unduck.png"));
     openSoundControlButton->setIcon(themedIcon("open_sound_control.png"));
+    if (audioButton)
+        audioButton->setIcon(themedIcon("audio_devices.png"));
     settingsButton->setIcon(themedIcon("cog.png"));
     aboutButton->setIcon(themedIcon("about.png"));
 }

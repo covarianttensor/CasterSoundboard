@@ -45,13 +45,17 @@ AudioDeviceController::AudioDeviceController(QObject *parent) : QObject(parent),
         else if (op == RecoveryPreview) emit recoveryPreviewReady(p);
         else if (op == RestartPreview) emit restartPreviewReady(p);
         else if (op == Recover || op == Restart) {
-            if (op == Restart && r.playbackTarget.isEmpty()) { setRouting(false); }
+            if (op == Restart && r.playbackTarget.isEmpty()) { currentSinkName.clear(); setRouting(false); }
             latest = d; emit devicesChanged(d); emit resultReady(r);
         }
         else if (op == Apply) {
             if (r.ok) { preferences = p.desired; const auto error = save(); if (!error.isEmpty()) r.message += "\n" + error; }
+            currentSinkName = r.playbackTarget;
             setRouting(!r.playbackTarget.isEmpty()); emit resultReady(r);
-        } else if (op == Stop) { if (r.ok) { setRouting(false); } emit resultReady(r); }
+        } else if (op == Stop) {
+            if (r.ok) { currentSinkName.clear(); setRouting(false); }
+            emit resultReady(r);
+        }
         else if (op == Status || !r.ok) { emit resultReady(r); }
         if (pending >= 0) {
             const int next = pending; const auto config = pendingConfig; const auto plan = pendingPlan; pending = -1;

@@ -26,6 +26,8 @@ public:
     ~AudioDeviceController();
     Configuration saved() const { return preferences; }
     Discovery devices() const { return latest; }
+    bool isRouting() const { return routing; }
+    QString playbackSinkName() const { return currentSinkName; }
     void request(int operation, const Configuration &config = Configuration(), const Plan &plan = Plan());
     void shutdown();
 signals:
@@ -47,6 +49,7 @@ private:
     int pending = -1;
     Configuration pendingConfig;
     Plan pendingPlan;
+    QString currentSinkName;
     QString save();
     void setRouting(bool active);
 };

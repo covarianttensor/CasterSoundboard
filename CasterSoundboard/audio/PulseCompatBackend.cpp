@@ -206,7 +206,8 @@ Discovery PulseCompatBackend::enumerateDevices() {
         const auto active = serviceRunner({"--user", "is-active", "pipewire.service"});
         pipeWireKnown = active.ok && active.output.trimmed() == "active";
     }
-    discovery.capabilities.serviceRestart = pipeWireKnown;
+    const bool hasSystemctl = !QStandardPaths::findExecutable("systemctl").isEmpty();
+    discovery.capabilities.serviceRestart = pipeWireKnown && hasSystemctl;
     return discovery;
 }
 Plan PulseCompatBackend::validateRecovery(const QString &endpointId) {
@@ -322,6 +323,8 @@ Plan PulseCompatBackend::validateServiceRestart() {
         try { pipeWireKnown = info().value("server_name").toString().contains("PipeWire", Qt::CaseInsensitive); }
         catch (const std::exception &) { /* Allow recovery of a previously detected PipeWire server. */ }
         if (!pipeWireKnown) fail("A PipeWire audio server has not been detected. This restart is not supported for native PulseAudio.");
+        const bool hasSystemctl = !QStandardPaths::findExecutable("systemctl").isEmpty();
+        if (!hasSystemctl) fail("systemctl is not available in this environment; desktop audio services cannot be restarted.");
         const QStringList units = {"wireplumber.service", "pipewire.service", "pipewire-pulse.service"};
         QStringList args = {"--user", "show", "--property=LoadState", "--value"}; args += units;
         const auto check = serviceRunner(args);
