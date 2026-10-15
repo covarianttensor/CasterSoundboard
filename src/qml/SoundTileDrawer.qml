@@ -9,11 +9,19 @@ Dialog {
     property var tile: null
     signal removeTileRequested(var tile)
 
+    function formatTime(ms) {
+        if (!ms || ms <= 0) return "00:00";
+        var totalSec = Math.floor(ms / 1000);
+        var min = Math.floor(totalSec / 60);
+        var sec = totalSec % 60;
+        return (min < 10 ? "0" + min : min) + ":" + (sec < 10 ? "0" + sec : sec);
+    }
+
     title: qsTr("Sound Tile Properties")
     modal: true
     anchors.centerIn: parent
     width: Math.min(580, parent.width - 32)
-    height: Math.min(640, parent.height - 32)
+    height: Math.min(800, parent.height - 32)
 
     topPadding: 12
     bottomPadding: 12
@@ -309,7 +317,153 @@ Dialog {
                 }
             }
 
-            // --- 6. Cue Point Region ---
+            // --- 6. Audition & Playback Scrubber ---
+            Rectangle {
+                Layout.fillWidth: true
+                Layout.preferredHeight: auditionCol.implicitHeight + 20
+                radius: 8
+                color: "#1D1F23"
+                border.color: "#343940"
+                border.width: 1
+
+                ColumnLayout {
+                    id: auditionCol
+                    anchors.fill: parent
+                    anchors.margins: 12
+                    spacing: 10
+
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: 8
+
+                        Text {
+                            text: qsTr("Audition & Live Scrubbing:")
+                            color: "#AAAAAA"
+                            font.pointSize: 10
+                            font.bold: true
+                            Layout.fillWidth: true
+                        }
+
+                        Text {
+                            text: {
+                                if (!tile || tile.durationMs <= 0) return "00:00 / 00:00";
+                                var cur = auditionSlider.pressed ? Math.round(auditionSlider.value) : tile.positionMs;
+                                return root.formatTime(cur) + " / " + root.formatTime(tile.durationMs);
+                            }
+                            color: "#8E2DE2"
+                            font.family: "Monospace"
+                            font.pointSize: 10
+                            font.bold: true
+                        }
+                    }
+
+                    // Scrubber Slider
+                    Slider {
+                        id: auditionSlider
+                        Layout.fillWidth: true
+                        from: 0
+                        to: (tile && tile.durationMs > 0) ? tile.durationMs : 1000
+                        value: (tile && !pressed) ? tile.positionMs : value
+                        enabled: tile && tile.durationMs > 0
+                        onMoved: {
+                            if (tile) tile.seek(Math.round(value));
+                        }
+
+                        background: Rectangle {
+                            x: auditionSlider.leftPadding
+                            y: auditionSlider.topPadding + auditionSlider.availableHeight / 2 - height / 2
+                            implicitWidth: 200
+                            implicitHeight: 8
+                            width: auditionSlider.availableWidth
+                            height: implicitHeight
+                            radius: 4
+                            color: "#2D323A"
+
+                            // Cue region highlight on slider
+                            Rectangle {
+                                visible: tile && tile.hasCueRegion && tile.durationMs > 0
+                                x: tile && tile.durationMs > 0 ? (parent.width * (Math.max(0, Math.min(tile.durationMs, tile.cueBeginMs)) / tile.durationMs)) : 0
+                                width: {
+                                    if (!tile || tile.durationMs <= 0) return 0;
+                                    var begin = Math.max(0, Math.min(tile.durationMs, tile.cueBeginMs));
+                                    var end = Math.max(begin, Math.min(tile.durationMs, tile.cueEndMs));
+                                    return Math.max(2, parent.width * ((end - begin) / tile.durationMs));
+                                }
+                                height: parent.height
+                                color: "#E67E22"
+                                opacity: 0.55
+                                radius: 2
+                            }
+
+                            // Progress fill
+                            Rectangle {
+                                width: auditionSlider.visualPosition * parent.width
+                                height: parent.height
+                                color: (tile && tile.playbackState === 1) ? "#2ECC71" : "#8E2DE2"
+                                radius: 4
+                            }
+                        }
+
+                        handle: Rectangle {
+                            x: auditionSlider.leftPadding + auditionSlider.visualPosition * (auditionSlider.availableWidth - width)
+                            y: auditionSlider.topPadding + auditionSlider.availableHeight / 2 - height / 2
+                            implicitWidth: 16
+                            implicitHeight: 16
+                            radius: 8
+                            color: "#FFFFFF"
+                            border.color: (tile && tile.playbackState === 1) ? "#2ECC71" : "#8E2DE2"
+                            border.width: 2
+                            scale: auditionSlider.pressed ? 1.25 : (auditionSlider.hovered ? 1.1 : 1.0)
+                            Behavior on scale { NumberAnimation { duration: 100 } }
+                        }
+                    }
+
+                    // Transport controls row
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: 8
+
+                        DarkButton {
+                            text: (tile && tile.playbackState === 1) ? qsTr("⏸ Pause") : qsTr("▶ Play")
+                            Layout.preferredWidth: 90
+                            Layout.preferredHeight: 36
+                            enabled: tile && tile.filePath && tile.filePath.length > 0
+                            onClicked: {
+                                if (!tile) return;
+                                if (tile.playbackState === 1) {
+                                    tile.pause();
+                                } else {
+                                    tile.play();
+                                }
+                            }
+                        }
+
+                        DarkButton {
+                            text: qsTr("⏹ Stop")
+                            Layout.preferredWidth: 80
+                            Layout.preferredHeight: 36
+                            enabled: tile && tile.playbackState !== 0
+                            onClicked: {
+                                if (tile) tile.stop();
+                            }
+                        }
+
+                        Item { Layout.fillWidth: true }
+
+                        DarkButton {
+                            text: qsTr("⏮ Rewind")
+                            Layout.preferredWidth: 86
+                            Layout.preferredHeight: 36
+                            enabled: tile && tile.durationMs > 0
+                            onClicked: {
+                                if (tile) tile.seek(0);
+                            }
+                        }
+                    }
+                }
+            }
+
+            // --- 7. Cue Point Region ---
             Rectangle {
                 Layout.fillWidth: true
                 Layout.preferredHeight: cueCol.implicitHeight + 16
@@ -418,7 +572,7 @@ Dialog {
                 }
             }
 
-            // --- 7. Danger Zone: Delete Tile ---
+            // --- 8. Danger Zone: Delete Tile ---
             Rectangle {
                 Layout.fillWidth: true
                 Layout.preferredHeight: 52

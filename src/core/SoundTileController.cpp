@@ -243,7 +243,14 @@ void SoundTileController::stop()
 
 void SoundTileController::seek(qint64 ms)
 {
+    if (m_durationMs > 0) {
+        ms = qBound(qint64(0), ms, m_durationMs);
+    } else {
+        ms = qMax(qint64(0), ms);
+    }
     m_player->setPosition(ms);
+    m_positionMs = ms;
+    emit positionMsChanged();
 }
 
 void SoundTileController::onPositionChanged(qint64 pos)
@@ -356,6 +363,10 @@ bool SoundTileController::fromJson(const QJsonObject &json)
         setHasCueRegion(cueObj["enabled"].toBool(false));
         setCueBeginMs(cueObj["beginMs"].toInteger(0));
         setCueEndMs(cueObj["endMs"].toInteger(0));
+    } else if (json.contains("hasCueRegion")) {
+        setHasCueRegion(json["hasCueRegion"].toBool(false));
+        setCueBeginMs(json["cueBeginMs"].toInteger(0));
+        setCueEndMs(json["cueEndMs"].toInteger(0));
     }
 
     return true;

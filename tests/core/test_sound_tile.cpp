@@ -118,6 +118,30 @@ private slots:
         tile.setVideoOutput(&dummyOutput);
         QCOMPARE(tile.videoOutput(), &dummyOutput);
     }
+
+    void testScrubbingAndSeeking()
+    {
+        SoundTileController tile;
+        tile.onDurationChanged(10000); // 10,000 ms duration
+        QCOMPARE(tile.durationMs(), 10000);
+
+        QSignalSpy posSpy(&tile, &SoundTileController::positionMsChanged);
+
+        // Seek to middle
+        tile.seek(5000);
+        QCOMPARE(tile.positionMs(), 5000);
+        QCOMPARE(posSpy.count(), 1);
+
+        // Seek negative clamps to 0
+        tile.seek(-500);
+        QCOMPARE(tile.positionMs(), 0);
+        QCOMPARE(posSpy.count(), 2);
+
+        // Seek beyond duration clamps to duration
+        tile.seek(15000);
+        QCOMPARE(tile.positionMs(), 10000);
+        QCOMPARE(posSpy.count(), 3);
+    }
 };
 
 QTEST_MAIN(TestSoundTile)

@@ -219,6 +219,8 @@ void OscServerController::syncClients()
                             ((t->playbackState() == QMediaPlayer::PausedState) ? 2 : 0);
                 sendOscMessage(QString("/cbp/%1/s/p_s").arg(i + 1), state);
                 sendOscMessage(QString("/cbp/%1/s/vol").arg(i + 1), static_cast<float>(t->volume()));
+                float posPct = t->durationMs() > 0 ? (static_cast<float>(t->positionMs()) / t->durationMs()) : 0.0f;
+                sendOscMessage(QString("/cbp/%1/s/t_p_p").arg(i + 1), posPct);
                 sendOscMessage(QString("/castersoundboard/board/%1/player/%2/status/play_state").arg(boardName, t->displayName()), state);
             }
         }
@@ -482,6 +484,11 @@ void OscServerController::dispatchCommand(const QString &address, const QVariant
 
                 if (prop == "vol" && !args.isEmpty()) {
                     tile->setVolume(args.first().toDouble());
+                } else if ((prop == "t_p_p" || prop == "track_position" || prop == "scrub") && !args.isEmpty()) {
+                    float pct = qBound(0.0f, args.first().toFloat(), 1.0f);
+                    tile->seek(static_cast<qint64>(pct * tile->durationMs()));
+                } else if ((prop == "pos" || prop == "position") && !args.isEmpty()) {
+                    tile->seek(args.first().toLongLong());
                 } else if (prop == "p_s" && !args.isEmpty() && args.first().toInt() == 1) {
                     if (subProp == "play_stop" || subProp == "play") {
                         tile->trigger();
@@ -539,6 +546,13 @@ void OscServerController::dispatchCommand(const QString &address, const QVariant
 
                 if (prop == "volume" && !args.isEmpty()) {
                     tile->setVolume(args.first().toDouble());
+                } else if ((prop == "position" || prop == "track_position" || prop == "t_p_p") && !args.isEmpty()) {
+                    float val = args.first().toFloat();
+                    if (val <= 1.0f && val >= 0.0f && tile->durationMs() > 0) {
+                        tile->seek(static_cast<qint64>(val * tile->durationMs()));
+                    } else {
+                        tile->seek(static_cast<qint64>(val));
+                    }
                 } else if (prop == "play_state" && !args.isEmpty() && args.first().toInt() == 1) {
                     if (subProp == "play") tile->play();
                     else if (subProp == "pause") tile->pause();

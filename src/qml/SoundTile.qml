@@ -233,35 +233,139 @@ Rectangle {
                 }
             }
 
-            // Seekable Progress Track
-            Rectangle {
-                id: progressTrack
+            // Interactive Scrubbing Track
+            Item {
+                id: scrubContainer
                 Layout.fillWidth: true
-                Layout.preferredHeight: 6
-                radius: 3
-                color: "#2D323A"
+                Layout.preferredHeight: 18
+
+                property bool isScrubbing: false
+                property real scrubFraction: 0.0
 
                 Rectangle {
-                    id: progressFill
+                    id: progressTrack
                     anchors.left: parent.left
-                    anchors.top: parent.top
-                    anchors.bottom: parent.bottom
-                    radius: 3
-                    color: (tile && tile.playbackState === 1) ? "#2ECC71" : "#8E2DE2"
-                    width: {
-                        if (!tile || tile.durationMs <= 0) return 0;
-                        return Math.min(progressTrack.width, progressTrack.width * (tile.positionMs / tile.durationMs));
+                    anchors.right: parent.right
+                    anchors.verticalCenter: parent.verticalCenter
+                    height: (scrubArea.containsMouse || scrubContainer.isScrubbing) ? 8 : 6
+                    radius: height / 2
+                    color: "#2D323A"
+                    Behavior on height { NumberAnimation { duration: 120 } }
+
+                    // Cue region marker (if enabled)
+                    Rectangle {
+                        id: cueRegionMarker
+                        visible: tile && tile.hasCueRegion && tile.durationMs > 0
+                        anchors.top: parent.top
+                        anchors.bottom: parent.bottom
+                        x: tile && tile.durationMs > 0 ? (progressTrack.width * (Math.max(0, Math.min(tile.durationMs, tile.cueBeginMs)) / tile.durationMs)) : 0
+                        width: {
+                            if (!tile || tile.durationMs <= 0) return 0;
+                            var begin = Math.max(0, Math.min(tile.durationMs, tile.cueBeginMs));
+                            var end = Math.max(begin, Math.min(tile.durationMs, tile.cueEndMs));
+                            return Math.max(2, progressTrack.width * ((end - begin) / tile.durationMs));
+                        }
+                        color: "#E67E22"
+                        opacity: 0.45
+                        radius: 2
+                    }
+
+                    // Progress fill
+                    Rectangle {
+                        id: progressFill
+                        anchors.left: parent.left
+                        anchors.top: parent.top
+                        anchors.bottom: parent.bottom
+                        radius: parent.radius
+                        color: (tile && tile.playbackState === 1) ? "#2ECC71" : "#8E2DE2"
+                        width: {
+                            if (!tile || tile.durationMs <= 0) return 0;
+                            if (scrubContainer.isScrubbing) {
+                                return Math.min(progressTrack.width, Math.max(0, progressTrack.width * scrubContainer.scrubFraction));
+                            }
+                            return Math.min(progressTrack.width, progressTrack.width * (tile.positionMs / tile.durationMs));
+                        }
+                    }
+
+                    // Draggable Scrub Thumb / Handle
+                    Rectangle {
+                        id: scrubThumb
+                        width: 14
+                        height: 14
+                        radius: 7
+                        color: "#FFFFFF"
+                        border.color: (tile && tile.playbackState === 1) ? "#2ECC71" : "#8E2DE2"
+                        border.width: 2
+                        anchors.verticalCenter: parent.verticalCenter
+                        x: Math.max(0, Math.min(progressTrack.width - width, progressFill.width - (width / 2)))
+                        visible: (scrubArea.containsMouse || scrubContainer.isScrubbing || (tile && tile.playbackState === 1)) && (tile && tile.durationMs > 0)
+                        scale: scrubContainer.isScrubbing ? 1.25 : (scrubArea.containsMouse ? 1.1 : 1.0)
+                        Behavior on scale { NumberAnimation { duration: 100 } }
+                    }
+                }
+
+                // Floating Scrub Tooltip
+                Rectangle {
+                    id: scrubTooltip
+                    visible: scrubContainer.isScrubbing
+                    anchors.bottom: progressTrack.top
+                    anchors.bottomMargin: 6
+                    x: Math.max(0, Math.min(scrubContainer.width - width, progressFill.width - (width / 2)))
+                    width: scrubTooltipText.implicitWidth + 12
+                    height: 22
+                    radius: 4
+                    color: "#111315"
+                    border.color: "#8E2DE2"
+                    border.width: 1
+
+                    Text {
+                        id: scrubTooltipText
+                        anchors.centerIn: parent
+                        text: {
+                            if (!tile || tile.durationMs <= 0) return "00:00";
+                            var ms = Math.round(scrubContainer.scrubFraction * tile.durationMs);
+                            return root.formatTime(ms);
+                        }
+                        color: "#FFFFFF"
+                        font.bold: true
+                        font.pointSize: 8
                     }
                 }
 
                 MouseArea {
+                    id: scrubArea
                     anchors.fill: parent
+                    hoverEnabled: true
                     cursorShape: Qt.PointingHandCursor
-                    onClicked: (mouse) => {
-                        if (tile && tile.durationMs > 0) {
-                            var pct = Math.max(0.0, Math.min(1.0, mouse.x / progressTrack.width));
-                            tile.seek(Math.round(pct * tile.durationMs));
+
+                    function updateScrub(mouseX) {
+                        if (!tile || tile.durationMs <= 0) return;
+                        var fraction = Math.max(0.0, Math.min(1.0, mouseX / progressTrack.width));
+                        scrubContainer.scrubFraction = fraction;
+                        var targetMs = Math.round(fraction * tile.durationMs);
+                        tile.seek(targetMs);
+                    }
+
+                    onPressed: (mouse) => {
+                        scrubContainer.isScrubbing = true;
+                        updateScrub(mouse.x);
+                    }
+
+                    onPositionChanged: (mouse) => {
+                        if (pressed) {
+                            updateScrub(mouse.x);
                         }
+                    }
+
+                    onReleased: (mouse) => {
+                        if (scrubContainer.isScrubbing) {
+                            updateScrub(mouse.x);
+                            scrubContainer.isScrubbing = false;
+                        }
+                    }
+
+                    onCanceled: {
+                        scrubContainer.isScrubbing = false;
                     }
                 }
             }

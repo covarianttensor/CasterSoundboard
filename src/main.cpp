@@ -57,12 +57,14 @@ int main(int argc, char *argv[])
     parser.addVersionOption();
     QCommandLineOption screenshotOption(QStringList() << "s" << "screenshot", "Capture window screenshot to path and exit.", "path");
     QCommandLineOption drawerOption("open-drawer", "Open tile settings drawer on startup for testing.");
+    QCommandLineOption drawerIndexOption("drawer-index", "Tile index to open in drawer on startup.", "index", "0");
     QCommandLineOption viewOption("view", "Initial view index (0=Soundboards, 1=Audio, 2=OSC, 3=Preferences).", "index", "0");
     QCommandLineOption autoStartOscOption("auto-start-osc", "Automatically start OSC server on startup.");
     QCommandLineOption widthOption("window-width", "Initial window width in pixels.", "width");
     QCommandLineOption heightOption("window-height", "Initial window height in pixels.", "height");
     parser.addOption(screenshotOption);
     parser.addOption(drawerOption);
+    parser.addOption(drawerIndexOption);
     parser.addOption(viewOption);
     parser.addOption(autoStartOscOption);
     parser.addOption(widthOption);
@@ -113,6 +115,7 @@ int main(int argc, char *argv[])
     engine.rootContext()->setContextProperty("oscController", &oscController);
     engine.rootContext()->setContextProperty("audioRoutingController", &audioRoutingController);
     engine.rootContext()->setContextProperty("openDrawerOnStart", parser.isSet(drawerOption));
+    engine.rootContext()->setContextProperty("drawerTileIndex", parser.value(drawerIndexOption).toInt());
     engine.rootContext()->setContextProperty("initialViewIndex", parser.value(viewOption).toInt());
 
     // Install application-wide hotkey event filter

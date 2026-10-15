@@ -101,6 +101,8 @@ public slots:
     void seek(qint64 ms);
     void setAudioOutputDevice(const QAudioDevice &device);
     void setDuckingAttenuation(qreal factor);
+    void onPositionChanged(qint64 pos);
+    void onDurationChanged(qint64 dur);
 
 signals:
     void filePathChanged();
@@ -121,8 +123,6 @@ signals:
     void playbackFinished();
 
 private slots:
-    void onPositionChanged(qint64 pos);
-    void onDurationChanged(qint64 dur);
     void onPlaybackStateChanged(QMediaPlayer::PlaybackState state);
     void onMediaStatusChanged(QMediaPlayer::MediaStatus status);
     void onTracksChanged();

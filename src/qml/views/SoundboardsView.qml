@@ -309,7 +309,8 @@ Item {
     Component.onCompleted: {
         if (typeof openDrawerOnStart !== "undefined" && openDrawerOnStart) {
             if (root.currentGrid && root.currentGrid.count > 0) {
-                tileDrawer.tile = root.currentGrid.tileAt(0);
+                var idx = (typeof drawerTileIndex !== "undefined") ? drawerTileIndex : 0;
+                tileDrawer.tile = root.currentGrid.tileAt(Math.max(0, Math.min(root.currentGrid.count - 1, idx)));
                 tileDrawer.open();
             }
         }

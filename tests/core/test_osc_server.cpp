@@ -222,6 +222,45 @@ private slots:
 
         osc.stopServer();
     }
+
+    void testReceiveCommandScrubbing()
+    {
+        SoundboardProjectController project;
+        project.newProject();
+        SoundboardGridModel *grid = project.tabModel()->currentGridModel();
+        QVERIFY(grid != nullptr);
+        SoundTileController *tile = grid->appendTile();
+        QVERIFY(tile != nullptr);
+        tile->onDurationChanged(20000); // 20s duration
+        QCOMPARE(tile->durationMs(), 20000);
+
+        OscServerController osc;
+        osc.setProjectController(&project);
+        osc.setInboundPort(58997);
+        QVERIFY(osc.startServer());
+
+        QUdpSocket client;
+        // 1. Scrub percentage: /cbp/1/m/t_p_p with float 0.5f (50% = 10000ms)
+        float pctVal = 0.5f;
+        quint32 rawFloat;
+        std::memcpy(&rawFloat, &pctVal, sizeof(float));
+        rawFloat = qToBigEndian(rawFloat);
+        QByteArray fArg(reinterpret_cast<const char*>(&rawFloat), sizeof(float));
+        QByteArray packet1 = makeOscMessage("/cbp/1/m/t_p_p", "f", fArg);
+        client.writeDatagram(packet1, QHostAddress::LocalHost, 58997);
+
+        QTRY_COMPARE(tile->positionMs(), 10000);
+
+        // 2. Direct ms seek: /cbp/1/m/pos with int32 7500ms
+        qint32 posVal = qToBigEndian<qint32>(7500);
+        QByteArray iArg(reinterpret_cast<const char*>(&posVal), sizeof(posVal));
+        QByteArray packet2 = makeOscMessage("/cbp/1/m/pos", "i", iArg);
+        client.writeDatagram(packet2, QHostAddress::LocalHost, 58997);
+
+        QTRY_COMPARE(tile->positionMs(), 7500);
+
+        osc.stopServer();
+    }
 };
 
 QTEST_MAIN(TestOscServer)
