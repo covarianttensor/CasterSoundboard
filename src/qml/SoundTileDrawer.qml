@@ -12,8 +12,13 @@ Dialog {
     title: qsTr("Sound Tile Properties")
     modal: true
     anchors.centerIn: parent
-    width: Math.min(540, parent.width - 32)
-    height: Math.min(620, parent.height - 32)
+    width: Math.min(580, parent.width - 32)
+    height: Math.min(640, parent.height - 32)
+
+    topPadding: 12
+    bottomPadding: 12
+    leftPadding: 16
+    rightPadding: 16
 
     footer: Rectangle {
         height: 54
@@ -67,9 +72,13 @@ Dialog {
     }
 
     component DarkTextField : TextField {
+        implicitWidth: 100
+        Layout.fillWidth: true
         Layout.minimumWidth: 50
+        Layout.preferredWidth: 100
         color: "#FFFFFF"
         placeholderTextColor: "#7E8590"
+        selectByMouse: true
         background: Rectangle {
             color: "#282C32"
             radius: 6
@@ -123,18 +132,20 @@ Dialog {
     }
 
     Flickable {
+        id: flickable
         anchors.fill: parent
+        contentWidth: width
         contentHeight: formCol.implicitHeight + 20
         clip: true
+        boundsBehavior: Flickable.StopAtBounds
+
         ScrollBar.vertical: ScrollBar {
             policy: ScrollBar.AsNeeded
         }
 
         ColumnLayout {
             id: formCol
-            anchors.left: parent.left
-            anchors.right: parent.right
-            anchors.rightMargin: 8
+            width: flickable.width - 12
             spacing: 14
 
             // --- 1. Sound Name ---
@@ -165,6 +176,8 @@ Dialog {
                     DarkTextField {
                         id: pathField
                         Layout.fillWidth: true
+                        Layout.preferredWidth: 100
+                        Layout.minimumWidth: 50
                         Layout.preferredHeight: 38
                         text: tile ? tile.filePath : ""
                         readOnly: true
@@ -191,6 +204,8 @@ Dialog {
                     DarkTextField {
                         id: hotkeyField
                         Layout.fillWidth: true
+                        Layout.preferredWidth: 100
+                        Layout.minimumWidth: 50
                         Layout.preferredHeight: 38
                         text: tile ? tile.hotkey : ""
                         placeholderText: qsTr("e.g. Ctrl+Alt+1, Space, F5, or letter key")
@@ -216,6 +231,8 @@ Dialog {
                     text: qsTr("Supports full modifiers (Ctrl, Alt, Shift) or standalone keys. Hotkeys can be muted during shows via Top Bar.")
                     color: "#7E8590"
                     font.pointSize: 8
+                    wrapMode: Text.WordWrap
+                    Layout.fillWidth: true
                 }
             }
 
@@ -313,6 +330,14 @@ Dialog {
                             id: cueCheck
                             checked: tile ? tile.hasCueRegion : false
                             text: qsTr("Enable Cue Region (In / Out Trimming)")
+                            contentItem: Text {
+                                text: parent.text
+                                color: "#FFFFFF"
+                                font.bold: true
+                                font.pointSize: 10
+                                leftPadding: 28
+                                verticalAlignment: Text.AlignVCenter
+                            }
                             onToggled: {
                                 if (tile) tile.hasCueRegion = checked;
                             }
@@ -321,26 +346,29 @@ Dialog {
 
                     RowLayout {
                         Layout.fillWidth: true
-                        enabled: cueCheck.checked
-                        opacity: cueCheck.checked ? 1.0 : 0.4
-                        spacing: 8
+                        spacing: 12
+                        visible: cueCheck.checked
 
                         ColumnLayout {
                             Layout.fillWidth: true
                             spacing: 2
                             Text { text: qsTr("Cue In (ms):"); color: "#AAAAAA"; font.pointSize: 9 }
                             RowLayout {
+                                Layout.fillWidth: true
+                                spacing: 6
                                 DarkTextField {
                                     id: cueInField
                                     text: tile ? tile.cueBeginMs.toString() : "0"
                                     Layout.fillWidth: true
+                                    Layout.preferredWidth: 60
+                                    Layout.minimumWidth: 40
                                     onTextChanged: {
                                         if (tile && activeFocus) tile.cueBeginMs = parseInt(text) || 0;
                                     }
                                 }
                                 DarkButton {
                                     text: qsTr("Here")
-                                    Layout.preferredWidth: 64
+                                    Layout.preferredWidth: 56
                                     Layout.preferredHeight: 38
                                     ToolTip.visible: hovered
                                     ToolTip.text: qsTr("Set to current playback position")
@@ -359,17 +387,21 @@ Dialog {
                             spacing: 2
                             Text { text: qsTr("Cue Out (ms):"); color: "#AAAAAA"; font.pointSize: 9 }
                             RowLayout {
+                                Layout.fillWidth: true
+                                spacing: 6
                                 DarkTextField {
                                     id: cueOutField
                                     text: tile ? tile.cueEndMs.toString() : "0"
                                     Layout.fillWidth: true
+                                    Layout.preferredWidth: 60
+                                    Layout.minimumWidth: 40
                                     onTextChanged: {
                                         if (tile && activeFocus) tile.cueEndMs = parseInt(text) || 0;
                                     }
                                 }
                                 DarkButton {
                                     text: qsTr("Here")
-                                    Layout.preferredWidth: 64
+                                    Layout.preferredWidth: 56
                                     Layout.preferredHeight: 38
                                     ToolTip.visible: hovered
                                     ToolTip.text: qsTr("Set to current playback position")
@@ -389,7 +421,7 @@ Dialog {
             // --- 7. Danger Zone: Delete Tile ---
             Rectangle {
                 Layout.fillWidth: true
-                Layout.preferredHeight: 48
+                Layout.preferredHeight: 52
                 radius: 6
                 color: "#2C1D20"
                 border.color: "#8B263E"
@@ -397,24 +429,37 @@ Dialog {
 
                 RowLayout {
                     anchors.fill: parent
-                    anchors.margins: 8
+                    anchors.margins: 10
+                    spacing: 10
+
                     Text {
                         text: qsTr("Remove this sound tile permanently")
                         color: "#E74C3C"
                         font.pointSize: 10
                         Layout.fillWidth: true
+                        Layout.minimumWidth: 100
+                        elide: Text.ElideRight
                     }
                     Button {
                         text: qsTr("Delete Tile")
-                        Layout.preferredHeight: 32
+                        Layout.preferredWidth: 100
+                        Layout.preferredHeight: 34
                         onClicked: {
                             if (tile) {
                                 root.removeTileRequested(tile);
                                 root.close();
                             }
                         }
+                        contentItem: Text {
+                            text: parent.text
+                            color: "#FFFFFF"
+                            font.bold: true
+                            font.pointSize: 10
+                            horizontalAlignment: Text.AlignHCenter
+                            verticalAlignment: Text.AlignVCenter
+                        }
                         background: Rectangle {
-                            color: parent.hovered ? "#C0392B" : "#962D22"
+                            color: parent.down ? "#7B1F17" : (parent.hovered ? "#C0392B" : "#962D22")
                             radius: 4
                         }
                     }
