@@ -311,11 +311,16 @@ QJsonObject SoundboardProjectController::toJson() const
 
 bool SoundboardProjectController::fromJson(const QJsonObject &json)
 {
+    QJsonObject win;
     if (json.contains("window") && json["window"].isObject()) {
-        QJsonObject win = json["window"].toObject();
-        setWindowWidth(win["width"].toInt(1024));
-        setWindowHeight(win["height"].toInt(720));
-        setIsFullScreen(win["fullScreen"].toBool(false));
+        win = json["window"].toObject();
+    } else if (json.contains("workspace") && json["workspace"].isObject()) {
+        win = json["workspace"].toObject();
+    }
+    if (!win.isEmpty()) {
+        setWindowWidth(win.contains("width") ? win["width"].toInt(1024) : win["windowWidth"].toInt(1024));
+        setWindowHeight(win.contains("height") ? win["height"].toInt(720) : win["windowHeight"].toInt(720));
+        setIsFullScreen(win.contains("fullScreen") ? win["fullScreen"].toBool(false) : win["isFullScreen"].toBool(false));
         setTileScale(win["tileScale"].toDouble(1.0));
     }
 

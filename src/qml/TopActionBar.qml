@@ -78,7 +78,7 @@ Rectangle {
                 id: scaleSlider
                 from: 0.6
                 to: 1.8
-                value: 1.0
+                value: (typeof projectController !== "undefined" && projectController.tileScale > 0) ? projectController.tileScale : 1.0
                 stepSize: 0.05
                 Layout.preferredWidth: 110
 
@@ -273,5 +273,14 @@ Rectangle {
         ToolTip.visible: hovered
         ToolTip.text: aib.tooltipText
         ToolTip.delay: 300
+    }
+
+    Connections {
+        target: (typeof projectController !== "undefined") ? projectController : null
+        function onTileScaleChanged() {
+            if (projectController && Math.abs(scaleSlider.value - projectController.tileScale) > 0.01) {
+                scaleSlider.value = projectController.tileScale;
+            }
+        }
     }
 }

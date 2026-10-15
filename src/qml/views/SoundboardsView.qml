@@ -118,139 +118,260 @@ Item {
                 }
             }
 
-            // Populated Grid of Sound Tiles
-            ScrollView {
-                id: scrollView
+            // Populated Grid of Sound Tiles with Touch-Friendly Scrollbars
+            Flickable {
+                id: soundboardFlickable
+                objectName: "soundboardFlickable"
                 anchors.fill: parent
                 anchors.margins: 14
                 visible: root.currentGrid && root.currentGrid.count > 0
                 clip: true
-                ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
-                ScrollBar.vertical.policy: ScrollBar.AsNeeded
+                flickableDirection: Flickable.HorizontalAndVerticalFlick
 
-                GridView {
-                    id: gridView
-                    width: scrollView.width
-                    height: Math.max(scrollView.height, contentHeight)
-                    cellWidth: Math.max(160, 230 * root.tileScale)
-                    cellHeight: Math.max(160, 230 * root.tileScale)
-                    model: root.currentGrid ? (root.currentGrid.count + 1) : 0
-                    clip: true
+                property real cellW: Math.max(160, 230 * root.tileScale)
+                property real cellH: Math.max(160, 230 * root.tileScale)
+                property int totalTiles: root.currentGrid ? (root.currentGrid.count + 1) : 0
+                property int minCols: totalTiles >= 2 ? 2 : 1
+                property real availW: soundboardFlickable.width - (soundboardScrollbarV.visible ? soundboardScrollbarV.width : 0)
+                property real availH: soundboardFlickable.height - (soundboardScrollbarH.visible ? soundboardScrollbarH.height : 0)
+                property int cols: Math.max(minCols, Math.floor(availW / cellW))
 
-                    delegate: Item {
-                        id: delegateRoot
-                        width: gridView.cellWidth
-                        height: gridView.cellHeight
+                contentWidth: Math.max(availW, soundboardGrid.width)
+                contentHeight: Math.max(availH, soundboardGrid.height)
 
-                        readonly property bool isAddTile: index === (root.currentGrid ? root.currentGrid.count : 0)
+                // Touch-Friendly Vertical ScrollBar (Oversized 28px width)
+                ScrollBar.vertical: ScrollBar {
+                    id: soundboardScrollbarV
+                    objectName: "soundboardScrollbarV"
+                    width: 28
+                    policy: ScrollBar.AsNeeded
+                    visible: size < 1.0
+                    interactive: true
+                    active: size < 1.0
+                    onActiveChanged: {
+                        if (!active && size < 1.0) active = true;
+                    }
+                    bottomPadding: soundboardScrollbarH.visible ? soundboardScrollbarH.height : 0
 
-                        // 1. Existing Sound Tile
-                        SoundTile {
-                            visible: !delegateRoot.isAddTile
+                    background: Rectangle {
+                        color: "#16181B"
+                        radius: 6
+                        border.color: "#2C3036"
+                        border.width: 1
+                        anchors.fill: parent
+                        anchors.bottomMargin: soundboardScrollbarH.visible ? soundboardScrollbarH.height : 0
+                    }
+
+                    contentItem: Rectangle {
+                        implicitWidth: 20
+                        implicitHeight: 48
+                        radius: 6
+                        color: soundboardScrollbarV.pressed ? "#8E2DE2" : (soundboardScrollbarV.hovered ? "#5A6270" : "#3E434D")
+                        border.color: soundboardScrollbarV.pressed ? "#FFFFFF" : "#555A64"
+                        border.width: 1
+
+                        // Grip Ridges for Touch Dragging
+                        Column {
                             anchors.centerIn: parent
-                            tile: delegateRoot.isAddTile ? null : (root.currentGrid ? root.currentGrid.tileAt(index) : null)
-                            scaleFactor: root.tileScale
-                            onSettingsRequested: (t) => {
-                                tileDrawer.tile = t;
-                                tileDrawer.open();
-                            }
-                            onExtraFilesDropped: (extraUrls) => {
-                                if (root.currentGrid) {
-                                    for (var i = 0; i < extraUrls.length; ++i) {
-                                        var u = extraUrls[i];
-                                        var newTile = root.currentGrid.appendTile();
-                                        if (newTile) {
-                                            newTile.filePath = u;
-                                            var fn = u.substring(u.lastIndexOf('/') + 1);
-                                            var dot = fn.lastIndexOf('.');
-                                            if (dot > 0) fn = fn.substring(0, dot);
-                                            newTile.displayName = fn;
-                                        }
-                                    }
+                            spacing: 3
+                            Repeater {
+                                model: 3
+                                Rectangle {
+                                    width: 10
+                                    height: 2
+                                    radius: 1
+                                    color: soundboardScrollbarV.pressed ? "#E0C3FC" : "#7E8590"
+                                    anchors.horizontalCenter: parent.horizontalCenter
                                 }
                             }
                         }
+                    }
+                }
 
-                        // 2. Add Sound Tile Card (inline in the grid flow)
-                        Rectangle {
-                            visible: delegateRoot.isAddTile
+                // Touch-Friendly Horizontal ScrollBar (Oversized 28px height)
+                ScrollBar.horizontal: ScrollBar {
+                    id: soundboardScrollbarH
+                    objectName: "soundboardScrollbarH"
+                    height: 28
+                    policy: ScrollBar.AsNeeded
+                    visible: size < 1.0
+                    interactive: true
+                    active: size < 1.0
+                    onActiveChanged: {
+                        if (!active && size < 1.0) active = true;
+                    }
+                    rightPadding: soundboardScrollbarV.visible ? soundboardScrollbarV.width : 0
+
+                    background: Rectangle {
+                        color: "#16181B"
+                        radius: 6
+                        border.color: "#2C3036"
+                        border.width: 1
+                        anchors.fill: parent
+                        anchors.rightMargin: soundboardScrollbarV.visible ? soundboardScrollbarV.width : 0
+                    }
+
+                    contentItem: Rectangle {
+                        implicitWidth: 48
+                        implicitHeight: 20
+                        radius: 6
+                        color: soundboardScrollbarH.pressed ? "#8E2DE2" : (soundboardScrollbarH.hovered ? "#5A6270" : "#3E434D")
+                        border.color: soundboardScrollbarH.pressed ? "#FFFFFF" : "#555A64"
+                        border.width: 1
+
+                        // Grip Ridges for Touch Dragging
+                        Row {
                             anchors.centerIn: parent
-                            width: Math.max(150, 210 * root.tileScale)
-                            height: Math.max(150, 210 * root.tileScale)
-                            radius: 12
-                            color: addDropArea.containsDrag ? "#1E824C" : (addMouse.containsMouse ? "#2A2536" : "#1F2126")
-                            border.color: addDropArea.containsDrag ? "#2ECC71" : (addMouse.containsMouse ? "#8E2DE2" : "#353942")
-                            border.width: addDropArea.containsDrag ? 2 : 1
-
-                            ColumnLayout {
-                                anchors.centerIn: parent
-                                spacing: 8
+                            spacing: 3
+                            Repeater {
+                                model: 3
                                 Rectangle {
-                                    width: 42 * root.tileScale
-                                    height: 42 * root.tileScale
-                                    radius: 21 * root.tileScale
-                                    color: (addMouse.containsMouse || addDropArea.containsDrag) ? "#8E2DE2" : "#2E333C"
-                                    border.color: (addMouse.containsMouse || addDropArea.containsDrag) ? "#FFFFFF" : "#555A64"
-                                    border.width: 1
-                                    Layout.alignment: Qt.AlignHCenter
-
-                                    Text {
-                                        anchors.centerIn: parent
-                                        text: "+"
-                                        color: "#FFFFFF"
-                                        font.pixelSize: Math.round(26 * root.tileScale)
-                                        font.bold: true
-                                    }
-                                }
-                                Text {
-                                    text: addDropArea.containsDrag ? qsTr("Drop to Add New Tiles") : qsTr("Add Sound Tile")
-                                    color: (addMouse.containsMouse || addDropArea.containsDrag) ? "#FFFFFF" : "#AAAAAA"
-                                    font.bold: true
-                                    font.pointSize: 10 * Math.max(0.8, root.tileScale * 0.9)
-                                    Layout.alignment: Qt.AlignHCenter
+                                    width: 2
+                                    height: 10
+                                    radius: 1
+                                    color: soundboardScrollbarH.pressed ? "#E0C3FC" : "#7E8590"
+                                    anchors.verticalCenter: parent.verticalCenter
                                 }
                             }
+                        }
+                    }
+                }
 
-                            DropArea {
-                                id: addDropArea
-                                anchors.fill: parent
-                                enabled: delegateRoot.isAddTile
-                                onEntered: (drag) => {
-                                    if (drag.hasUrls) drag.acceptProposedAction();
+                Grid {
+                    id: soundboardGrid
+                    columns: soundboardFlickable.cols
+
+                    Repeater {
+                        model: soundboardFlickable.totalTiles
+
+                        delegate: Item {
+                            id: delegateRoot
+                            width: soundboardFlickable.cellW
+                            height: soundboardFlickable.cellH
+
+                            readonly property bool isAddTile: index === (root.currentGrid ? root.currentGrid.count : 0)
+
+                            // 1. Existing Sound Tile
+                            SoundTile {
+                                visible: !delegateRoot.isAddTile
+                                anchors.centerIn: parent
+                                tile: delegateRoot.isAddTile ? null : (root.currentGrid ? root.currentGrid.tileAt(index) : null)
+                                scaleFactor: root.tileScale
+                                onSettingsRequested: (t) => {
+                                    tileDrawer.tile = t;
+                                    tileDrawer.open();
                                 }
-                                onDropped: (drop) => {
-                                    if (drop.hasUrls && root.currentGrid) {
-                                        for (var i = 0; i < drop.urls.length; ++i) {
-                                            var url = drop.urls[i].toString();
-                                            if (url.indexOf("file://") === 0) url = url.substring(7);
-                                            var tile = root.currentGrid.appendTile();
-                                            if (tile) {
-                                                tile.filePath = url;
-                                                var filename = url.substring(url.lastIndexOf('/') + 1);
-                                                var dotIdx = filename.lastIndexOf('.');
-                                                if (dotIdx > 0) filename = filename.substring(0, dotIdx);
-                                                tile.displayName = filename;
+                                onExtraFilesDropped: (extraUrls) => {
+                                    if (root.currentGrid) {
+                                        for (var i = 0; i < extraUrls.length; ++i) {
+                                            var u = extraUrls[i];
+                                            var newTile = root.currentGrid.appendTile();
+                                            if (newTile) {
+                                                newTile.filePath = u;
+                                                var fn = u.substring(u.lastIndexOf('/') + 1);
+                                                var dot = fn.lastIndexOf('.');
+                                                if (dot > 0) fn = fn.substring(0, dot);
+                                                newTile.displayName = fn;
                                             }
                                         }
-                                        drop.acceptProposedAction();
                                     }
                                 }
                             }
 
-                            MouseArea {
-                                id: addMouse
-                                anchors.fill: parent
-                                enabled: delegateRoot.isAddTile
-                                hoverEnabled: true
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: {
-                                    if (root.currentGrid) {
-                                        root.currentGrid.appendTile();
+                            // 2. Add Sound Tile Card (inline in the grid flow)
+                            Rectangle {
+                                visible: delegateRoot.isAddTile
+                                anchors.centerIn: parent
+                                width: Math.max(150, 210 * root.tileScale)
+                                height: Math.max(150, 210 * root.tileScale)
+                                radius: 12
+                                color: addDropArea.containsDrag ? "#1E824C" : (addMouse.containsMouse ? "#2A2536" : "#1F2126")
+                                border.color: addDropArea.containsDrag ? "#2ECC71" : (addMouse.containsMouse ? "#8E2DE2" : "#353942")
+                                border.width: addDropArea.containsDrag ? 2 : 1
+
+                                ColumnLayout {
+                                    anchors.centerIn: parent
+                                    spacing: 8
+                                    Rectangle {
+                                        width: 42 * root.tileScale
+                                        height: 42 * root.tileScale
+                                        radius: 21 * root.tileScale
+                                        color: (addMouse.containsMouse || addDropArea.containsDrag) ? "#8E2DE2" : "#2E3236"
+                                        border.color: (addMouse.containsMouse || addDropArea.containsDrag) ? "#FFFFFF" : "#555A64"
+                                        border.width: 1
+                                        Layout.alignment: Qt.AlignHCenter
+
+                                        Text {
+                                            anchors.centerIn: parent
+                                            text: "+"
+                                            color: "#FFFFFF"
+                                            font.pixelSize: Math.round(26 * root.tileScale)
+                                            font.bold: true
+                                        }
+                                    }
+                                    Text {
+                                        text: addDropArea.containsDrag ? qsTr("Drop to Add New Tiles") : qsTr("Add Sound Tile")
+                                        color: (addMouse.containsMouse || addDropArea.containsDrag) ? "#FFFFFF" : "#AAAAAA"
+                                        font.bold: true
+                                        font.pointSize: 10 * Math.max(0.8, root.tileScale * 0.9)
+                                        Layout.alignment: Qt.AlignHCenter
+                                    }
+                                }
+
+                                DropArea {
+                                    id: addDropArea
+                                    anchors.fill: parent
+                                    enabled: delegateRoot.isAddTile
+                                    onEntered: (drag) => {
+                                        if (drag.hasUrls) drag.acceptProposedAction();
+                                    }
+                                    onDropped: (drop) => {
+                                        if (drop.hasUrls && root.currentGrid) {
+                                            for (var i = 0; i < drop.urls.length; ++i) {
+                                                var url = drop.urls[i].toString();
+                                                if (url.indexOf("file://") === 0) url = url.substring(7);
+                                                var tile = root.currentGrid.appendTile();
+                                                if (tile) {
+                                                    tile.filePath = url;
+                                                    var filename = url.substring(url.lastIndexOf('/') + 1);
+                                                    var dotIdx = filename.lastIndexOf('.');
+                                                    if (dotIdx > 0) filename = filename.substring(0, dotIdx);
+                                                    tile.displayName = filename;
+                                                }
+                                            }
+                                            drop.acceptProposedAction();
+                                        }
+                                    }
+                                }
+
+                                MouseArea {
+                                    id: addMouse
+                                    anchors.fill: parent
+                                    enabled: delegateRoot.isAddTile
+                                    hoverEnabled: true
+                                    cursorShape: Qt.PointingHandCursor
+                                    onClicked: {
+                                        if (root.currentGrid) {
+                                            root.currentGrid.appendTile();
+                                        }
                                     }
                                 }
                             }
                         }
                     }
+                }
+
+                // Corner filler when both scrollbars are visible
+                Rectangle {
+                    anchors.right: parent.right
+                    anchors.bottom: parent.bottom
+                    width: 28
+                    height: 28
+                    color: "#16181B"
+                    border.color: "#2C3036"
+                    border.width: 1
+                    visible: soundboardScrollbarV.visible && soundboardScrollbarH.visible
+                    z: 10
                 }
             }
 

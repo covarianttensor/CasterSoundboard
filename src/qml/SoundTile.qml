@@ -337,6 +337,7 @@ Rectangle {
                     id: scrubArea
                     anchors.fill: parent
                     hoverEnabled: true
+                    preventStealing: true
                     cursorShape: Qt.PointingHandCursor
 
                     function updateScrub(mouseX) {
