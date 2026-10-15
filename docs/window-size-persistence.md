@@ -1,5 +1,14 @@
 # Profile window-size persistence
 
+The main window size is stored only in saved `.caster` profiles. Saving a
+profile, closing its tab, or closing the visible app updates that size;
+loading the profile restores it. When several saved tabs are open, closing
+the app stores the final window size in each profile. Automatic size updates
+preserve saved soundboard content without saving other pending edits.
+Unsaved tabs and headless runs do not automatically store a window size.
+Maximized, minimized, and fullscreen windows store their normal window size.
+Older profiles without size metadata retain the existing window size on load.
+
 Window size is optional metadata appended after the existing player states:
 `quint32(0x4357535a)`, `quint32(1)`, and a `QSize`, using the profile's QDataStream
 version. Profiles without metadata remain readable. Older upstream readers
