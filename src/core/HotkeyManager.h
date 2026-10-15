@@ -6,7 +6,8 @@
 #include <QMap>
 #include <QKeyEvent>
 
-class SoundTileController;
+#include "SoundTileController.h"
+#include "SoundboardProjectController.h"
 
 class HotkeyManager : public QObject
 {
@@ -24,12 +25,14 @@ public:
     Q_INVOKABLE void registerTile(SoundTileController *tile);
     Q_INVOKABLE void unregisterTile(SoundTileController *tile);
     Q_INVOKABLE void clear();
+    Q_INVOKABLE void monitorProject(SoundboardProjectController *project);
 
     // In-app key dispatch (returns true if an assigned hotkey matched and triggered)
     Q_INVOKABLE bool handleKeyEvent(QKeyEvent *event);
 
 public slots:
     void toggleMute();
+    void rescanProject();
 
 signals:
     void isMutedChanged();
@@ -43,6 +46,7 @@ private:
     void rebuildMap();
 
     bool m_isMuted{false};
+    SoundboardProjectController *m_monitoredProject{nullptr};
     QList<SoundTileController*> m_registeredTiles;
     QMap<QKeySequence, SoundTileController*> m_keyMap;
 };

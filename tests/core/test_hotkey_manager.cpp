@@ -2,6 +2,8 @@
 #include <QSignalSpy>
 #include "HotkeyManager.h"
 #include "SoundTileController.h"
+#include "SoundboardProjectController.h"
+#include "SoundboardGridModel.h"
 
 class TestHotkeyManager : public QObject
 {
@@ -58,6 +60,26 @@ private slots:
         manager.setIsMuted(false);
         QVERIFY(manager.handleKeyEvent(&keyP));
         QCOMPARE(triggerSpy.count(), 2);
+    }
+
+    void testMonitorProject()
+    {
+        SoundboardProjectController project;
+        project.newProject();
+        SoundboardGridModel *grid = project.tabModel()->currentGridModel();
+        QVERIFY(grid != nullptr);
+
+        SoundTileController *tile = grid->appendTile();
+        tile->setHotkey("Ctrl+Alt+S");
+
+        HotkeyManager manager;
+        manager.monitorProject(&project);
+
+        QSignalSpy triggerSpy(&manager, &HotkeyManager::hotkeyTriggered);
+
+        QKeyEvent event(QEvent::KeyPress, Qt::Key_S, Qt::ControlModifier | Qt::AltModifier);
+        QVERIFY(manager.handleKeyEvent(&event));
+        QCOMPARE(triggerSpy.count(), 1);
     }
 };
 

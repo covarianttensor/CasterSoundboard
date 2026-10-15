@@ -1,5 +1,8 @@
 #include "HotkeyManager.h"
 #include "SoundTileController.h"
+#include "SoundboardProjectController.h"
+#include "SoundboardTabModel.h"
+#include "SoundboardGridModel.h"
 
 HotkeyManager::HotkeyManager(QObject *parent)
     : QObject(parent)
@@ -58,6 +61,56 @@ void HotkeyManager::clear()
     }
     m_registeredTiles.clear();
     m_keyMap.clear();
+}
+
+void HotkeyManager::rescanProject()
+{
+    clear();
+    if (!m_monitoredProject || !m_monitoredProject->tabModel())
+        return;
+
+    SoundboardTabModel *tabModel = m_monitoredProject->tabModel();
+    for (int i = 0; i < tabModel->count(); ++i) {
+        SoundboardGridModel *grid = tabModel->gridModelAt(i);
+        if (grid) {
+            connect(grid, &QAbstractItemModel::rowsInserted, this, &HotkeyManager::rescanProject, Qt::UniqueConnection);
+            connect(grid, &QAbstractItemModel::rowsRemoved, this, &HotkeyManager::rescanProject, Qt::UniqueConnection);
+            connect(grid, &QAbstractItemModel::modelReset, this, &HotkeyManager::rescanProject, Qt::UniqueConnection);
+
+            for (SoundTileController *tile : grid->tiles()) {
+                registerTile(tile);
+            }
+        }
+    }
+}
+
+void HotkeyManager::monitorProject(SoundboardProjectController *project)
+{
+    if (m_monitoredProject == project)
+        return;
+
+    if (m_monitoredProject) {
+        disconnect(m_monitoredProject, nullptr, this, nullptr);
+        if (m_monitoredProject->tabModel()) {
+            disconnect(m_monitoredProject->tabModel(), nullptr, this, nullptr);
+        }
+    }
+
+    m_monitoredProject = project;
+    if (!m_monitoredProject) {
+        clear();
+        return;
+    }
+
+    connect(m_monitoredProject, &SoundboardProjectController::projectLoaded, this, &HotkeyManager::rescanProject);
+
+    if (auto *tabModel = m_monitoredProject->tabModel()) {
+        connect(tabModel, &QAbstractItemModel::rowsInserted, this, &HotkeyManager::rescanProject);
+        connect(tabModel, &QAbstractItemModel::rowsRemoved, this, &HotkeyManager::rescanProject);
+        connect(tabModel, &QAbstractItemModel::modelReset, this, &HotkeyManager::rescanProject);
+    }
+
+    rescanProject();
 }
 
 void HotkeyManager::onTileHotkeyChanged()

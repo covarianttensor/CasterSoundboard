@@ -5,11 +5,13 @@ project(CasterSoundboard VERSION 2.0.0 LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
-find_package(Qt6 REQUIRED COMPONENTS Core Gui Qml Quick Multimedia Network Test)
+find_package(Qt6 REQUIRED COMPONENTS Core Gui Qml Quick QuickControls2 Multimedia Network Test)
 
 # -------------------------------------------------------------
 # Core C++ Soundboard Engine Library
@@ -39,6 +41,80 @@ target_link_libraries(CasterCore PUBLIC
     Qt6::Qml
     Qt6::Multimedia
     Qt6::Network
+)
+
+# -------------------------------------------------------------
+# QML Application Executable
+# -------------------------------------------------------------
+qt_add_executable(CasterSoundboard
+    src/main.cpp
+)
+
+target_include_directories(CasterSoundboard PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/core
+)
+
+target_link_libraries(CasterSoundboard PRIVATE
+    CasterCore
+    Qt6::Core
+    Qt6::Gui
+    Qt6::Qml
+    Qt6::Quick
+    Qt6::QuickControls2
+    Qt6::Multimedia
+    Qt6::Network
+)
+
+qt_policy(SET QTP0004 OLD)
+
+qt_add_qml_module(CasterSoundboard
+    URI CasterSoundboard
+    VERSION 1.0
+    RESOURCE_PREFIX "/qt/qml"
+    QML_FILES
+        src/qml/Main.qml
+        src/qml/NavSidebar.qml
+        src/qml/TopActionBar.qml
+        src/qml/SoundboardTabBar.qml
+        src/qml/views/SoundboardsView.qml
+        src/qml/views/AudioRoutingView.qml
+        src/qml/views/OscView.qml
+        src/qml/views/PreferencesView.qml
+    RESOURCES
+        src/qml/icons/33_percent.png
+        src/qml/icons/about.png
+        src/qml/icons/app.png
+        src/qml/icons/audio_devices.png
+        src/qml/icons/cog.png
+        src/qml/icons/colorPicker.png
+        src/qml/icons/cue.png
+        src/qml/icons/down.png
+        src/qml/icons/duck.png
+        src/qml/icons/Key.png
+        src/qml/icons/loop.png
+        src/qml/icons/newTab.png
+        src/qml/icons/no_loop.png
+        src/qml/icons/notes.png
+        src/qml/icons/openMusic.png
+        src/qml/icons/open.png
+        src/qml/icons/open_sound_control.png
+        src/qml/icons/pause.png
+        src/qml/icons/play.png
+        src/qml/icons/playState_paused.png
+        src/qml/icons/playState_playing.png
+        src/qml/icons/playState_stopped.png
+        src/qml/icons/rename.png
+        src/qml/icons/save_as.png
+        src/qml/icons/save.png
+        src/qml/icons/stopAll.png
+        src/qml/icons/stop.png
+        src/qml/icons/unduck.png
+        src/qml/icons/fullscreen.png
+        src/qml/icons/exit_fullscreen.png
+        src/qml/icons/soundboard_tab.png
+        src/qml/icons/add_player.png
+        src/qml/img/player_gradient.png
+        src/qml/img/player_outline.png
 )
 
 # -------------------------------------------------------------

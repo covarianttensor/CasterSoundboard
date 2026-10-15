@@ -1,0 +1,259 @@
+import QtQuick
+import QtQuick.Controls
+import QtQuick.Layouts
+
+Rectangle {
+    id: root
+
+    property alias tileScaleValue: scaleSlider.value
+
+    signal newTabRequested()
+    signal openProjectRequested()
+    signal saveProjectRequested()
+    signal saveAsProjectRequested()
+    signal renameTabRequested()
+    signal stopAllRequested()
+    signal toggleDuckingRequested()
+    signal toggleMuteHotkeysRequested()
+
+    height: 60
+    color: "#25282B"
+
+    RowLayout {
+        anchors.fill: parent
+        anchors.leftMargin: 12
+        anchors.rightMargin: 12
+        spacing: 8
+
+        // --- File & Project Controls ---
+        ActionIconButton {
+            iconSource: "icons/newTab.png"
+            tooltipText: qsTr("Add Soundboard Tab (Ctrl+N)")
+            onClicked: root.newTabRequested()
+        }
+
+        ActionIconButton {
+            iconSource: "icons/open.png"
+            tooltipText: qsTr("Open .caster Project (Ctrl+O)")
+            onClicked: root.openProjectRequested()
+        }
+
+        ActionIconButton {
+            iconSource: "icons/save.png"
+            tooltipText: qsTr("Save Project (Ctrl+S)")
+            onClicked: root.saveProjectRequested()
+        }
+
+        ActionIconButton {
+            iconSource: "icons/save_as.png"
+            tooltipText: qsTr("Save Project As... (Ctrl+Shift+S)")
+            onClicked: root.saveAsProjectRequested()
+        }
+
+        ActionIconButton {
+            iconSource: "icons/rename.png"
+            tooltipText: qsTr("Rename Current Tab")
+            onClicked: root.renameTabRequested()
+        }
+
+        Rectangle {
+            width: 1
+            height: 32
+            color: "#3A3E42"
+            Layout.leftMargin: 4
+            Layout.rightMargin: 4
+        }
+
+        // --- Tile Zoom & Scale Touch Slider ---
+        RowLayout {
+            spacing: 6
+
+            Text {
+                text: qsTr("Tile Zoom:")
+                color: "#AAAAAA"
+                font.pointSize: 10
+            }
+
+            Slider {
+                id: scaleSlider
+                from: 0.6
+                to: 1.8
+                value: 1.0
+                stepSize: 0.05
+                Layout.preferredWidth: 110
+
+                background: Rectangle {
+                    x: scaleSlider.leftPadding
+                    y: scaleSlider.topPadding + scaleSlider.availableHeight / 2 - height / 2
+                    implicitWidth: 110
+                    implicitHeight: 6
+                    width: scaleSlider.availableWidth
+                    height: implicitHeight
+                    radius: 3
+                    color: "#3A3E42"
+
+                    Rectangle {
+                        width: scaleSlider.visualPosition * parent.width
+                        height: parent.height
+                        color: "#8E2DE2"
+                        radius: 3
+                    }
+                }
+
+                handle: Rectangle {
+                    x: scaleSlider.leftPadding + scaleSlider.visualPosition * (scaleSlider.availableWidth - width)
+                    y: scaleSlider.topPadding + scaleSlider.availableHeight / 2 - height / 2
+                    implicitWidth: 20
+                    implicitHeight: 20
+                    radius: 10
+                    color: scaleSlider.pressed ? "#A558F0" : "#FFFFFF"
+                    border.color: "#8E2DE2"
+                    border.width: 2
+                }
+            }
+
+            Text {
+                text: Math.round(scaleSlider.value * 100) + "%"
+                color: "#FFFFFF"
+                font.bold: true
+                font.pointSize: 10
+                Layout.preferredWidth: 40
+            }
+        }
+
+        Item {
+            Layout.fillWidth: true
+        }
+
+        // --- Production Controls ---
+
+        // Mute Hotkeys Toggle (Issue #76)
+        Button {
+            id: muteHotkeysBtn
+            property bool isMuted: typeof hotkeyManager !== "undefined" ? hotkeyManager.isMuted : false
+            Layout.preferredHeight: 44
+            Layout.preferredWidth: isMuted ? 140 : 120
+            onClicked: root.toggleMuteHotkeysRequested()
+
+            background: Rectangle {
+                color: muteHotkeysBtn.isMuted ? "#D9534F" : (muteHotkeysBtn.hovered ? "#3A3E42" : "#2E3236")
+                radius: 6
+                border.color: muteHotkeysBtn.isMuted ? "#FF6B6B" : "#4A4E52"
+                border.width: 1
+            }
+
+            contentItem: RowLayout {
+                spacing: 6
+                Image {
+                    source: "icons/Key.png"
+                    width: 20; height: 20
+                    fillMode: Image.PreserveAspectFit
+                }
+                Text {
+                    text: muteHotkeysBtn.isMuted ? qsTr("Keys Muted") : qsTr("Hotkeys Active")
+                    color: "#FFFFFF"
+                    font.bold: true
+                    font.pointSize: 9
+                }
+            }
+
+            ToolTip.visible: hovered
+            ToolTip.text: qsTr("Toggle Hotkey Listening: Mute hotkeys while typing in notes or chat (Issue #76)")
+        }
+
+        // Audio Ducking Toggle
+        Button {
+            id: duckingBtn
+            property bool isDucking: typeof projectController !== "undefined" ? projectController.isDuckingActive : false
+            Layout.preferredHeight: 44
+            Layout.preferredWidth: 110
+            onClicked: root.toggleDuckingRequested()
+
+            background: Rectangle {
+                color: duckingBtn.isDucking ? "#F39C12" : (duckingBtn.hovered ? "#3A3E42" : "#2E3236")
+                radius: 6
+                border.color: duckingBtn.isDucking ? "#F1C40F" : "#4A4E52"
+                border.width: 1
+            }
+
+            contentItem: RowLayout {
+                spacing: 6
+                Image {
+                    source: duckingBtn.isDucking ? "icons/duck.png" : "icons/unduck.png"
+                    width: 24; height: 24
+                    fillMode: Image.PreserveAspectFit
+                }
+                Text {
+                    text: qsTr("Ducking")
+                    color: "#FFFFFF"
+                    font.bold: true
+                    font.pointSize: 10
+                }
+            }
+
+            ToolTip.visible: hovered
+            ToolTip.text: qsTr("Toggle Audio Ducking (Ctrl+D)")
+        }
+
+        // Panic Button: Stop All Sounds
+        Button {
+            id: stopAllBtn
+            Layout.preferredHeight: 44
+            Layout.preferredWidth: 115
+            onClicked: root.stopAllRequested()
+
+            background: Rectangle {
+                color: stopAllBtn.pressed ? "#A93226" : (stopAllBtn.hovered ? "#C0392B" : "#962D22")
+                radius: 6
+                border.color: "#E74C3C"
+                border.width: 1
+            }
+
+            contentItem: RowLayout {
+                spacing: 6
+                Image {
+                    source: "icons/stopAll.png"
+                    width: 24; height: 24
+                    fillMode: Image.PreserveAspectFit
+                }
+                Text {
+                    text: qsTr("Stop All")
+                    color: "#FFFFFF"
+                    font.bold: true
+                    font.pointSize: 10
+                }
+            }
+
+            ToolTip.visible: hovered
+            ToolTip.text: qsTr("Panic Button: Stop all playing sounds across all tabs (Space)")
+        }
+    }
+
+    component ActionIconButton : Button {
+        id: aib
+        property string iconSource
+        property string tooltipText
+
+        Layout.preferredWidth: 44
+        Layout.preferredHeight: 44
+
+        background: Rectangle {
+            color: aib.pressed ? "#1E2022" : (aib.hovered ? "#3A3E42" : "#2E3236")
+            radius: 6
+            border.color: "#3A3E42"
+            border.width: 1
+        }
+
+        contentItem: Image {
+            source: aib.iconSource
+            anchors.centerIn: parent
+            width: 24; height: 24
+            fillMode: Image.PreserveAspectFit
+            opacity: aib.hovered ? 1.0 : 0.85
+        }
+
+        ToolTip.visible: hovered
+        ToolTip.text: aib.tooltipText
+        ToolTip.delay: 300
+    }
+}
