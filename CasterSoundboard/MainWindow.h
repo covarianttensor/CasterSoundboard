@@ -39,6 +39,9 @@ class CasterOSCServerConfigPicker;
 class QComboBox;
 class QLabel;
 class QMediaDevices;
+namespace Audio {
+class AudioDeviceController;
+}
 class WebRemote;
 
 class MainWindow : public QWidget //inherit from QWidget
@@ -50,6 +53,9 @@ public:
     ~MainWindow();
     bool loadProfile(const QString &filePath, QString &errorMessage); // also called at startup
     void updateTabToolTips();
+    bool isDarkTheme() const;
+    QIcon themedIcon(const QString &iconFileName) const;
+    void updateThemeIcons();
 
     //PROPERTIES
 
@@ -64,10 +70,13 @@ protected:
     //METHODS
     void keyReleaseEvent(QKeyEvent *event);//Capture Hot Keys
     void changeEvent(QEvent *event) override;
+    void closeEvent(QCloseEvent *event) override;
 
     //WIDGETS
 
 private:
+    bool rememberWindowSize(CasterBoard *board);
+    QSize profileWindowSize() const;
     void openWebServerSettings();
     void updateServerIndicators();
     void showOSCStartError();
@@ -96,9 +105,6 @@ private:
     CasterBoard* findBoardByName(const QString &name) const;
     CasterBoard* currentBoard() const;
     void setAudioDuckingState(int state, bool notifyOSC = false);
-    bool isDarkTheme() const;
-    QIcon themedIcon(const QString &iconFileName) const;
-    void updateThemeIcons();
 
     //WIDGETS
     //Toolbar
@@ -112,6 +118,7 @@ private:
     QPushButton *stopAllSoundsButton;
     QPushButton *toggleAudioDuckingButton;
     QPushButton *openSoundControlButton;
+    QPushButton *audioButton = nullptr;
     QPushButton *settingsButton;
     QPushButton *aboutButton;
     //Lower window area
@@ -124,6 +131,7 @@ private:
     QMediaDevices *mediaDevices = nullptr;
     QLabel *audioOutputLabel = nullptr;
     QComboBox *audioOutputComboBox = nullptr;
+    Audio::AudioDeviceController *audioController = nullptr;
 
 
 

@@ -46,6 +46,7 @@ public:
     bool isCurrentBoard = false;
     QString *soundBoardName;
     QString *profileFilePath;
+    QSize mainWindowSize; // Optional profile metadata; not a global setting.
     QMap<int,QString> *int_to_player_key;
     QMap<int,QString> *keyboard_key_to_player_key;
     QMap<QString, CasterPlayerWidget*> *players;

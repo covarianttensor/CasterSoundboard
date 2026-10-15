@@ -1,0 +1,132 @@
+[
+  {
+    "index": 44,
+    "name": "card.ga104",
+    "properties": {
+      "device.description": "GA104 High Definition Audio Controller"
+    },
+    "active_profile": "output:hdmi-stereo",
+    "profiles": {
+      "off": {
+        "description": "Off",
+        "sinks": 0,
+        "sources": 0,
+        "priority": 0,
+        "available": true
+      },
+      "output:hdmi-stereo": {
+        "description": "Digital Stereo (HDMI) Output",
+        "sinks": 1,
+        "sources": 0,
+        "priority": 5900,
+        "available": true
+      },
+      "output:hdmi-stereo-extra1": {
+        "description": "Digital Stereo (HDMI 2) Output",
+        "sinks": 1,
+        "sources": 0,
+        "priority": 5700,
+        "available": false
+      },
+      "output:hdmi-stereo-extra2": {
+        "description": "Digital Stereo (HDMI 3) Output",
+        "sinks": 1,
+        "sources": 0,
+        "priority": 5700,
+        "available": false
+      },
+      "output:hdmi-stereo-extra3": {
+        "description": "Digital Stereo (HDMI 4) Output",
+        "sinks": 1,
+        "sources": 0,
+        "priority": 5700,
+        "available": false
+      },
+      "output:hdmi-surround-extra1": {
+        "description": "Digital Surround 5.1 (HDMI 2) Output",
+        "sinks": 1,
+        "sources": 0,
+        "priority": 600,
+        "available": false
+      },
+      "output:hdmi-surround71-extra1": {
+        "description": "Digital Surround 7.1 (HDMI 2) Output",
+        "sinks": 1,
+        "sources": 0,
+        "priority": 600,
+        "available": false
+      },
+      "output:hdmi-surround-extra2": {
+        "description": "Digital Surround 5.1 (HDMI 3) Output",
+        "sinks": 1,
+        "sources": 0,
+        "priority": 600,
+        "available": false
+      },
+      "output:hdmi-surround71-extra2": {
+        "description": "Digital Surround 7.1 (HDMI 3) Output",
+        "sinks": 1,
+        "sources": 0,
+        "priority": 600,
+        "available": false
+      },
+      "output:hdmi-surround-extra3": {
+        "description": "Digital Surround 5.1 (HDMI 4) Output",
+        "sinks": 1,
+        "sources": 0,
+        "priority": 600,
+        "available": false
+      },
+      "output:hdmi-surround71-extra3": {
+        "description": "Digital Surround 7.1 (HDMI 4) Output",
+        "sinks": 1,
+        "sources": 0,
+        "priority": 600,
+        "available": false
+      },
+      "pro-audio": {
+        "description": "Pro Audio",
+        "sinks": 4,
+        "sources": 0,
+        "priority": 1,
+        "available": true
+      }
+    },
+    "ports": {
+      "hdmi-output-0": {
+        "description": "HDMI / DisplayPort",
+        "availability": "available",
+        "profiles": [
+          "output:hdmi-stereo"
+        ]
+      },
+      "hdmi-output-1": {
+        "description": "HDMI / DisplayPort 2",
+        "availability": "not available",
+        "profiles": [
+          "output:hdmi-stereo-extra1",
+          "output:hdmi-surround-extra1",
+          "output:hdmi-surround71-extra1"
+        ]
+      },
+      "hdmi-output-2": {
+        "description": "HDMI / DisplayPort 3",
+        "availability": "not available",
+        "profiles": [
+          "output:hdmi-stereo-extra2",
+          "output:hdmi-surround-extra2",
+          "output:hdmi-surround71-extra2"
+        ]
+      },
+      "hdmi-output-3": {
+        "description": "HDMI / DisplayPort 4",
+        "availability": "not available",
+        "profiles": [
+          "output:hdmi-stereo-extra3",
+          "output:hdmi-surround-extra3",
+          "output:hdmi-surround71-extra3"
+        ]
+      }
+    }
+  }
+]

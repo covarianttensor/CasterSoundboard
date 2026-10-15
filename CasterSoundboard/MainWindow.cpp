@@ -1,3 +1,7 @@
+#include "audio/AudioDeviceController.h"
+#include "audio/AudioDevicesDialog.h"
+#include <QCoreApplication>
+#include <QAction>
 #include "web/WebRemote.h"
 #include <QLineEdit>
 #include <QSpinBox>
@@ -25,6 +29,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 #include "MainWindow.h"
+#include <QSaveFile>
+#include <QCloseEvent>
 #include <memory>
 #include "CasterBoard.h"
 #include "CasterPlayer.h"
@@ -145,6 +151,16 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent)
     aboutButton->setIconSize(QSize(40,40));
     aboutButton->setToolTip("About");
 
+    //~~Audio Devices Button~~
+    audioController = new Audio::AudioDeviceController(this);
+    auto audioDialog = new Audio::AudioDevicesDialog(audioController, this);
+    audioButton = new QPushButton;
+    audioButton->setIconSize(QSize(40,40));
+    audioButton->setToolTip(tr("Audio Devices"));
+    audioButton->setAccessibleName(tr("Audio Devices"));
+    audioButton->setObjectName("audioDevicesButton");
+    connect(audioButton, &QPushButton::clicked, audioDialog, &Audio::AudioDevicesDialog::openSettings);
+
     this->updateThemeIcons();
 
     //======Main Toolbar=========
@@ -158,6 +174,7 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent)
     mainToolbar->addWidget(stopAllSoundsButton);
     mainToolbar->addWidget(toggleAudioDuckingButton);
     mainToolbar->addWidget(openSoundControlButton);
+    mainToolbar->addWidget(audioButton);
     auto webServerButton = new QPushButton;
     webServerButton->setIcon(QIcon(":/res/img/web_server.png"));
     webServerButton->setIconSize(QSize(40,40));
@@ -175,6 +192,7 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent)
     audioOutputLabel->setContentsMargins(8, 0, 4, 0);
 
     audioOutputComboBox = new QComboBox;
+    audioOutputComboBox->setObjectName("audioOutputComboBox");
     audioOutputComboBox->setMinimumWidth(160);
     audioOutputComboBox->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
     audioOutputComboBox->setToolTip(tr("Select audio output device for playback"));
@@ -182,6 +200,15 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent)
     mainToolbar->addSeparator();
     mainToolbar->addWidget(audioOutputLabel);
     mainToolbar->addWidget(audioOutputComboBox);
+
+    connect(audioController, &Audio::AudioDeviceController::playbackRoutingChanged,
+            this, [this](bool active) {
+        audioOutputComboBox->setEnabled(!active);
+        audioOutputComboBox->setToolTip(active
+            ? tr("Playback is routed to Caster Soundboard virtual sink by Audio Devices. Stop audio sharing to change output.")
+            : tr("Select audio output device for playback"));
+        QTimer::singleShot(50, this, &MainWindow::populateAudioOutputs);
+    });
 
     // Add toolbar to layout
     layout->addWidget(mainToolbar, 0, Qt::AlignLeft);
@@ -306,6 +333,7 @@ void MainWindow::mainTabContainerTabClosedRequested(int tabIndex)
     if(msgBox.exec() == QMessageBox::Yes)
     {
         CasterBoard *toBeDeleted = dynamic_cast<CasterBoard*>(mainTabContainer->widget(tabIndex));
+        if (!rememberWindowSize(toBeDeleted)) return;
         //CLOSE REQUESTED TAB
         if(toBeDeleted) {
             toBeDeleted->stopAllSounds();
@@ -760,7 +788,58 @@ bool MainWindow::loadProfile(const QString &filePath, QString &errorMessage)
     const int index = mainTabContainer->addTab(cb, *cb->soundBoardName);
     mainTabContainer->setCurrentIndex(index);
     updateTabToolTips();
+    if (!cb->mainWindowSize.isEmpty()) resize(cb->mainWindowSize);
     return true;
+}
+
+QSize MainWindow::profileWindowSize() const
+{
+    return (isMaximized() || isFullScreen() || isMinimized()) ? normalGeometry().size() : size();
+}
+
+bool MainWindow::rememberWindowSize(CasterBoard *board)
+{
+    // Headless runs and unnamed boards must not persist window geometry.
+    if (!isVisible() || !board || board->profileFilePath->isEmpty()) return true;
+    const QString path = *board->profileFilePath;
+    QFile input(path);
+    if (!input.open(QIODevice::ReadOnly)) { showProfileError(this, input.errorString()); return false; }
+    // Read the saved board, not the live board: automatic size persistence must
+    // not save edits the user has not saved (including edits to labels or sounds).
+    CasterBoard saved;
+    QDataStream in(&input);
+    in.setVersion(QDataStream::Qt_DefaultCompiledVersion);
+    in >> saved;
+    input.close();
+    if (in.status() != QDataStream::Ok) {
+        showProfileError(this, tr("Cannot read profile:\n") + path);
+        return false;
+    }
+    saved.mainWindowSize = profileWindowSize();
+    QSaveFile output(path);
+    if (!output.open(QIODevice::WriteOnly)) { showProfileError(this, output.errorString()); return false; }
+    QDataStream out(&output);
+    out.setVersion(QDataStream::Qt_DefaultCompiledVersion);
+    out << saved;
+    if (out.status() != QDataStream::Ok) {
+        output.cancelWriting();
+        showProfileError(this, tr("Cannot save window size to profile:\n") + path);
+        return false;
+    }
+    if (!output.commit()) { showProfileError(this, output.errorString()); return false; }
+    board->mainWindowSize = saved.mainWindowSize;
+    return true;
+}
+
+void MainWindow::closeEvent(QCloseEvent *event)
+{
+    for (int i = 0; i < mainTabContainer->count(); ++i) {
+        if (!rememberWindowSize(qobject_cast<CasterBoard*>(mainTabContainer->widget(i)))) {
+            event->ignore();
+            return;
+        }
+    }
+    event->accept();
 }
 
 void MainWindow::saveTab()
@@ -776,6 +855,7 @@ void MainWindow::saveTab()
             file.open(QIODevice::WriteOnly);
             out.setDevice(&file);
             out.setVersion(QDataStream::Qt_DefaultCompiledVersion);
+            currentBoard()->mainWindowSize = profileWindowSize();
             out << *dynamic_cast<CasterBoard*>(mainTabContainer->currentWidget());
             file.flush();
             file.close();
@@ -794,6 +874,7 @@ void MainWindow::saveTab()
                 file.open(QIODevice::WriteOnly);
                 out.setDevice(&file);
                 out.setVersion(QDataStream::Qt_DefaultCompiledVersion);
+                currentBoard()->mainWindowSize = profileWindowSize();
                 out << *dynamic_cast<CasterBoard*>(mainTabContainer->currentWidget());
                 file.flush();
                 file.close();
@@ -831,6 +912,7 @@ void MainWindow::saveAsTab()
             file.open(QIODevice::WriteOnly);
             out.setDevice(&file);
             out.setVersion(QDataStream::Qt_DefaultCompiledVersion);
+            currentBoard()->mainWindowSize = profileWindowSize();
             out << *dynamic_cast<CasterBoard*>(mainTabContainer->currentWidget());
             file.flush();
             file.close();
@@ -929,6 +1011,9 @@ void MainWindow::populateAudioOutputs()
 
     const QList<QAudioDevice> devices = QMediaDevices::audioOutputs();
 
+    const bool managed = audioController && audioController->isRouting();
+    const QString managedSink = audioController ? audioController->playbackSinkName() : QString();
+
     // Disambiguate duplicate descriptions if any exist
     QMap<QString, int> descCounts;
     for (const QAudioDevice &dev : devices) {
@@ -937,8 +1022,13 @@ void MainWindow::populateAudioOutputs()
     QMap<QString, int> descIndex;
 
     int targetIndex = 0;
+    int managedIndex = -1;
     for (const QAudioDevice &dev : devices) {
         QString label = dev.description();
+        const bool isManagedSink = managed && (
+            (!managedSink.isEmpty() && (dev.id().contains(managedSink.toUtf8()) || dev.description().contains(managedSink))) ||
+            dev.description().contains("Caster_Soundboard") || dev.description().contains("Caster Soundboard")
+        );
         if (descCounts[dev.description()] > 1) {
             descIndex[dev.description()]++;
             label += QString(" (%1)").arg(descIndex[dev.description()]);
@@ -946,10 +1036,19 @@ void MainWindow::populateAudioOutputs()
         if (dev.isDefault()) {
             label += tr(" (Default)");
         }
+        if (isManagedSink) {
+            label = tr("Caster Soundboard (Virtual Sink)");
+        }
         audioOutputComboBox->addItem(label, dev.id());
-        if (!activeId.isEmpty() && dev.id() == activeId) {
+        if (isManagedSink) {
+            managedIndex = audioOutputComboBox->count() - 1;
+        } else if (!managed && !activeId.isEmpty() && dev.id() == activeId) {
             targetIndex = audioOutputComboBox->count() - 1;
         }
+    }
+
+    if (managed && managedIndex >= 0) {
+        targetIndex = managedIndex;
     }
 
     audioOutputComboBox->setCurrentIndex(targetIndex);
@@ -1460,6 +1559,8 @@ void MainWindow::updateThemeIcons()
     stopAllSoundsButton->setIcon(themedIcon("stopAll.png"));
     toggleAudioDuckingButton->setIcon(themedIcon(audio_duck_state == 0 ? "duck.png" : "unduck.png"));
     openSoundControlButton->setIcon(themedIcon("open_sound_control.png"));
+    if (audioButton)
+        audioButton->setIcon(themedIcon("audio_devices.png"));
     settingsButton->setIcon(themedIcon("cog.png"));
     aboutButton->setIcon(themedIcon("about.png"));
 }

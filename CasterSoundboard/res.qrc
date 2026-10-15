@@ -1,5 +1,7 @@
 <RCC>
     <qresource prefix="/">
+        <file>audio/device-setup.html</file>
+        <file>res/img/audio_devices.png</file>
         <file>web/index.html</file>
         <file>res/img/web_server.png</file>
         <file>res/img/Key.png</file>
@@ -53,5 +55,6 @@
         <file>res/img/white/duck.png</file>
         <file>res/img/white/unduck.png</file>
         <file>res/img/white/33_percent.png</file>
+        <file>res/img/white/audio_devices.png</file>
     </qresource>
 </RCC>

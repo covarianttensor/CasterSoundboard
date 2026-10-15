@@ -6,9 +6,16 @@
 #include <QApplication>
 #include <QInputDialog>
 #include <QMessageBox>
+#include <QAbstractButton>
 #include <QTabWidget>
 #include <QComboBox>
+#include <QPushButton>
+#include <QLineEdit>
+#include "audio/AudioDevicesDialog.h"
 #include <QSettings>
+#include <QTemporaryDir>
+#include <QFile>
+#include <QDataStream>
 #include <QtMultimedia/QMediaDevices>
 #include <QTimer>
 #include <QUdpSocket>
@@ -126,7 +133,7 @@ private slots:
         settings.remove("audio/outputDeviceId");
 
         MainWindow window;
-        auto comboBox = window.findChild<QComboBox *>();
+        auto comboBox = window.findChild<QComboBox *>("audioOutputComboBox");
         QVERIFY(comboBox);
         QVERIFY(comboBox->count() >= 1);
         QCOMPARE(comboBox->itemText(0), QString("Default System Output"));
@@ -153,7 +160,7 @@ private slots:
             // Test persistence across new MainWindow instance
             settings.setValue("audio/outputDeviceId", expectedId);
             MainWindow restoredWindow;
-            auto restoredCombo = restoredWindow.findChild<QComboBox *>();
+            auto restoredCombo = restoredWindow.findChild<QComboBox *>("audioOutputComboBox");
             QVERIFY(restoredCombo);
             QCOMPARE(restoredCombo->currentData().toByteArray(), expectedId);
             QCOMPARE(CasterMediaPlayer::globalAudioDevice().id(), expectedId);
@@ -178,6 +185,133 @@ private slots:
         // Stop server
         window.stopOSCServer();
         QVERIFY(!window.isOSCServerRunning());
+    }
+
+    void profileWindowSize() {
+        QTemporaryDir profiles;
+        QVERIFY(profiles.isValid());
+        const QString path = profiles.filePath("size.caster");
+        // An older profile has no window size metadata.
+        {
+            CasterBoard board;
+            *board.soundBoardName = "Saved name";
+            QFile file(path);
+            QVERIFY(file.open(QIODevice::WriteOnly));
+            QDataStream out(&file);
+            out << board;
+            QCOMPARE(out.status(), QDataStream::Ok);
+        }
+        MainWindow window;
+        window.resize(1100, 650);
+        QString error;
+        QVERIFY2(window.loadProfile(path, error), qPrintable(error));
+        QCOMPARE(window.size(), QSize(1100, 650));
+        window.show();
+        QCoreApplication::processEvents();
+        window.resize(1200, 750);
+        const QSize closedSize = window.size();
+        auto board = qobject_cast<CasterBoard *>(window.findChild<QTabWidget *>()->currentWidget());
+        QVERIFY(board);
+        *board->soundBoardName = "Unsaved name";
+        QVERIFY(window.close());
+
+        MainWindow restored;
+        QVERIFY2(restored.loadProfile(path, error), qPrintable(error));
+        QCOMPARE(restored.size(), closedSize);
+        auto saved = qobject_cast<CasterBoard *>(restored.findChild<QTabWidget *>()->currentWidget());
+        QCOMPARE(*saved->soundBoardName, QString("Saved name"));
+        // Explicit saves also include size, with no global geometry setting.
+        restored.resize(1150, 700);
+        restored.saveTab();
+        MainWindow reopened;
+        QVERIFY2(reopened.loadProfile(path, error), qPrintable(error));
+        QCOMPARE(reopened.size(), restored.size());
+        // A hidden/headless window closing must not replace that saved size.
+        reopened.resize(1000, 500);
+        QVERIFY(reopened.close());
+        MainWindow afterHeadless;
+        QVERIFY2(afterHeadless.loadProfile(path, error), qPrintable(error));
+        QCOMPARE(afterHeadless.size(), restored.size());
+    }
+
+    void profileWindowSizeTabCloseAndFailure() {
+        QTemporaryDir profiles;
+        QVERIFY(profiles.isValid());
+        const QString path = profiles.filePath("tab.caster");
+        {
+            CasterBoard board;
+            QFile file(path);
+            QVERIFY(file.open(QIODevice::WriteOnly));
+            QDataStream out(&file);
+            out << board;
+            QCOMPARE(out.status(), QDataStream::Ok);
+        }
+        MainWindow window;
+        QString error;
+        QVERIFY2(window.loadProfile(path, error), qPrintable(error));
+        window.show();
+        QCoreApplication::processEvents();
+        window.resize(1200, 720);
+        const QSize expected = window.size();
+        auto tabs = window.findChild<QTabWidget *>();
+        QTimer::singleShot(0, [] {
+            auto dialog = qobject_cast<QMessageBox *>(QApplication::activeModalWidget());
+            Q_ASSERT(dialog);
+            if (auto yes = dialog->button(QMessageBox::Yes))
+                yes->click();
+            else
+                dialog->done(QMessageBox::Yes);
+        });
+        window.mainTabContainerTabClosedRequested(0);
+        QCOMPARE(tabs->count(), 0);
+        QVERIFY2(window.loadProfile(path, error), qPrintable(error));
+        QCOMPARE(window.size(), expected);
+
+        // A damaged on-disk profile must not be overwritten on close.
+        const QByteArray damaged("not a profile");
+        {
+            QFile file(path);
+            QVERIFY(file.open(QIODevice::WriteOnly));
+            QCOMPARE(file.write(damaged), qint64(damaged.size()));
+        }
+        QTimer::singleShot(0, [] {
+            auto dialog = qobject_cast<QMessageBox *>(QApplication::activeModalWidget());
+            Q_ASSERT(dialog);
+            dialog->accept();
+        });
+        QVERIFY(!window.close());
+        QVERIFY(window.isVisible());
+        QFile file(path);
+        QVERIFY(file.open(QIODevice::ReadOnly));
+        QCOMPARE(file.readAll(), damaged);
+    }
+
+    void profileWindowSizeMalformedMetadata() {
+        QTemporaryDir profiles;
+        QVERIFY(profiles.isValid());
+        const QString path = profiles.filePath("invalid.caster");
+        CasterBoard board;
+        QByteArray legacy;
+        QDataStream baseline(&legacy, QIODevice::WriteOnly);
+        baseline << board;
+        QCOMPARE(baseline.status(), QDataStream::Ok);
+        for (int variant = 0; variant < 4; ++variant) {
+            QByteArray bytes = legacy;
+            QDataStream out(&bytes, QIODevice::Append);
+            out << quint32(variant == 0 ? 0 : 0x4357535a)
+                << quint32(variant == 1 ? 99 : 1)
+                << (variant == 2 ? QSize(0, 700) : QSize(1100, 700));
+            if (variant == 3) bytes.chop(1);
+            QFile file(path);
+            QVERIFY(file.open(QIODevice::WriteOnly));
+            QCOMPARE(file.write(bytes), qint64(bytes.size()));
+            file.close();
+            MainWindow window;
+            QString error;
+            QVERIFY(!window.loadProfile(path, error));
+            QVERIFY(!error.isEmpty());
+            QCOMPARE(window.findChild<QTabWidget *>()->count(), 0);
+        }
     }
 
     void defaultProfileAndSettings() {
@@ -237,6 +371,56 @@ private slots:
         else settings.setValue("profile/lastOpenedProfile", origLast);
         settings.setValue("profile/reopenLastOnStartup", origReopen);
         settings.setValue("osc/autoStart", origAutoOsc);
+    }
+
+    void audioDevicesToolbarAndThemeSupport() {
+        MainWindow window;
+        window.show();
+
+        // Verify audioDevicesButton exists on the toolbar
+        auto *audioBtn = window.findChild<QPushButton *>("audioDevicesButton");
+        QVERIFY(audioBtn != nullptr);
+        QCOMPARE(audioBtn->toolTip(), QString("Audio Devices"));
+
+        // Verify both light and dark theme icon assets exist and are valid pixmaps
+        QPixmap lightIcon(":/res/img/audio_devices.png");
+        QVERIFY(!lightIcon.isNull());
+        QCOMPARE(lightIcon.size(), QSize(64, 64));
+
+        QPixmap darkIcon(":/res/img/white/audio_devices.png");
+        QVERIFY(!darkIcon.isNull());
+        QCOMPARE(darkIcon.size(), QSize(64, 64));
+
+        // Test light theme icon resolution
+        QPalette lightPal;
+        lightPal.setColor(QPalette::Window, QColor(240, 240, 240));
+        lightPal.setColor(QPalette::WindowText, QColor(20, 20, 20));
+        window.setPalette(lightPal);
+        window.updateThemeIcons();
+        QVERIFY(!audioBtn->icon().isNull());
+
+        // Test dark theme icon resolution
+        QPalette darkPal;
+        darkPal.setColor(QPalette::Window, QColor(30, 30, 30));
+        darkPal.setColor(QPalette::WindowText, QColor(230, 230, 230));
+        window.setPalette(darkPal);
+        window.updateThemeIcons();
+        QVERIFY(!audioBtn->icon().isNull());
+
+        // Verify audioOutputComboBox remains on the toolbar and ready
+        auto *outputCombo = window.findChild<QComboBox *>("audioOutputComboBox");
+        QVERIFY(outputCombo != nullptr);
+        QVERIFY(outputCombo->isEnabled());
+        QVERIFY(outputCombo->toolTip().contains("Select audio output"));
+        QVERIFY(outputCombo->count() >= 1);
+        QCOMPARE(outputCombo->itemText(0), QString("Default System Output"));
+
+        // Verify AudioDevicesDialog contains virtualMicNameEdit and initializes with placeholder
+        auto *audioDialog = window.findChild<Audio::AudioDevicesDialog *>();
+        QVERIFY(audioDialog != nullptr);
+        auto *nameEdit = audioDialog->findChild<QLineEdit *>("virtualMicNameEdit");
+        QVERIFY(nameEdit != nullptr);
+        QCOMPARE(nameEdit->placeholderText(), QString("Virtual_Microphone"));
     }
 };
 QTEST_MAIN(ApplicationTest)
