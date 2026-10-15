@@ -84,7 +84,7 @@ Rectangle {
         anchors.margins: 10
         spacing: 4
 
-        // --- Header: Title, Hotkey Badge, Settings Button ---
+        // --- Header Row: Tile Color Dot, Floated-Left Hotkey Badge, Settings Cog ---
         RowLayout {
             Layout.fillWidth: true
             spacing: 6
@@ -95,24 +95,16 @@ Rectangle {
                 height: 10
                 radius: 5
                 color: (tile && tile.color && tile.color.length > 0) ? tile.color : "#8E2DE2"
+                Layout.alignment: Qt.AlignVCenter
             }
 
-            // Display Title
-            Text {
-                id: titleText
-                text: tile ? (tile.displayName.length > 0 ? tile.displayName : qsTr("Empty Sound")) : qsTr("Empty")
-                color: "#FFFFFF"
-                font.bold: true
-                font.pointSize: 10 * Math.max(0.8, scaleFactor * 0.9)
-                elide: Text.ElideRight
-                Layout.fillWidth: true
-            }
-
-            // Hotkey Badge
+            // Hotkey Badge (floated left next to color dot)
             Rectangle {
+                id: hotkeyBadge
                 visible: tile && tile.hotkey && tile.hotkey.length > 0
                 Layout.preferredHeight: 20
                 Layout.preferredWidth: hotkeyLabel.implicitWidth + 12
+                Layout.alignment: Qt.AlignVCenter
                 radius: 4
                 color: "#2C313A"
                 border.color: "#8E2DE2"
@@ -126,12 +118,29 @@ Rectangle {
                     font.bold: true
                     font.pointSize: 8
                 }
+
+                MouseArea {
+                    id: hotkeyMouse
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: root.settingsRequested(tile)
+                }
+
+                ToolTip.visible: hotkeyMouse.containsMouse
+                ToolTip.text: tile ? qsTr("Hotkey: %1 (Click to edit)").arg(tile.hotkey) : ""
+            }
+
+            // Spacer expanding across middle, keeping hotkey on left and cog on right
+            Item {
+                Layout.fillWidth: true
             }
 
             // Settings Cog Button
             Button {
                 Layout.preferredWidth: 26
                 Layout.preferredHeight: 26
+                Layout.alignment: Qt.AlignVCenter
                 flat: true
                 onClicked: root.settingsRequested(tile)
 
@@ -150,6 +159,86 @@ Rectangle {
 
                 ToolTip.visible: hovered
                 ToolTip.text: qsTr("Tile Settings & Hotkeys")
+            }
+        }
+
+        // --- Display Title Row (Dedicated row, scrolls like a stock ticker if text overflows) ---
+        Item {
+            id: titleRow
+            Layout.fillWidth: true
+            Layout.preferredHeight: Math.max(18, titleText.implicitHeight + 2)
+            clip: true
+
+            readonly property real textWidth: titleText.implicitWidth
+            readonly property real gap: 48
+            readonly property real cycleWidth: textWidth + gap
+            readonly property bool isOverflowing: width > 0 && (textWidth > width)
+
+            Item {
+                id: tickerContainer
+                height: parent.height
+                width: titleRow.isOverflowing ? (titleRow.cycleWidth * 2) : parent.width
+                x: 0
+
+                // Primary Display Title
+                Text {
+                    id: titleText
+                    anchors.verticalCenter: parent.verticalCenter
+                    x: 0
+                    text: tile ? (tile.displayName.length > 0 ? tile.displayName : qsTr("Empty Sound")) : qsTr("Empty")
+                    color: "#FFFFFF"
+                    font.bold: true
+                    font.pointSize: 10 * Math.max(0.8, scaleFactor * 0.9)
+                }
+
+                // Seamless Duplicate for Stock Ticker Loop
+                Text {
+                    id: titleTextCopy
+                    visible: titleRow.isOverflowing
+                    anchors.verticalCenter: parent.verticalCenter
+                    x: titleRow.cycleWidth
+                    text: titleText.text
+                    color: titleText.color
+                    font: titleText.font
+                }
+            }
+
+            NumberAnimation {
+                id: tickerAnim
+                target: tickerContainer
+                property: "x"
+                running: titleRow.isOverflowing && root.visible
+                loops: Animation.Infinite
+                from: 0
+                to: -titleRow.cycleWidth
+                duration: Math.max(3000, titleRow.cycleWidth * 32)
+                easing.type: Easing.Linear
+            }
+
+            onIsOverflowingChanged: {
+                if (!isOverflowing) {
+                    tickerAnim.stop();
+                    tickerContainer.x = 0;
+                }
+            }
+
+            onCycleWidthChanged: {
+                if (isOverflowing) {
+                    tickerAnim.restart();
+                } else {
+                    tickerAnim.stop();
+                    tickerContainer.x = 0;
+                }
+            }
+
+            ToolTip.visible: titleHover.containsMouse && titleRow.isOverflowing
+            ToolTip.text: titleText.text
+
+            MouseArea {
+                id: titleHover
+                anchors.fill: parent
+                hoverEnabled: true
+                acceptedButtons: Qt.NoButton
             }
         }
 

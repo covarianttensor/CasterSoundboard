@@ -70,7 +70,7 @@
                 },
                 {
                     "id": "tile-5",
-                    "displayName": "Dramatic Stinger",
+                    "displayName": "Dramatic Hollywood Orchestral Stinger & Impact Hit",
                     "filePath": "",
                     "hotkey": "Ctrl+Alt+3",
                     "volume": 0.75,
@@ -85,7 +85,7 @@
                     "id": "tile-6",
                     "displayName": "Outro Theme",
                     "filePath": "",
-                    "hotkey": "Ctrl+Alt+4",
+                    "hotkey": "",
                     "volume": 0.8,
                     "isLooped": false,
                     "triggerStyle": 2,
