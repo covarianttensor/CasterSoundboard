@@ -157,7 +157,7 @@ private slots:
         QCOMPARE(waveSpy.count(), 1);
 
         QVariantList wave = tile.waveform();
-        QCOMPARE(wave.size(), 50);
+        QCOMPARE(wave.size(), 64);
 
         double maxVal = 0.0;
         for (const QVariant &pt : wave) {

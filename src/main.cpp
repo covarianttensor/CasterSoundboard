@@ -64,6 +64,7 @@ int main(int argc, char *argv[])
     QCommandLineOption heightOption("window-height", "Initial window height in pixels.", "height");
     QCommandLineOption hotkeyPromptOption("open-hotkey-prompt", "Open hotkey prompt dialog on startup for testing.");
     QCommandLineOption testSeekMsOption("test-seek-ms", "Set position in ms on tile 0 for visual verification.", "ms");
+    QCommandLineOption scrollCueOption("scroll-cue", "Scroll to cue region in drawer on startup for testing.");
     parser.addOption(screenshotOption);
     parser.addOption(drawerOption);
     parser.addOption(drawerIndexOption);
@@ -73,6 +74,7 @@ int main(int argc, char *argv[])
     parser.addOption(heightOption);
     parser.addOption(hotkeyPromptOption);
     parser.addOption(testSeekMsOption);
+    parser.addOption(scrollCueOption);
     parser.addPositionalArgument("project", "Project file (.caster) to open on launch.", "[project]");
     parser.process(app);
 
@@ -118,10 +120,11 @@ int main(int argc, char *argv[])
     engine.rootContext()->setContextProperty("hotkeyManager", &hotkeyManager);
     engine.rootContext()->setContextProperty("oscController", &oscController);
     engine.rootContext()->setContextProperty("audioRoutingController", &audioRoutingController);
-    engine.rootContext()->setContextProperty("openDrawerOnStart", parser.isSet(drawerOption) || parser.isSet(hotkeyPromptOption));
+    engine.rootContext()->setContextProperty("openDrawerOnStart", parser.isSet(drawerOption) || parser.isSet(hotkeyPromptOption) || parser.isSet(scrollCueOption));
     engine.rootContext()->setContextProperty("drawerTileIndex", parser.value(drawerIndexOption).toInt());
     engine.rootContext()->setContextProperty("initialViewIndex", parser.value(viewOption).toInt());
     engine.rootContext()->setContextProperty("openHotkeyPromptOnStart", parser.isSet(hotkeyPromptOption));
+    engine.rootContext()->setContextProperty("scrollToCueOnStart", parser.isSet(scrollCueOption));
 
     // Install application-wide hotkey event filter
     GlobalHotkeyFilter hotkeyFilter(&hotkeyManager, &app);
@@ -151,7 +154,7 @@ int main(int argc, char *argv[])
 
     if (parser.isSet(screenshotOption)) {
         const QString outPath = parser.value(screenshotOption);
-        int delay = parser.isSet(testSeekMsOption) ? 500 : 350;
+        int delay = (parser.isSet(testSeekMsOption) || parser.isSet(scrollCueOption)) ? 800 : 350;
         QTimer::singleShot(delay, [&engine, outPath, &app]() {
             if (!engine.rootObjects().isEmpty()) {
                 if (auto *window = qobject_cast<QQuickWindow*>(engine.rootObjects().first())) {

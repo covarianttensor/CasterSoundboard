@@ -94,7 +94,7 @@ void SoundTileController::updateWaveform()
     }
 
     QVariantList points;
-    constexpr int numBins = 50;
+    constexpr int numBins = 64;
 
     // First attempt direct WAV parsing if it's a RIFF PCM file
     QFile file(localPath);
@@ -171,13 +171,13 @@ void SoundTileController::updateWaveform()
         file.close();
     }
 
-    // Fallback: If not PCM WAV (e.g. MP3, OGG, FLAC, M4A, etc.), decode downsampled PCM via ffmpeg
+    // Fallback: If not PCM WAV (e.g. MP3, OGG, FLAC, M4A, video files with audio tracks, etc.), decode downsampled PCM via ffmpeg
     if (!parsedDirect) {
         QProcess proc;
-        proc.start("ffmpeg", QStringList() << "-v" << "error" << "-i" << localPath
+        proc.start("ffmpeg", QStringList() << "-v" << "error" << "-threads" << "4" << "-i" << localPath
                                            << "-vn" << "-ac" << "1" << "-ar" << "2000"
                                            << "-f" << "s16le" << "-");
-        if (proc.waitForFinished(2000)) {
+        if (proc.waitForFinished(5000)) {
             QByteArray pcmData = proc.readAllStandardOutput();
             int totalSamples = pcmData.size() / 2;
             if (totalSamples > 0) {

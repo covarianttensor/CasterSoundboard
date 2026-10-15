@@ -17,6 +17,17 @@ Dialog {
         return (min < 10 ? "0" + min : min) + ":" + (sec < 10 ? "0" + sec : sec);
     }
 
+    function formatPreciseTime(ms) {
+        if (!ms || ms <= 0) return "00:00.00";
+        var totalSec = Math.floor(ms / 1000);
+        var min = Math.floor(totalSec / 60);
+        var sec = totalSec % 60;
+        var hundredths = Math.floor((ms % 1000) / 10);
+        return (min < 10 ? "0" + min : min) + ":" + 
+               (sec < 10 ? "0" + sec : sec) + "." + 
+               (hundredths < 10 ? "0" + hundredths : hundredths);
+    }
+
     title: qsTr("Sound Tile Properties")
     modal: true
     anchors.centerIn: parent
@@ -26,6 +37,12 @@ Dialog {
     Component.onCompleted: {
         if (typeof openHotkeyPromptOnStart !== "undefined" && openHotkeyPromptOnStart) {
             hotkeyPromptDialog.openDialog();
+        }
+    }
+
+    onOpened: {
+        if (typeof scrollToCueOnStart !== "undefined" && scrollToCueOnStart) {
+            flickable.contentY = 320;
         }
     }
 
@@ -733,7 +750,7 @@ Dialog {
             // --- 7. Cue Point Region ---
             Rectangle {
                 Layout.fillWidth: true
-                Layout.preferredHeight: cueCol.implicitHeight + 16
+                Layout.preferredHeight: cueCol.implicitHeight + 24
                 radius: 8
                 color: "#1D1F23"
                 border.color: "#343940"
@@ -742,11 +759,14 @@ Dialog {
                 ColumnLayout {
                     id: cueCol
                     anchors.fill: parent
-                    anchors.margins: 12
-                    spacing: 8
+                    anchors.margins: 14
+                    spacing: 10
 
+                    // Top Header Row: CheckBox & Action Buttons
                     RowLayout {
                         Layout.fillWidth: true
+                        spacing: 8
+
                         CheckBox {
                             id: cueCheck
                             checked: tile ? tile.hasCueRegion : false
@@ -760,23 +780,499 @@ Dialog {
                                 verticalAlignment: Text.AlignVCenter
                             }
                             onToggled: {
-                                if (tile) tile.hasCueRegion = checked;
+                                if (tile) {
+                                    tile.hasCueRegion = checked;
+                                    if (checked && (tile.cueEndMs <= tile.cueBeginMs || tile.cueEndMs === 0) && tile.durationMs > 0) {
+                                        tile.cueEndMs = tile.durationMs;
+                                    }
+                                }
+                            }
+                        }
+
+                        Item { Layout.fillWidth: true }
+
+                        DarkButton {
+                            text: qsTr("Reset Full")
+                            visible: cueCheck.checked && tile && tile.durationMs > 0
+                            Layout.preferredHeight: 30
+                            Layout.preferredWidth: 86
+                            onClicked: {
+                                if (tile) {
+                                    tile.cueBeginMs = 0;
+                                    tile.cueEndMs = tile.durationMs;
+                                }
+                            }
+                        }
+
+                        DarkButton {
+                            text: qsTr("▶ Audition Cue")
+                            visible: cueCheck.checked && tile && tile.filePath && tile.filePath.length > 0
+                            Layout.preferredHeight: 30
+                            Layout.preferredWidth: 116
+                            onClicked: {
+                                if (tile) {
+                                    tile.seek(tile.cueBeginMs);
+                                    tile.play();
+                                }
                             }
                         }
                     }
 
+                    // --- Waveform Cue Region Visual Editor Container ---
+                    Item {
+                        id: cueWaveformBox
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 140
+                        visible: (tile && tile.filePath && tile.filePath.length > 0)
+                        opacity: cueCheck.checked ? 1.0 : 0.45
+                        enabled: cueCheck.checked
+
+                        readonly property real trackWidth: cueTrack.width > 0 ? cueTrack.width : 1
+                        readonly property real duration: (tile && tile.durationMs > 0) ? tile.durationMs : 1000
+
+                        readonly property real cueInX: {
+                            if (!tile || duration <= 0) return 0;
+                            var frac = Math.max(0.0, Math.min(1.0, tile.cueBeginMs / duration));
+                            return trackWidth * frac;
+                        }
+
+                        readonly property real cueOutX: {
+                            if (!tile || duration <= 0) return trackWidth;
+                            var endVal = (tile.cueEndMs > 0) ? tile.cueEndMs : duration;
+                            var frac = Math.max(0.0, Math.min(1.0, endVal / duration));
+                            return trackWidth * frac;
+                        }
+
+                        // Top Readout Row: Floating START Label & Length
+                        Item {
+                            id: cueTopBar
+                            anchors.top: parent.top
+                            anchors.left: parent.left
+                            anchors.right: parent.right
+                            height: 22
+
+                            // Center Cue Duration Label
+                            Text {
+                                anchors.centerIn: parent
+                                text: {
+                                    if (!tile) return "";
+                                    var inMs = tile.cueBeginMs;
+                                    var outMs = (tile.cueEndMs > 0) ? tile.cueEndMs : tile.durationMs;
+                                    var diff = Math.max(0, outMs - inMs);
+                                    return qsTr("CUE LENGTH: %1").arg(root.formatPreciseTime(diff));
+                                }
+                                color: "#8E9AA8"
+                                font.pointSize: 8
+                                font.bold: true
+                            }
+
+                            // Dynamic START Badge (Tracks Start Handle)
+                            Rectangle {
+                                id: startBadge
+                                x: Math.max(0, Math.min(cueWaveformBox.width - width, cueWaveformBox.cueInX - width / 2))
+                                anchors.verticalCenter: parent.verticalCenter
+                                width: startLabel.implicitWidth + 12
+                                height: 20
+                                radius: 4
+                                color: "#16191E"
+                                border.color: startHandleMouse.pressed ? "#FFFFFF" : "#00D2FF"
+                                border.width: 1
+
+                                Text {
+                                    id: startLabel
+                                    anchors.centerIn: parent
+                                    text: qsTr("START: %1").arg(root.formatPreciseTime(tile ? tile.cueBeginMs : 0))
+                                    color: "#00D2FF"
+                                    font.bold: true
+                                    font.pointSize: 8
+                                    font.family: "Monospace"
+                                }
+                            }
+                        }
+
+                        // Middle Interactive Waveform Track Container
+                        Item {
+                            id: cueTrack
+                            anchors.top: cueTopBar.bottom
+                            anchors.topMargin: 2
+                            anchors.bottom: cueBottomBar.top
+                            anchors.bottomMargin: 2
+                            anchors.left: parent.left
+                            anchors.right: parent.right
+
+                            // Background Box
+                            Rectangle {
+                                anchors.fill: parent
+                                radius: 8
+                                color: "#131518"
+                                border.color: "#272B32"
+                                border.width: 1
+
+                                // Inner Clipped Canvas Area
+                                Item {
+                                    id: innerWaveArea
+                                    anchors.fill: parent
+                                    anchors.margins: 1
+                                    clip: true
+
+                                    // Time Grid Guidelines
+                                    Row {
+                                        anchors.fill: parent
+                                        Repeater {
+                                            model: 4
+                                            Item {
+                                                width: innerWaveArea.width / 4
+                                                height: innerWaveArea.height
+                                                Rectangle {
+                                                    anchors.right: parent.right
+                                                    anchors.top: parent.top
+                                                    anchors.bottom: parent.bottom
+                                                    width: 1
+                                                    color: "#1E232A"
+                                                    visible: index < 3
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                    // Center Horizontal Midline
+                                    Rectangle {
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        anchors.left: parent.left
+                                        anchors.right: parent.right
+                                        height: 1
+                                        color: "#1E232A"
+                                    }
+
+                                    // 1. Base Unselected Waveform (Muted Slate / Teal)
+                                    Canvas {
+                                        id: cueWaveformBase
+                                        anchors.fill: parent
+                                        anchors.margins: 4
+
+                                        onPaint: {
+                                            var ctx = getContext("2d");
+                                            ctx.reset();
+                                            var data = (tile && tile.waveform) ? tile.waveform : [];
+                                            var w = width;
+                                            var h = height;
+                                            if (!data || data.length === 0) {
+                                                ctx.fillStyle = "#272B32";
+                                                ctx.fillRect(0, (h - 2) / 2, w, 2);
+                                                return;
+                                            }
+
+                                            var count = data.length;
+                                            var step = w / count;
+                                            var barWidth = Math.max(2, step * 0.70);
+
+                                            ctx.fillStyle = "#2D3843";
+                                            for (var i = 0; i < count; ++i) {
+                                                var amp = Math.max(0.06, Math.min(1.0, Number(data[i])));
+                                                var barH = Math.max(4, amp * (h * 0.78));
+                                                var barX = i * step + (step - barWidth) / 2;
+                                                var barY = (h - barH) / 2;
+                                                ctx.fillRect(barX, barY, barWidth, barH);
+                                            }
+                                        }
+
+                                        onWidthChanged: requestPaint()
+                                        onHeightChanged: requestPaint()
+                                        Component.onCompleted: requestPaint()
+                                    }
+
+                                    // 2. Selected Active Cue Region Highlight
+                                    Rectangle {
+                                        id: cueActiveRegion
+                                        x: cueWaveformBox.cueInX
+                                        width: Math.max(0, cueWaveformBox.cueOutX - cueWaveformBox.cueInX)
+                                        anchors.top: parent.top
+                                        anchors.bottom: parent.bottom
+                                        color: Qt.rgba(0.0, 0.82, 1.0, 0.12)
+                                        border.color: Qt.rgba(0.0, 0.82, 1.0, 0.45)
+                                        border.width: 1
+                                        clip: true
+
+                                        // Illuminated Active Waveform inside the cue region
+                                        Canvas {
+                                            id: cueWaveformActive
+                                            x: -cueWaveformBox.cueInX
+                                            y: 4
+                                            width: cueTrack.width - 2
+                                            height: cueTrack.height - 2
+
+                                            onPaint: {
+                                                var ctx = getContext("2d");
+                                                ctx.reset();
+                                                var data = (tile && tile.waveform) ? tile.waveform : [];
+                                                var w = width;
+                                                var h = height;
+                                                if (!data || data.length === 0) return;
+
+                                                var count = data.length;
+                                                var step = w / count;
+                                                var barWidth = Math.max(2, step * 0.70);
+
+                                                ctx.fillStyle = (tile && tile.color && tile.color !== "#3A3D40") ? tile.color : "#00D2FF";
+                                                for (var i = 0; i < count; ++i) {
+                                                    var amp = Math.max(0.06, Math.min(1.0, Number(data[i])));
+                                                    var barH = Math.max(4, amp * (h * 0.78));
+                                                    var barX = i * step + (step - barWidth) / 2;
+                                                    var barY = (h - barH) / 2;
+                                                    ctx.fillRect(barX, barY, barWidth, barH);
+                                                }
+                                            }
+
+                                            onWidthChanged: requestPaint()
+                                            onHeightChanged: requestPaint()
+                                            Component.onCompleted: requestPaint()
+                                        }
+                                    }
+
+                                    // 3. Playback Needle / Audition Cursor
+                                    Rectangle {
+                                        visible: tile && tile.durationMs > 0 && tile.playbackState !== 0
+                                        x: Math.round(innerWaveArea.width * (tile ? (tile.positionMs / tile.durationMs) : 0))
+                                        anchors.top: parent.top
+                                        anchors.bottom: parent.bottom
+                                        width: 2
+                                        color: (tile && tile.playbackState === 1) ? "#2ECC71" : "#FFFFFF"
+                                        opacity: 0.9
+                                    }
+                                }
+                            }
+
+                            // Middle Drag Area (Move whole cue window)
+                            Item {
+                                x: cueWaveformBox.cueInX + 13
+                                width: Math.max(0, cueWaveformBox.cueOutX - cueWaveformBox.cueInX - 26)
+                                anchors.top: parent.top
+                                anchors.bottom: parent.bottom
+                                visible: width > 10
+
+                                MouseArea {
+                                    id: midDragArea
+                                    anchors.fill: parent
+                                    cursorShape: Qt.SizeAllCursor
+                                    preventStealing: true
+
+                                    property real dragStartX: 0
+                                    property int origIn: 0
+                                    property int origOut: 0
+
+                                    onPressed: (mouse) => {
+                                        dragStartX = mapToItem(cueTrack, mouse.x, 0).x;
+                                        origIn = tile ? tile.cueBeginMs : 0;
+                                        origOut = tile ? ((tile.cueEndMs > 0) ? tile.cueEndMs : tile.durationMs) : 0;
+                                    }
+
+                                    onPositionChanged: (mouse) => {
+                                        if (!pressed || !tile || tile.durationMs <= 0) return;
+                                        var globalX = mapToItem(cueTrack, mouse.x, 0).x;
+                                        var deltaPx = globalX - dragStartX;
+                                        var deltaMs = Math.round((deltaPx / cueTrack.width) * tile.durationMs);
+                                        var len = origOut - origIn;
+                                        var newIn = Math.max(0, Math.min(tile.durationMs - len, origIn + deltaMs));
+                                        tile.cueBeginMs = newIn;
+                                        tile.cueEndMs = newIn + len;
+                                    }
+                                }
+                            }
+
+                            // 4. Cue In (START) Slider Handle
+                            Item {
+                                id: startHandle
+                                x: Math.round(cueWaveformBox.cueInX - width / 2)
+                                y: -4
+                                width: 26
+                                height: cueTrack.height + 8
+                                z: 10
+
+                                Rectangle {
+                                    anchors.fill: parent
+                                    radius: 13
+                                    color: startHandleMouse.pressed ? "#FFFFFF" : (startHandleMouse.containsMouse ? "#F0F4F8" : "#E2E8F0")
+                                    border.color: startHandleMouse.pressed ? "#00D2FF" : (startHandleMouse.containsMouse ? "#38BDF8" : "#94A3B8")
+                                    border.width: 2
+
+                                    // Center Grip Ridges
+                                    Row {
+                                        anchors.centerIn: parent
+                                        spacing: 2
+                                        Repeater {
+                                            model: 3
+                                            Rectangle {
+                                                width: 2
+                                                height: 16
+                                                radius: 1
+                                                color: "#64748B"
+                                            }
+                                        }
+                                    }
+                                }
+
+                                MouseArea {
+                                    id: startHandleMouse
+                                    anchors.fill: parent
+                                    anchors.margins: -4
+                                    hoverEnabled: true
+                                    cursorShape: Qt.SizeHorCursor
+                                    preventStealing: true
+
+                                    onPositionChanged: (mouse) => {
+                                        if (!pressed || !tile || tile.durationMs <= 0) return;
+                                        var globalX = mapToItem(cueTrack, mouse.x, 0).x;
+                                        var frac = Math.max(0.0, Math.min(1.0, globalX / cueTrack.width));
+                                        var targetMs = Math.round(frac * tile.durationMs);
+                                        var maxAllowed = (tile.cueEndMs > 50) ? tile.cueEndMs - 50 : (tile.durationMs - 50);
+                                        targetMs = Math.min(targetMs, maxAllowed);
+                                        targetMs = Math.max(0, targetMs);
+                                        tile.cueBeginMs = targetMs;
+                                    }
+                                }
+                            }
+
+                            // 5. Cue Out (END) Slider Handle
+                            Item {
+                                id: endHandle
+                                x: Math.round(cueWaveformBox.cueOutX - width / 2)
+                                y: -4
+                                width: 26
+                                height: cueTrack.height + 8
+                                z: 10
+
+                                Rectangle {
+                                    anchors.fill: parent
+                                    radius: 13
+                                    color: endHandleMouse.pressed ? "#FFFFFF" : (endHandleMouse.containsMouse ? "#F0F4F8" : "#E2E8F0")
+                                    border.color: endHandleMouse.pressed ? "#00D2FF" : (endHandleMouse.containsMouse ? "#38BDF8" : "#94A3B8")
+                                    border.width: 2
+
+                                    // Center Grip Ridges
+                                    Row {
+                                        anchors.centerIn: parent
+                                        spacing: 2
+                                        Repeater {
+                                            model: 3
+                                            Rectangle {
+                                                width: 2
+                                                height: 16
+                                                radius: 1
+                                                color: "#64748B"
+                                            }
+                                        }
+                                    }
+                                }
+
+                                MouseArea {
+                                    id: endHandleMouse
+                                    anchors.fill: parent
+                                    anchors.margins: -4
+                                    hoverEnabled: true
+                                    cursorShape: Qt.SizeHorCursor
+                                    preventStealing: true
+
+                                    onPositionChanged: (mouse) => {
+                                        if (!pressed || !tile || tile.durationMs <= 0) return;
+                                        var globalX = mapToItem(cueTrack, mouse.x, 0).x;
+                                        var frac = Math.max(0.0, Math.min(1.0, globalX / cueTrack.width));
+                                        var targetMs = Math.round(frac * tile.durationMs);
+                                        targetMs = Math.max(targetMs, tile.cueBeginMs + 50);
+                                        targetMs = Math.min(tile.durationMs, targetMs);
+                                        tile.cueEndMs = targetMs;
+                                    }
+                                }
+                            }
+                        }
+
+                        // Bottom Readout Row: Floating END Label & Time bounds
+                        Item {
+                            id: cueBottomBar
+                            anchors.bottom: parent.bottom
+                            anchors.left: parent.left
+                            anchors.right: parent.right
+                            height: 22
+
+                            // 00:00.00 start bound
+                            Text {
+                                anchors.left: parent.left
+                                anchors.verticalCenter: parent.verticalCenter
+                                text: "00:00.00"
+                                color: "#64748B"
+                                font.pointSize: 7
+                                font.family: "Monospace"
+                                visible: cueWaveformBox.cueInX > 75
+                            }
+
+                            // Dynamic END Badge (Tracks End Handle)
+                            Rectangle {
+                                id: endBadge
+                                x: Math.max(0, Math.min(cueWaveformBox.width - width, cueWaveformBox.cueOutX - width / 2))
+                                anchors.verticalCenter: parent.verticalCenter
+                                width: endLabel.implicitWidth + 12
+                                height: 20
+                                radius: 4
+                                color: "#16191E"
+                                border.color: endHandleMouse.pressed ? "#FFFFFF" : "#00D2FF"
+                                border.width: 1
+
+                                Text {
+                                    id: endLabel
+                                    anchors.centerIn: parent
+                                    text: qsTr("END: %1").arg(root.formatPreciseTime(tile ? (tile.cueEndMs > 0 ? tile.cueEndMs : tile.durationMs) : 0))
+                                    color: "#00D2FF"
+                                    font.bold: true
+                                    font.pointSize: 8
+                                    font.family: "Monospace"
+                                }
+                            }
+
+                            // Total duration end bound
+                            Text {
+                                anchors.right: parent.right
+                                anchors.verticalCenter: parent.verticalCenter
+                                text: root.formatPreciseTime(tile ? tile.durationMs : 0)
+                                color: "#64748B"
+                                font.pointSize: 7
+                                font.family: "Monospace"
+                                visible: cueWaveformBox.cueOutX < (cueWaveformBox.trackWidth - 75)
+                            }
+                        }
+                    }
+
+                    // Numeric Fine-Tuning Controls Row
                     RowLayout {
                         Layout.fillWidth: true
                         spacing: 12
                         visible: cueCheck.checked
 
+                        // Cue In (Start) Column
                         ColumnLayout {
                             Layout.fillWidth: true
-                            spacing: 2
-                            Text { text: qsTr("Cue In (ms):"); color: "#AAAAAA"; font.pointSize: 9 }
+                            spacing: 4
+
+                            Text {
+                                text: qsTr("Cue In (Start):")
+                                color: "#AAAAAA"
+                                font.pointSize: 9
+                                font.bold: true
+                            }
+
                             RowLayout {
                                 Layout.fillWidth: true
-                                spacing: 6
+                                spacing: 4
+
+                                DarkButton {
+                                    text: "-100"
+                                    Layout.preferredWidth: 46
+                                    Layout.preferredHeight: 34
+                                    ToolTip.visible: hovered
+                                    ToolTip.text: qsTr("Nudge -100ms")
+                                    onClicked: {
+                                        if (tile) tile.cueBeginMs = Math.max(0, tile.cueBeginMs - 100);
+                                    }
+                                }
+
                                 DarkTextField {
                                     id: cueInField
                                     text: tile ? tile.cueBeginMs.toString() : "0"
@@ -784,58 +1280,137 @@ Dialog {
                                     Layout.preferredWidth: 60
                                     Layout.minimumWidth: 40
                                     onTextChanged: {
-                                        if (tile && activeFocus) tile.cueBeginMs = parseInt(text) || 0;
+                                        if (tile && activeFocus) {
+                                            var val = parseInt(text) || 0;
+                                            var maxIn = (tile.cueEndMs > 50) ? tile.cueEndMs - 50 : 0;
+                                            tile.cueBeginMs = Math.max(0, Math.min(maxIn, val));
+                                        }
                                     }
                                 }
+
                                 DarkButton {
-                                    text: qsTr("Here")
-                                    Layout.preferredWidth: 56
-                                    Layout.preferredHeight: 38
+                                    text: "+100"
+                                    Layout.preferredWidth: 46
+                                    Layout.preferredHeight: 34
                                     ToolTip.visible: hovered
-                                    ToolTip.text: qsTr("Set to current playback position")
+                                    ToolTip.text: qsTr("Nudge +100ms")
                                     onClicked: {
                                         if (tile) {
-                                            tile.cueBeginMs = tile.positionMs;
-                                            cueInField.text = tile.positionMs.toString();
+                                            var maxIn = (tile.cueEndMs > 50) ? tile.cueEndMs - 50 : 0;
+                                            tile.cueBeginMs = Math.min(maxIn, tile.cueBeginMs + 100);
+                                        }
+                                    }
+                                }
+
+                                DarkButton {
+                                    text: qsTr("Here")
+                                    Layout.preferredWidth: 50
+                                    Layout.preferredHeight: 34
+                                    ToolTip.visible: hovered
+                                    ToolTip.text: qsTr("Set Cue In to current playhead position")
+                                    onClicked: {
+                                        if (tile) {
+                                            var maxIn = (tile.cueEndMs > 50) ? tile.cueEndMs - 50 : 0;
+                                            tile.cueBeginMs = Math.min(maxIn, tile.positionMs);
                                         }
                                     }
                                 }
                             }
                         }
 
+                        // Cue Out (End) Column
                         ColumnLayout {
                             Layout.fillWidth: true
-                            spacing: 2
-                            Text { text: qsTr("Cue Out (ms):"); color: "#AAAAAA"; font.pointSize: 9 }
+                            spacing: 4
+
+                            Text {
+                                text: qsTr("Cue Out (End):")
+                                color: "#AAAAAA"
+                                font.pointSize: 9
+                                font.bold: true
+                            }
+
                             RowLayout {
                                 Layout.fillWidth: true
-                                spacing: 6
+                                spacing: 4
+
+                                DarkButton {
+                                    text: "-100"
+                                    Layout.preferredWidth: 46
+                                    Layout.preferredHeight: 34
+                                    ToolTip.visible: hovered
+                                    ToolTip.text: qsTr("Nudge -100ms")
+                                    onClicked: {
+                                        if (tile) {
+                                            tile.cueEndMs = Math.max(tile.cueBeginMs + 50, (tile.cueEndMs > 0 ? tile.cueEndMs : tile.durationMs) - 100);
+                                        }
+                                    }
+                                }
+
                                 DarkTextField {
                                     id: cueOutField
-                                    text: tile ? tile.cueEndMs.toString() : "0"
+                                    text: tile ? (tile.cueEndMs > 0 ? tile.cueEndMs.toString() : (tile.durationMs > 0 ? tile.durationMs.toString() : "0")) : "0"
                                     Layout.fillWidth: true
                                     Layout.preferredWidth: 60
                                     Layout.minimumWidth: 40
                                     onTextChanged: {
-                                        if (tile && activeFocus) tile.cueEndMs = parseInt(text) || 0;
+                                        if (tile && activeFocus) {
+                                            var val = parseInt(text) || 0;
+                                            tile.cueEndMs = Math.max(tile.cueBeginMs + 50, Math.min(tile.durationMs, val));
+                                        }
                                     }
                                 }
+
                                 DarkButton {
-                                    text: qsTr("Here")
-                                    Layout.preferredWidth: 56
-                                    Layout.preferredHeight: 38
+                                    text: "+100"
+                                    Layout.preferredWidth: 46
+                                    Layout.preferredHeight: 34
                                     ToolTip.visible: hovered
-                                    ToolTip.text: qsTr("Set to current playback position")
+                                    ToolTip.text: qsTr("Nudge +100ms")
                                     onClicked: {
                                         if (tile) {
-                                            tile.cueEndMs = tile.positionMs;
-                                            cueOutField.text = tile.positionMs.toString();
+                                            tile.cueEndMs = Math.min(tile.durationMs, (tile.cueEndMs > 0 ? tile.cueEndMs : tile.durationMs) + 100);
+                                        }
+                                    }
+                                }
+
+                                DarkButton {
+                                    text: qsTr("Here")
+                                    Layout.preferredWidth: 50
+                                    Layout.preferredHeight: 34
+                                    ToolTip.visible: hovered
+                                    ToolTip.text: qsTr("Set Cue Out to current playhead position")
+                                    onClicked: {
+                                        if (tile) {
+                                            tile.cueEndMs = Math.max(tile.cueBeginMs + 50, tile.positionMs);
                                         }
                                     }
                                 }
                             }
                         }
                     }
+                }
+            }
+
+            Connections {
+                target: tile
+                function onCueBeginMsChanged() {
+                    if (cueInField && !cueInField.activeFocus && tile) {
+                        cueInField.text = tile.cueBeginMs.toString();
+                    }
+                }
+                function onCueEndMsChanged() {
+                    if (cueOutField && !cueOutField.activeFocus && tile) {
+                        cueOutField.text = (tile.cueEndMs > 0 ? tile.cueEndMs.toString() : (tile.durationMs > 0 ? tile.durationMs.toString() : "0"));
+                    }
+                }
+                function onWaveformChanged() {
+                    if (cueWaveformBase) cueWaveformBase.requestPaint();
+                    if (cueWaveformActive) cueWaveformActive.requestPaint();
+                }
+                function onDurationMsChanged() {
+                    if (cueWaveformBase) cueWaveformBase.requestPaint();
+                    if (cueWaveformActive) cueWaveformActive.requestPaint();
                 }
             }
 
