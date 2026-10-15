@@ -12,9 +12,25 @@ Dialog {
     title: qsTr("Sound Tile Properties")
     modal: true
     anchors.centerIn: parent
-    width: Math.min(520, parent.width - 32)
+    width: Math.min(540, parent.width - 32)
     height: Math.min(620, parent.height - 32)
-    standardButtons: Dialog.Close
+
+    footer: Rectangle {
+        height: 54
+        color: "#1A1C20"
+        radius: 10
+        RowLayout {
+            anchors.fill: parent
+            anchors.rightMargin: 16
+            Item { Layout.fillWidth: true }
+            DarkButton {
+                text: qsTr("Close")
+                Layout.preferredWidth: 96
+                Layout.preferredHeight: 38
+                onClicked: root.close()
+            }
+        }
+    }
 
     background: Rectangle {
         color: "#22252A"
@@ -51,6 +67,7 @@ Dialog {
     }
 
     component DarkTextField : TextField {
+        Layout.minimumWidth: 50
         color: "#FFFFFF"
         placeholderTextColor: "#7E8590"
         background: Rectangle {
@@ -58,6 +75,23 @@ Dialog {
             radius: 6
             border.color: parent.activeFocus ? "#8E2DE2" : "#454B54"
             border.width: parent.activeFocus ? 2 : 1
+        }
+    }
+
+    component DarkButton : Button {
+        font.pointSize: 10
+        contentItem: Text {
+            text: parent.text
+            font: parent.font
+            color: parent.enabled ? "#FFFFFF" : "#7E8590"
+            horizontalAlignment: Text.AlignHCenter
+            verticalAlignment: Text.AlignVCenter
+        }
+        background: Rectangle {
+            color: parent.down ? "#4E545F" : (parent.hovered ? "#3E434D" : "#2E333B")
+            radius: 6
+            border.color: parent.down ? "#8E2DE2" : "#454B54"
+            border.width: 1
         }
     }
 
@@ -92,10 +126,15 @@ Dialog {
         anchors.fill: parent
         contentHeight: formCol.implicitHeight + 20
         clip: true
+        ScrollBar.vertical: ScrollBar {
+            policy: ScrollBar.AsNeeded
+        }
 
         ColumnLayout {
             id: formCol
-            width: parent.width
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.rightMargin: 8
             spacing: 14
 
             // --- 1. Sound Name ---
@@ -131,8 +170,9 @@ Dialog {
                         readOnly: true
                         placeholderText: qsTr("No file selected...")
                     }
-                    Button {
+                    DarkButton {
                         text: qsTr("Browse...")
+                        Layout.preferredWidth: 90
                         Layout.preferredHeight: 38
                         onClicked: mediaFileDialog.open()
                     }
@@ -159,8 +199,9 @@ Dialog {
                         }
                     }
 
-                    Button {
+                    DarkButton {
                         text: qsTr("Clear")
+                        Layout.preferredWidth: 70
                         Layout.preferredHeight: 38
                         enabled: tile && tile.hotkey && tile.hotkey.length > 0
                         onClicked: {
@@ -297,8 +338,10 @@ Dialog {
                                         if (tile && activeFocus) tile.cueBeginMs = parseInt(text) || 0;
                                     }
                                 }
-                                Button {
+                                DarkButton {
                                     text: qsTr("Here")
+                                    Layout.preferredWidth: 64
+                                    Layout.preferredHeight: 38
                                     ToolTip.visible: hovered
                                     ToolTip.text: qsTr("Set to current playback position")
                                     onClicked: {
@@ -324,8 +367,10 @@ Dialog {
                                         if (tile && activeFocus) tile.cueEndMs = parseInt(text) || 0;
                                     }
                                 }
-                                Button {
+                                DarkButton {
                                     text: qsTr("Here")
+                                    Layout.preferredWidth: 64
+                                    Layout.preferredHeight: 38
                                     ToolTip.visible: hovered
                                     ToolTip.text: qsTr("Set to current playback position")
                                     onClicked: {

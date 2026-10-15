@@ -132,7 +132,7 @@ Rectangle {
             id: muteHotkeysBtn
             property bool isMuted: typeof hotkeyManager !== "undefined" ? hotkeyManager.isMuted : false
             Layout.preferredHeight: 44
-            Layout.preferredWidth: isMuted ? 140 : 120
+            Layout.preferredWidth: isMuted ? 135 : 125
             onClicked: root.toggleMuteHotkeysRequested()
 
             background: Rectangle {
@@ -143,11 +143,16 @@ Rectangle {
             }
 
             contentItem: RowLayout {
+                anchors.centerIn: parent
                 spacing: 6
                 Image {
                     source: "icons/Key.png"
-                    width: 20; height: 20
+                    sourceSize.width: 18
+                    sourceSize.height: 18
+                    Layout.preferredWidth: 18
+                    Layout.preferredHeight: 18
                     fillMode: Image.PreserveAspectFit
+                    opacity: 0.9
                 }
                 Text {
                     text: muteHotkeysBtn.isMuted ? qsTr("Keys Muted") : qsTr("Hotkeys Active")
@@ -166,7 +171,7 @@ Rectangle {
             id: duckingBtn
             property bool isDucking: typeof projectController !== "undefined" ? projectController.isDuckingActive : false
             Layout.preferredHeight: 44
-            Layout.preferredWidth: 125
+            Layout.preferredWidth: 110
             onClicked: root.toggleDuckingRequested()
 
             background: Rectangle {
@@ -177,11 +182,16 @@ Rectangle {
             }
 
             contentItem: RowLayout {
+                anchors.centerIn: parent
                 spacing: 6
                 Image {
-                    source: duckingBtn.isDucking ? "icons/duck.png" : "icons/unduck.png"
-                    width: 24; height: 24
+                    source: "icons/duck.png"
+                    sourceSize.width: 18
+                    sourceSize.height: 18
+                    Layout.preferredWidth: 18
+                    Layout.preferredHeight: 18
                     fillMode: Image.PreserveAspectFit
+                    opacity: duckingBtn.isDucking ? 1.0 : 0.85
                 }
                 Text {
                     text: qsTr("Ducking")
@@ -199,7 +209,7 @@ Rectangle {
         Button {
             id: stopAllBtn
             Layout.preferredHeight: 44
-            Layout.preferredWidth: 120
+            Layout.preferredWidth: 115
             onClicked: root.stopAllRequested()
 
             background: Rectangle {
@@ -210,11 +220,16 @@ Rectangle {
             }
 
             contentItem: RowLayout {
+                anchors.centerIn: parent
                 spacing: 6
                 Image {
                     source: "icons/stopAll.png"
-                    width: 24; height: 24
+                    sourceSize.width: 18
+                    sourceSize.height: 18
+                    Layout.preferredWidth: 18
+                    Layout.preferredHeight: 18
                     fillMode: Image.PreserveAspectFit
+                    opacity: 0.95
                 }
                 Text {
                     text: qsTr("Stop All")
@@ -247,7 +262,10 @@ Rectangle {
         contentItem: Image {
             source: aib.iconSource
             anchors.centerIn: parent
-            width: 24; height: 24
+            sourceSize.width: 22
+            sourceSize.height: 22
+            width: 22
+            height: 22
             fillMode: Image.PreserveAspectFit
             opacity: aib.hovered ? 1.0 : 0.85
         }

@@ -111,10 +111,13 @@ Rectangle {
 
             Image {
                 anchors.centerIn: parent
-                width: 32; height: 32
+                sourceSize.width: 28
+                sourceSize.height: 28
+                width: 28
+                height: 28
                 source: btnItem.iconSource
                 fillMode: Image.PreserveAspectFit
-                opacity: btnItem.isActive ? 1.0 : (mouseArea.containsMouse ? 0.9 : 0.7)
+                opacity: btnItem.isActive ? 1.0 : (mouseArea.containsMouse ? 1.0 : 0.85)
             }
         }
 
