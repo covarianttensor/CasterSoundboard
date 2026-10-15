@@ -149,6 +149,21 @@ Item {
                                 tileDrawer.tile = t;
                                 tileDrawer.open();
                             }
+                            onExtraFilesDropped: (extraUrls) => {
+                                if (root.currentGrid) {
+                                    for (var i = 0; i < extraUrls.length; ++i) {
+                                        var u = extraUrls[i];
+                                        var newTile = root.currentGrid.appendTile();
+                                        if (newTile) {
+                                            newTile.filePath = u;
+                                            var fn = u.substring(u.lastIndexOf('/') + 1);
+                                            var dot = fn.lastIndexOf('.');
+                                            if (dot > 0) fn = fn.substring(0, dot);
+                                            newTile.displayName = fn;
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
 
@@ -162,9 +177,9 @@ Item {
                             width: Math.max(150, 210 * root.tileScale)
                             height: Math.max(150, 210 * root.tileScale)
                             radius: 12
-                            color: footerMouse.containsMouse ? "#2A2536" : "#1F2126"
-                            border.color: footerMouse.containsMouse ? "#8E2DE2" : "#353942"
-                            border.width: 1
+                            color: footerDropArea.containsDrag ? "#1E824C" : (footerMouse.containsMouse ? "#2A2536" : "#1F2126")
+                            border.color: footerDropArea.containsDrag ? "#2ECC71" : (footerMouse.containsMouse ? "#8E2DE2" : "#353942")
+                            border.width: footerDropArea.containsDrag ? 2 : 1
 
                             ColumnLayout {
                                 anchors.centerIn: parent
@@ -174,14 +189,39 @@ Item {
                                     sourceSize.width: 36 * root.tileScale
                                     sourceSize.height: 36 * root.tileScale
                                     Layout.alignment: Qt.AlignHCenter
-                                    opacity: footerMouse.containsMouse ? 1.0 : 0.7
+                                    opacity: (footerMouse.containsMouse || footerDropArea.containsDrag) ? 1.0 : 0.7
                                 }
                                 Text {
-                                    text: qsTr("Add Sound Tile")
-                                    color: footerMouse.containsMouse ? "#FFFFFF" : "#AAAAAA"
+                                    text: footerDropArea.containsDrag ? qsTr("Drop to Add New Tiles") : qsTr("Add Sound Tile")
+                                    color: (footerMouse.containsMouse || footerDropArea.containsDrag) ? "#FFFFFF" : "#AAAAAA"
                                     font.bold: true
                                     font.pointSize: 10 * Math.max(0.8, root.tileScale * 0.9)
                                     Layout.alignment: Qt.AlignHCenter
+                                }
+                            }
+
+                            DropArea {
+                                id: footerDropArea
+                                anchors.fill: parent
+                                onEntered: (drag) => {
+                                    if (drag.hasUrls) drag.acceptProposedAction();
+                                }
+                                onDropped: (drop) => {
+                                    if (drop.hasUrls && root.currentGrid) {
+                                        for (var i = 0; i < drop.urls.length; ++i) {
+                                            var url = drop.urls[i].toString();
+                                            if (url.indexOf("file://") === 0) url = url.substring(7);
+                                            var tile = root.currentGrid.appendTile();
+                                            if (tile) {
+                                                tile.filePath = url;
+                                                var filename = url.substring(url.lastIndexOf('/') + 1);
+                                                var dotIdx = filename.lastIndexOf('.');
+                                                if (dotIdx > 0) filename = filename.substring(0, dotIdx);
+                                                tile.displayName = filename;
+                                            }
+                                        }
+                                        drop.acceptProposedAction();
+                                    }
                                 }
                             }
 
@@ -201,19 +241,15 @@ Item {
                 }
             }
 
-            // Global Drag & Drop Overlay on Board Area
+            // Background drop area (for dropping onto empty grid space behind tiles)
             DropArea {
-                id: boardDropArea
+                id: backgroundDropArea
                 anchors.fill: parent
+                z: -1
                 onEntered: (drag) => {
-                    if (drag.hasUrls) {
-                        drag.acceptProposedAction();
-                        boardDropOverlay.visible = true;
-                    }
+                    if (drag.hasUrls) drag.acceptProposedAction();
                 }
-                onExited: boardDropOverlay.visible = false
                 onDropped: (drop) => {
-                    boardDropOverlay.visible = false;
                     if (drop.hasUrls && root.currentGrid) {
                         for (var i = 0; i < drop.urls.length; ++i) {
                             var url = drop.urls[i].toString();
@@ -228,33 +264,6 @@ Item {
                             }
                         }
                         drop.acceptProposedAction();
-                    }
-                }
-            }
-
-            // Drag Over Visual Banner
-            Rectangle {
-                id: boardDropOverlay
-                anchors.fill: parent
-                color: "#1E824C"
-                opacity: 0.85
-                visible: false
-
-                ColumnLayout {
-                    anchors.centerIn: parent
-                    spacing: 12
-                    Image {
-                        source: "../icons/openMusic.png"
-                        sourceSize.width: 64
-                        sourceSize.height: 64
-                        Layout.alignment: Qt.AlignHCenter
-                    }
-                    Text {
-                        text: qsTr("Drop Media Files to Add as New Tiles")
-                        color: "#FFFFFF"
-                        font.bold: true
-                        font.pointSize: 18
-                        Layout.alignment: Qt.AlignHCenter
                     }
                 }
             }

@@ -11,6 +11,7 @@ Rectangle {
 
     signal settingsRequested(var tile)
     signal removeRequested(var tile)
+    signal extraFilesDropped(var urls)
 
     implicitWidth: 220 * scaleFactor
     implicitHeight: 220 * scaleFactor
@@ -504,6 +505,21 @@ Rectangle {
                 }
                 if (tile) {
                     tile.filePath = url;
+                    if (tile.displayName.length === 0 || tile.displayName === "Empty Sound" || tile.displayName.indexOf("Tile ") === 0) {
+                        var filename = url.substring(url.lastIndexOf('/') + 1);
+                        var dotIdx = filename.lastIndexOf('.');
+                        if (dotIdx > 0) filename = filename.substring(0, dotIdx);
+                        tile.displayName = filename;
+                    }
+                }
+                if (drop.urls.length > 1) {
+                    var extraUrls = [];
+                    for (var i = 1; i < drop.urls.length; ++i) {
+                        var u = drop.urls[i].toString();
+                        if (u.indexOf("file://") === 0) u = u.substring(7);
+                        extraUrls.push(u);
+                    }
+                    root.extraFilesDropped(extraUrls);
                 }
                 drop.acceptProposedAction();
             }
@@ -516,8 +532,8 @@ Rectangle {
         anchors.fill: parent
         radius: root.radius
         color: "#1E824C"
-        opacity: 0.85
-        visible: false
+        opacity: 0.88
+        visible: dropArea.containsDrag
 
         ColumnLayout {
             anchors.centerIn: parent
