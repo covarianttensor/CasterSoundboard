@@ -23,6 +23,12 @@ Dialog {
     width: Math.min(580, parent.width - 32)
     height: Math.min(800, parent.height - 32)
 
+    Component.onCompleted: {
+        if (typeof openHotkeyPromptOnStart !== "undefined" && openHotkeyPromptOnStart) {
+            hotkeyPromptDialog.openDialog();
+        }
+    }
+
     topPadding: 12
     bottomPadding: 12
     leftPadding: 16
@@ -139,6 +145,258 @@ Dialog {
         }
     }
 
+    // --- Hotkey Capture Prompt Dialog ---
+    Dialog {
+        id: hotkeyPromptDialog
+        title: qsTr("Register Key Combination")
+        modal: true
+        parent: Overlay.overlay
+        anchors.centerIn: parent
+        width: Math.min(480, (parent ? parent.width - 40 : 480))
+        height: 290
+        topPadding: 14
+        bottomPadding: 14
+        leftPadding: 18
+        rightPadding: 18
+
+        property string pendingSequence: ""
+        property string pendingModifiers: ""
+
+        function openDialog() {
+            pendingSequence = "";
+            pendingModifiers = "";
+            if (typeof hotkeyManager !== "undefined") {
+                hotkeyManager.isMuted = true;
+            }
+            open();
+        }
+
+        onOpened: {
+            captureArea.forceActiveFocus();
+        }
+
+        onClosed: {
+            if (typeof hotkeyManager !== "undefined") {
+                hotkeyManager.isMuted = false;
+            }
+        }
+
+        background: Rectangle {
+            color: "#202327"
+            radius: 12
+            border.color: "#3E434D"
+            border.width: 1
+        }
+
+        header: Rectangle {
+            height: 48
+            color: "#181A1D"
+            radius: 12
+
+            RowLayout {
+                anchors.fill: parent
+                anchors.leftMargin: 16
+                anchors.rightMargin: 16
+                spacing: 8
+
+                Text {
+                    text: "⌨"
+                    font.pointSize: 14
+                    color: "#8E2DE2"
+                }
+
+                Text {
+                    text: qsTr("Register Key Combination")
+                    color: "#FFFFFF"
+                    font.bold: true
+                    font.pointSize: 11
+                    Layout.fillWidth: true
+                }
+            }
+        }
+
+        contentItem: Item {
+            id: captureArea
+            focus: true
+
+            Keys.priority: Keys.BeforeItem
+            Keys.enabled: true
+            Keys.onPressed: (event) => {
+                event.accepted = true;
+
+                // Escape cancels dialog
+                if (event.key === Qt.Key_Escape && event.modifiers === Qt.NoModifier) {
+                    hotkeyPromptDialog.close();
+                    return;
+                }
+
+                // Enter / Return applies sequence
+                if ((event.key === Qt.Key_Return || event.key === Qt.Key_Enter) && event.modifiers === Qt.NoModifier) {
+                    if (hotkeyPromptDialog.pendingSequence.length > 0) {
+                        hotkeyPromptDialog.applySequence();
+                    }
+                    return;
+                }
+
+                // Modifier-only press
+                if (event.key === Qt.Key_Control || event.key === Qt.Key_Shift || event.key === Qt.Key_Alt || event.key === Qt.Key_Meta) {
+                    if (typeof hotkeyManager !== "undefined") {
+                        hotkeyPromptDialog.pendingModifiers = hotkeyManager.modifiersToString(event.modifiers);
+                    }
+                    return;
+                }
+
+                // Complete key combination
+                if (typeof hotkeyManager !== "undefined") {
+                    var seq = hotkeyManager.keySequenceToString(event.key, event.modifiers);
+                    if (seq && seq.length > 0) {
+                        hotkeyPromptDialog.pendingSequence = seq;
+                        hotkeyPromptDialog.pendingModifiers = "";
+                    }
+                }
+            }
+
+            Keys.onReleased: (event) => {
+                if (event.key === Qt.Key_Control || event.key === Qt.Key_Shift || event.key === Qt.Key_Alt || event.key === Qt.Key_Meta) {
+                    if (hotkeyPromptDialog.pendingSequence.length === 0) {
+                        hotkeyPromptDialog.pendingModifiers = "";
+                    }
+                }
+            }
+
+            MouseArea {
+                anchors.fill: parent
+                onClicked: captureArea.forceActiveFocus()
+            }
+
+            ColumnLayout {
+                anchors.fill: parent
+                spacing: 10
+
+                Text {
+                    text: qsTr("Press the key combination you wish to register on your keyboard:")
+                    color: "#BDC3C7"
+                    font.pointSize: 10
+                    wrapMode: Text.WordWrap
+                    Layout.fillWidth: true
+                }
+
+                // Key Combination Display Badge
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 60
+                    radius: 8
+                    color: "#16181B"
+                    border.color: hotkeyPromptDialog.pendingSequence.length > 0 ? "#8E2DE2" : (hotkeyPromptDialog.pendingModifiers.length > 0 ? "#A855F7" : "#2C3036")
+                    border.width: hotkeyPromptDialog.pendingSequence.length > 0 ? 2 : 1
+
+                    RowLayout {
+                        anchors.centerIn: parent
+                        spacing: 8
+
+                        Text {
+                            text: {
+                                if (hotkeyPromptDialog.pendingSequence.length > 0) {
+                                    return hotkeyPromptDialog.pendingSequence;
+                                }
+                                if (hotkeyPromptDialog.pendingModifiers.length > 0) {
+                                    return hotkeyPromptDialog.pendingModifiers;
+                                }
+                                return qsTr("Listening... Press any key or combo");
+                            }
+                            color: hotkeyPromptDialog.pendingSequence.length > 0 ? "#FFFFFF" : (hotkeyPromptDialog.pendingModifiers.length > 0 ? "#D19CF7" : "#7E8590")
+                            font.bold: true
+                            font.pointSize: hotkeyPromptDialog.pendingSequence.length > 0 ? 15 : 10.5
+                            font.italic: hotkeyPromptDialog.pendingSequence.length === 0 && hotkeyPromptDialog.pendingModifiers.length === 0
+                        }
+                    }
+                }
+
+                RowLayout {
+                    Layout.fillWidth: true
+                    Text {
+                        text: (tile && tile.hotkey && tile.hotkey.length > 0) ? qsTr("Current shortcut: %1").arg(tile.hotkey) : qsTr("No shortcut currently assigned")
+                        color: "#7E8590"
+                        font.pointSize: 8
+                    }
+                    Item { Layout.fillWidth: true }
+                    Text {
+                        text: qsTr("e.g. Ctrl+Alt+1, Space, F5, P")
+                        color: "#606670"
+                        font.pointSize: 8
+                    }
+                }
+            }
+        }
+
+        footer: Rectangle {
+            height: 52
+            color: "#181A1D"
+            radius: 12
+
+            RowLayout {
+                anchors.fill: parent
+                anchors.leftMargin: 16
+                anchors.rightMargin: 16
+                spacing: 8
+
+                DarkButton {
+                    text: qsTr("Clear")
+                    Layout.preferredWidth: 80
+                    Layout.preferredHeight: 34
+                    onClicked: {
+                        hotkeyPromptDialog.pendingSequence = "";
+                        hotkeyPromptDialog.pendingModifiers = "";
+                        hotkeyField.text = "";
+                        if (tile) tile.hotkey = "";
+                        hotkeyPromptDialog.close();
+                    }
+                }
+
+                Item { Layout.fillWidth: true }
+
+                DarkButton {
+                    text: qsTr("Cancel")
+                    Layout.preferredWidth: 80
+                    Layout.preferredHeight: 34
+                    onClicked: hotkeyPromptDialog.close()
+                }
+
+                Button {
+                    id: applyBtn
+                    text: qsTr("Apply")
+                    Layout.preferredWidth: 90
+                    Layout.preferredHeight: 34
+                    enabled: hotkeyPromptDialog.pendingSequence.length > 0
+
+                    contentItem: Text {
+                        text: parent.text
+                        font.bold: true
+                        font.pointSize: 10
+                        color: parent.enabled ? "#FFFFFF" : "#7E8590"
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                    }
+
+                    background: Rectangle {
+                        color: parent.enabled ? (parent.down ? "#7322B8" : (parent.hovered ? "#9D3BF0" : "#8E2DE2")) : "#2E333B"
+                        radius: 6
+                    }
+
+                    onClicked: hotkeyPromptDialog.applySequence()
+                }
+            }
+        }
+
+        function applySequence() {
+            if (pendingSequence.length > 0) {
+                hotkeyField.text = pendingSequence;
+                if (tile) tile.hotkey = pendingSequence;
+            }
+            close();
+        }
+    }
+
     Flickable {
         id: flickable
         anchors.fill: parent
@@ -223,10 +481,19 @@ Dialog {
                     }
 
                     DarkButton {
+                        text: qsTr("Press Key...")
+                        Layout.preferredWidth: 105
+                        Layout.preferredHeight: 38
+                        onClicked: hotkeyPromptDialog.openDialog()
+                        ToolTip.visible: hovered
+                        ToolTip.text: qsTr("Open prompt dialog to press and register a key combination")
+                    }
+
+                    DarkButton {
                         text: qsTr("Clear")
                         Layout.preferredWidth: 70
                         Layout.preferredHeight: 38
-                        enabled: tile && tile.hotkey && tile.hotkey.length > 0
+                        enabled: (tile && tile.hotkey && tile.hotkey.length > 0) || (hotkeyField.text.length > 0)
                         onClicked: {
                             if (tile) {
                                 tile.hotkey = "";

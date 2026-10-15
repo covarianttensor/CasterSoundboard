@@ -81,6 +81,17 @@ private slots:
         QVERIFY(manager.handleKeyEvent(&event));
         QCOMPARE(triggerSpy.count(), 1);
     }
+
+    void testKeySequenceFormatting()
+    {
+        HotkeyManager manager;
+        QCOMPARE(manager.keySequenceToString(Qt::Key_P, Qt::NoModifier), QString("P"));
+        QCOMPARE(manager.keySequenceToString(Qt::Key_1, Qt::ControlModifier | Qt::AltModifier), QString("Ctrl+Alt+1"));
+        QCOMPARE(manager.keySequenceToString(Qt::Key_Space, Qt::NoModifier), QString("Space"));
+        QCOMPARE(manager.keySequenceToString(Qt::Key_F5, Qt::NoModifier), QString("F5"));
+        QCOMPARE(manager.keySequenceToString(Qt::Key_Control, Qt::ControlModifier), QString()); // modifier alone returns empty
+        QCOMPARE(manager.modifiersToString(Qt::ControlModifier | Qt::AltModifier), QString("Ctrl+Alt+..."));
+    }
 };
 
 QTEST_MAIN(TestHotkeyManager)

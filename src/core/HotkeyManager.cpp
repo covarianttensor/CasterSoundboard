@@ -161,3 +161,30 @@ bool HotkeyManager::handleKeyEvent(QKeyEvent *event)
 
     return false;
 }
+
+QString HotkeyManager::keySequenceToString(int key, int modifiers) const
+{
+    if (key == 0 || key == Qt::Key_Control || key == Qt::Key_Shift || key == Qt::Key_Alt || key == Qt::Key_Meta) {
+        return QString();
+    }
+
+    int cleanModifiers = 0;
+    if (modifiers & Qt::ControlModifier) cleanModifiers |= Qt::ControlModifier;
+    if (modifiers & Qt::AltModifier) cleanModifiers |= Qt::AltModifier;
+    if (modifiers & Qt::ShiftModifier) cleanModifiers |= Qt::ShiftModifier;
+    if (modifiers & Qt::MetaModifier) cleanModifiers |= Qt::MetaModifier;
+
+    QKeySequence seq(key | cleanModifiers);
+    return seq.toString(QKeySequence::NativeText);
+}
+
+QString HotkeyManager::modifiersToString(int modifiers) const
+{
+    QStringList parts;
+    if (modifiers & Qt::ControlModifier) parts << "Ctrl";
+    if (modifiers & Qt::AltModifier) parts << "Alt";
+    if (modifiers & Qt::ShiftModifier) parts << "Shift";
+    if (modifiers & Qt::MetaModifier) parts << "Meta";
+    if (parts.isEmpty()) return QString();
+    return parts.join("+") + "+...";
+}

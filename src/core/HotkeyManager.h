@@ -30,6 +30,10 @@ public:
     // In-app key dispatch (returns true if an assigned hotkey matched and triggered)
     Q_INVOKABLE bool handleKeyEvent(QKeyEvent *event);
 
+    // Helpers to format keyboard shortcuts for UI prompts
+    Q_INVOKABLE QString keySequenceToString(int key, int modifiers) const;
+    Q_INVOKABLE QString modifiersToString(int modifiers) const;
+
 public slots:
     void toggleMute();
     void rescanProject();

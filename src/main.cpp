@@ -62,6 +62,7 @@ int main(int argc, char *argv[])
     QCommandLineOption autoStartOscOption("auto-start-osc", "Automatically start OSC server on startup.");
     QCommandLineOption widthOption("window-width", "Initial window width in pixels.", "width");
     QCommandLineOption heightOption("window-height", "Initial window height in pixels.", "height");
+    QCommandLineOption hotkeyPromptOption("open-hotkey-prompt", "Open hotkey prompt dialog on startup for testing.");
     parser.addOption(screenshotOption);
     parser.addOption(drawerOption);
     parser.addOption(drawerIndexOption);
@@ -69,6 +70,7 @@ int main(int argc, char *argv[])
     parser.addOption(autoStartOscOption);
     parser.addOption(widthOption);
     parser.addOption(heightOption);
+    parser.addOption(hotkeyPromptOption);
     parser.addPositionalArgument("project", "Project file (.caster) to open on launch.", "[project]");
     parser.process(app);
 
@@ -114,9 +116,10 @@ int main(int argc, char *argv[])
     engine.rootContext()->setContextProperty("hotkeyManager", &hotkeyManager);
     engine.rootContext()->setContextProperty("oscController", &oscController);
     engine.rootContext()->setContextProperty("audioRoutingController", &audioRoutingController);
-    engine.rootContext()->setContextProperty("openDrawerOnStart", parser.isSet(drawerOption));
+    engine.rootContext()->setContextProperty("openDrawerOnStart", parser.isSet(drawerOption) || parser.isSet(hotkeyPromptOption));
     engine.rootContext()->setContextProperty("drawerTileIndex", parser.value(drawerIndexOption).toInt());
     engine.rootContext()->setContextProperty("initialViewIndex", parser.value(viewOption).toInt());
+    engine.rootContext()->setContextProperty("openHotkeyPromptOnStart", parser.isSet(hotkeyPromptOption));
 
     // Install application-wide hotkey event filter
     GlobalHotkeyFilter hotkeyFilter(&hotkeyManager, &app);
