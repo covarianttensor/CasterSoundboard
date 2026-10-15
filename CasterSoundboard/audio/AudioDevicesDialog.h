@@ -3,7 +3,7 @@
 #include "AudioDeviceController.h"
 #include <QDialog>
 class QComboBox; class QCheckBox; class QLabel; class QPlainTextEdit; class QPushButton;
-class QTextBrowser;
+class QTextBrowser; class QLineEdit;
 namespace Audio {
 class AudioDevicesDialog : public QDialog {
     Q_OBJECT
@@ -14,6 +14,8 @@ private:
     AudioDeviceController *controller;
     QComboBox *microphone, *systemOutput, *monitorOutput, *recoveryDevice;
     QCheckBox *mix, *monitor, *defaultInput;
+    QLineEdit *virtualMicNameEdit = nullptr;
+    QLabel *virtualMicNameLabel = nullptr;
     QLabel *recoveryHint, *mixHint, *monitorHint, *defaultInputHint;
     QPlainTextEdit *details;
     QWidget *deviceControls;

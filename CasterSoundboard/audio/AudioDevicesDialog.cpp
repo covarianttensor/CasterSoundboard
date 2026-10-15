@@ -2,6 +2,7 @@
 #include <QComboBox>
 #include <QAbstractItemView>
 #include <QCheckBox>
+#include <QLineEdit>
 #include <QLabel>
 #include <QPlainTextEdit>
 #include <QPushButton>
@@ -50,6 +51,16 @@ AudioDevicesDialog::AudioDevicesDialog(AudioDeviceController *c, QWidget *parent
         return hint;
     };
     mixHint = explain(mix, tr("Combines your microphone and soundboard into one input for another application. Example: record your narration and sound effects together in a recording application."));
+    auto nameLayout = new QHBoxLayout;
+    nameLayout->setContentsMargins(22, 0, 0, 6);
+    virtualMicNameLabel = new QLabel(tr("Virtual microphone name:"));
+    virtualMicNameEdit = new QLineEdit;
+    virtualMicNameEdit->setObjectName("virtualMicNameEdit");
+    virtualMicNameEdit->setPlaceholderText(tr("Virtual_Microphone"));
+    virtualMicNameEdit->setToolTip(tr("Custom name for the virtual microphone in audio settings and apps (spaces will be converted to underscores)"));
+    nameLayout->addWidget(virtualMicNameLabel);
+    nameLayout->addWidget(virtualMicNameEdit);
+    layout->addLayout(nameLayout);
     monitorHint = explain(monitor, tr("Plays soundboard audio through the selected monitor output without playing your live microphone back to you. Example: hear sound effects in your headphones while sending them to another application."));
     defaultInputHint = explain(defaultInput, tr("Makes the mixed microphone the system input for applications using Default/System Default. Example: a recording application using the default input receives both your microphone and soundboard. Applications with an explicitly selected input keep that selection."));
     section(tr("Device recovery"));
@@ -149,7 +160,9 @@ void AudioDevicesDialog::appendDiagnostics(const QString &title, const QString &
 }
 Configuration AudioDevicesDialog::staged() const {
     Configuration c; c.microphone = microphone->currentData().toString(); c.systemOutput = systemOutput->currentData().toString();
-    c.monitorOutput = monitorOutput->currentData().toString(); c.mix = mix->isChecked() && capabilities.virtualSinks && capabilities.loopbacks && capabilities.streamRetargeting; c.monitor = monitor->isChecked() && capabilities.virtualSinks && capabilities.loopbacks && capabilities.streamRetargeting; c.defaultInput = defaultInput->isChecked() && capabilities.defaults; return c;
+    c.monitorOutput = monitorOutput->currentData().toString();
+    c.virtualMicName = virtualMicNameEdit ? virtualMicNameEdit->text().trimmed() : QString();
+    c.mix = mix->isChecked() && capabilities.virtualSinks && capabilities.loopbacks && capabilities.streamRetargeting; c.monitor = monitor->isChecked() && capabilities.virtualSinks && capabilities.loopbacks && capabilities.streamRetargeting; c.defaultInput = defaultInput->isChecked() && capabilities.defaults; return c;
 }
 void AudioDevicesDialog::openSettings() {
     auto saved = controller->saved();
@@ -158,6 +171,8 @@ void AudioDevicesDialog::openSettings() {
         box->setCurrentIndex(i < 0 ? 0 : i);
     };
     select(microphone, saved.microphone); select(systemOutput, saved.systemOutput); select(monitorOutput, saved.monitorOutput);
+    if (virtualMicNameEdit)
+        virtualMicNameEdit->setText(saved.virtualMicName.isEmpty() ? QString("Virtual_Microphone") : saved.virtualMicName);
     mix->setChecked(saved.mix); monitor->setChecked(saved.monitor); defaultInput->setChecked(saved.defaultInput);
     show(); raise(); activateWindow(); controller->request(AudioDeviceController::Refresh);
 }
@@ -167,6 +182,8 @@ void AudioDevicesDialog::populate(const Discovery &d) {
     monitor->setVisible(capabilities.virtualSinks && capabilities.loopbacks && capabilities.streamRetargeting);
     defaultInput->setVisible(capabilities.defaults && capabilities.virtualSinks && capabilities.loopbacks);
     mixHint->setVisible(!mix->isHidden());
+    if (virtualMicNameEdit) virtualMicNameEdit->setVisible(!mix->isHidden());
+    if (virtualMicNameLabel) virtualMicNameLabel->setVisible(!mix->isHidden());
     monitorHint->setVisible(!monitor->isHidden());
     defaultInputHint->setVisible(!defaultInput->isHidden());
     ready = d.error.isEmpty() && d.capabilities.defaults;
@@ -237,5 +254,7 @@ void AudioDevicesDialog::updateEnabled() {
     systemOutput->setEnabled(ready && !busy); mix->setEnabled(ready && !busy); monitor->setEnabled(ready && !busy);
     microphone->setEnabled(ready && !busy && mix->isChecked()); monitorOutput->setEnabled(ready && !busy && monitor->isChecked());
     defaultInput->setEnabled(ready && !busy && mix->isChecked());
+    if (virtualMicNameEdit) virtualMicNameEdit->setEnabled(ready && !busy && mix->isChecked());
+    if (virtualMicNameLabel) virtualMicNameLabel->setEnabled(ready && !busy && mix->isChecked());
 }
 }

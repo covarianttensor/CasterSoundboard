@@ -169,6 +169,24 @@ private slots:
         f.defaultSource="another.app.source";QVERIFY(b.stopManagedRouting().ok);
         QCOMPARE(f.defaultSource,QString("another.app.source"));QCOMPARE(f.lists["modules"].size(),1);QCOMPARE(f.lists["modules"][0].toObject()["index"].toInt(),99);
     }
+    void customVirtualMicName() {
+        FakeServer f;
+        PulseCompatBackend b([&](const QStringList &a) { return f.run(a); });
+        auto c = f.config();
+        c.virtualMicName = "Discord Soundboard Mic";
+        auto plan = b.validateConfiguration(c);
+        QVERIFY2(plan.error.isEmpty(), qPrintable(plan.error));
+        QVERIFY(plan.changes.join('\n').contains("Discord_Soundboard_Mic"));
+        auto r = b.apply(plan);
+        QVERIFY2(r.ok, qPrintable(r.message));
+        QCOMPARE(r.voiceSource, QString("Discord_Soundboard_Mic.monitor"));
+        bool foundSink = false;
+        for (auto v : f.lists["sinks"]) {
+            if (v.toObject()["name"].toString() == "Discord_Soundboard_Mic") foundSink = true;
+        }
+        QVERIFY(foundSink);
+        QVERIFY(b.stopManagedRouting().ok);
+    }
     void rejectReusedModuleId() {
         FakeServer f;PulseCompatBackend b([&](const QStringList&a){return f.run(a);});QVERIFY(b.apply(b.validateConfiguration(f.config())).ok);
         auto m=f.lists["modules"][0].toObject();m["argument"]="sink_name=someone_else";f.lists["modules"][0]=m;

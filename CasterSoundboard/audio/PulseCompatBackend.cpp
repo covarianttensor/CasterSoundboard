@@ -407,8 +407,13 @@ Plan PulseCompatBackend::validateConfiguration(const Configuration &desired) {
         }
         plan.metadata["profiles"] = transitions;
         plan.changes << "Global system playback output: " + output.label;
-        if (desired.defaultInput && desired.mix) plan.changes << "Global default input: mixed virtual microphone";
-        if (desired.mix) plan.changes << "Set the receiving application's input to Default/System Default to use the mixed microphone when it is enabled as default.";
+        QString micDisplay = desired.virtualMicName.trimmed();
+        micDisplay.replace(QRegularExpression("\\s+"), "_");
+        micDisplay.remove(QRegularExpression("[^A-Za-z0-9_.-]"));
+        if (micDisplay.isEmpty()) micDisplay = "Virtual_Microphone";
+        if (desired.mix) plan.changes << "Virtual microphone for apps: " + micDisplay;
+        if (desired.defaultInput && desired.mix) plan.changes << "Global default input: " + micDisplay;
+        if (desired.mix) plan.changes << "Set the receiving application's input to Default/System Default or " + micDisplay + " to use the mixed microphone.";
     } catch (const std::exception &e) { plan.error = QString::fromUtf8(e.what()); }
     return plan;
 }
@@ -509,9 +514,26 @@ Result PulseCompatBackend::apply(const Plan &supplied) {
             boardSink = uniqueName("SoundboardSink");
             load("module-null-sink", {"sink_name=" + boardSink, "sink_properties=\"device.description=Caster_Soundboard caster.owner=" + token + "\""});
         }
-        if (desired.mix && micSink.isEmpty()) {
-            micSink = uniqueName("VirtualMic");
-            load("module-null-sink", {"sink_name=" + micSink, "sink_properties=\"device.description=Virtual_Microphone caster.owner=" + token + "\""});
+        if (desired.mix) {
+            QString sanitizedName = desired.virtualMicName.trimmed();
+            sanitizedName.replace(QRegularExpression("\\s+"), "_");
+            sanitizedName.remove(QRegularExpression("[^A-Za-z0-9_.-]"));
+            const bool isDefault = sanitizedName.isEmpty() || sanitizedName == "Virtual_Microphone" || sanitizedName == "VirtualMic";
+            if (sanitizedName.isEmpty()) sanitizedName = "Virtual_Microphone";
+            const QString targetSinkName = isDefault ? QString("VirtualMic") : sanitizedName;
+
+            if (micSink.isEmpty() || !micSink.startsWith(targetSinkName)) {
+                if (!micSink.isEmpty()) {
+                    for (int i = owned.size() - 1; i >= 0; --i) {
+                        if (owned[i].name == "module-null-sink" && owned[i].arguments.contains("sink_name=" + micSink)) {
+                            try { unload(owned[i].id); } catch (...) {}
+                        }
+                    }
+                    micSink.clear();
+                }
+                micSink = uniqueName(targetSinkName);
+                load("module-null-sink", {"sink_name=" + micSink, "sink_properties=\"device.description=" + sanitizedName + " caster.owner=" + token + "\""});
+            }
         }
         QMap<QString, QString> wanted;
         auto connect = [&](const QString &source, const QString &sink) {

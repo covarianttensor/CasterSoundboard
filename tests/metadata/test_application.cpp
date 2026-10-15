@@ -10,6 +10,8 @@
 #include <QTabWidget>
 #include <QComboBox>
 #include <QPushButton>
+#include <QLineEdit>
+#include "audio/AudioDevicesDialog.h"
 #include <QSettings>
 #include <QTemporaryDir>
 #include <QFile>
@@ -412,6 +414,13 @@ private slots:
         QVERIFY(outputCombo->toolTip().contains("Select audio output"));
         QVERIFY(outputCombo->count() >= 1);
         QCOMPARE(outputCombo->itemText(0), QString("Default System Output"));
+
+        // Verify AudioDevicesDialog contains virtualMicNameEdit and initializes with placeholder
+        auto *audioDialog = window.findChild<Audio::AudioDevicesDialog *>();
+        QVERIFY(audioDialog != nullptr);
+        auto *nameEdit = audioDialog->findChild<QLineEdit *>("virtualMicNameEdit");
+        QVERIFY(nameEdit != nullptr);
+        QCOMPARE(nameEdit->placeholderText(), QString("Virtual_Microphone"));
     }
 };
 QTEST_MAIN(ApplicationTest)

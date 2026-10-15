@@ -16,10 +16,12 @@ struct Endpoint {
 };
 struct Configuration {
     QString microphone, systemOutput, monitorOutput;
+    QString virtualMicName;
     bool mix = true, monitor = true, defaultInput = false;
     bool operator==(const Configuration &o) const {
         return microphone == o.microphone && systemOutput == o.systemOutput &&
-            monitorOutput == o.monitorOutput && mix == o.mix && monitor == o.monitor && defaultInput == o.defaultInput;
+            monitorOutput == o.monitorOutput && virtualMicName == o.virtualMicName &&
+            mix == o.mix && monitor == o.monitor && defaultInput == o.defaultInput;
     }
 };
 struct Capabilities {

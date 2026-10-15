@@ -34,6 +34,7 @@ AudioDeviceController::AudioDeviceController(QObject *parent) : QObject(parent),
         preferences.microphone = s.value("microphone").toString(); preferences.systemOutput = s.value("systemOutput").toString();
         preferences.monitorOutput = s.value("monitorOutput").toString(); preferences.mix = s.value("mix", true).toBool();
         preferences.monitor = s.value("monitor", true).toBool(); preferences.defaultInput = s.value("defaultInput", false).toBool();
+        preferences.virtualMicName = s.value("virtualMicName", "Virtual_Microphone").toString();
     }
     worker->moveToThread(&thread);
     connect(&thread, &QThread::finished, worker, &QObject::deleteLater);
@@ -97,7 +98,8 @@ QString AudioDeviceController::save() {
     s.remove("application"); // Retire the experimental per-application routing preference.
     s.setValue("microphone", preferences.microphone); s.setValue("systemOutput", preferences.systemOutput);
     s.setValue("monitorOutput", preferences.monitorOutput); s.setValue("mix", preferences.mix);
-    s.setValue("monitor", preferences.monitor); s.setValue("defaultInput", preferences.defaultInput); s.sync();
+    s.setValue("monitor", preferences.monitor); s.setValue("defaultInput", preferences.defaultInput);
+    s.setValue("virtualMicName", preferences.virtualMicName); s.sync();
     if (s.status() != QSettings::NoError) return "Routing applied, but audio preferences could not be saved.";
     return {};
 }
