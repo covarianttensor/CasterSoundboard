@@ -121,6 +121,7 @@ private:
     QPushButton *audioButton = nullptr;
     QPushButton *settingsButton;
     QPushButton *aboutButton;
+    QPushButton *webServerButton = nullptr;
     //Lower window area
     QTabWidget *mainTabContainer;
     // Bottom

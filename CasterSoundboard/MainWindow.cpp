@@ -175,8 +175,8 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent)
     mainToolbar->addWidget(toggleAudioDuckingButton);
     mainToolbar->addWidget(openSoundControlButton);
     mainToolbar->addWidget(audioButton);
-    auto webServerButton = new QPushButton;
-    webServerButton->setIcon(QIcon(":/res/img/web_server.png"));
+    webServerButton = new QPushButton;
+    webServerButton->setIcon(themedIcon("web_server.png"));
     webServerButton->setIconSize(QSize(40,40));
     webServerButton->setToolTip(tr("Web Server Settings"));
     webServerButton->setAccessibleName(tr("Web Server"));
@@ -1551,6 +1551,8 @@ QIcon MainWindow::themedIcon(const QString &iconFileName) const
 
 void MainWindow::updateThemeIcons()
 {
+    if (webServerButton)
+        webServerButton->setIcon(themedIcon("web_server.png"));
     addNewTabButton->setIcon(themedIcon("newTab.png"));
     openTabButton->setIcon(themedIcon("open.png"));
     saveTabButton->setIcon(themedIcon("save.png"));
