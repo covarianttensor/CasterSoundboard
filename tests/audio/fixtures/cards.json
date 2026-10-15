@@ -1,0 +1,166 @@
+[
+  {
+    "index": 45,
+    "name": "card.focusrite",
+    "properties": {
+      "device.description": "Scarlett 2i2"
+    },
+    "profiles": {
+      "off": {
+        "description": "Off",
+        "sinks": 0,
+        "sources": 0,
+        "priority": 0,
+        "available": true
+      },
+      "output:analog-stereo+input:analog-stereo": {
+        "description": "Analog Stereo Duplex",
+        "sinks": 1,
+        "sources": 1,
+        "priority": 6565,
+        "available": true
+      },
+      "output:analog-stereo": {
+        "description": "Analog Stereo Output",
+        "sinks": 1,
+        "sources": 0,
+        "priority": 6500,
+        "available": true
+      },
+      "input:analog-stereo": {
+        "description": "Analog Stereo Input",
+        "sinks": 0,
+        "sources": 1,
+        "priority": 65,
+        "available": true
+      },
+      "pro-audio": {
+        "description": "Pro Audio",
+        "sinks": 1,
+        "sources": 1,
+        "priority": 1,
+        "available": true
+      }
+    },
+    "ports": {
+      "analog-input": {
+        "description": "Analog Input",
+        "availability": "availability unknown",
+        "profiles": [
+          "input:analog-stereo",
+          "output:analog-stereo+input:analog-stereo"
+        ]
+      },
+      "analog-output": {
+        "description": "Analog Output",
+        "availability": "availability unknown",
+        "profiles": [
+          "output:analog-stereo",
+          "output:analog-stereo+input:analog-stereo"
+        ]
+      }
+    },
+    "active_profile": "output:analog-stereo+input:analog-stereo"
+  },
+  {
+    "index": 46,
+    "name": "card.jbl",
+    "properties": {
+      "device.description": "JBL Quantum"
+    },
+    "profiles": {
+      "off": {
+        "description": "Off",
+        "sinks": 0,
+        "sources": 0,
+        "priority": 0,
+        "available": true
+      },
+      "output:analog-stereo+input:mono-fallback": {
+        "description": "Analog Stereo Output + Mono Input",
+        "sinks": 1,
+        "sources": 1,
+        "priority": 6501,
+        "available": true
+      },
+      "output:analog-stereo": {
+        "description": "Analog Stereo Output",
+        "sinks": 1,
+        "sources": 0,
+        "priority": 6500,
+        "available": true
+      },
+      "output:iec958-stereo+input:mono-fallback": {
+        "description": "Digital Stereo (IEC958) Output + Mono Input",
+        "sinks": 1,
+        "sources": 1,
+        "priority": 5501,
+        "available": true
+      },
+      "output:iec958-stereo": {
+        "description": "Digital Stereo (IEC958) Output",
+        "sinks": 1,
+        "sources": 0,
+        "priority": 5500,
+        "available": true
+      },
+      "output:iec958-ac3-surround-51+input:mono-fallback": {
+        "description": "Digital Surround 5.1 (IEC958/AC3) Output + Mono Input",
+        "sinks": 1,
+        "sources": 1,
+        "priority": 301,
+        "available": true
+      },
+      "output:iec958-ac3-surround-51": {
+        "description": "Digital Surround 5.1 (IEC958/AC3) Output",
+        "sinks": 1,
+        "sources": 0,
+        "priority": 300,
+        "available": true
+      },
+      "pro-audio": {
+        "description": "Pro Audio",
+        "sinks": 1,
+        "sources": 1,
+        "priority": 1,
+        "available": true
+      },
+      "input:mono-fallback": {
+        "description": "Mono Input",
+        "sinks": 0,
+        "sources": 1,
+        "priority": 1,
+        "available": true
+      }
+    },
+    "ports": {
+      "analog-input-mic": {
+        "description": "Microphone",
+        "availability": "availability unknown",
+        "profiles": [
+          "input:mono-fallback",
+          "output:analog-stereo+input:mono-fallback",
+          "output:iec958-stereo+input:mono-fallback",
+          "output:iec958-ac3-surround-51+input:mono-fallback"
+        ]
+      },
+      "analog-output": {
+        "description": "Analog Output",
+        "availability": "availability unknown",
+        "profiles": [
+          "output:analog-stereo",
+          "output:analog-stereo+input:mono-fallback"
+        ]
+      },
+      "iec958-stereo-output": {
+        "description": "Digital Output (S/PDIF)",
+        "availability": "availability unknown",
+        "profiles": [
+          "output:iec958-stereo",
+          "output:iec958-stereo+input:mono-fallback"
+        ]
+      }
+    },
+    "active_profile": "output:analog-stereo"
+  }
+]

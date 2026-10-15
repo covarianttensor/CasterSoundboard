@@ -1,5 +1,7 @@
 <RCC>
     <qresource prefix="/">
+        <file>audio/device-setup.html</file>
+        <file>res/img/audio_devices.png</file>
         <file>res/img/Key.png</file>
         <file>res/img/down.png</file>
         <file>res/img/app.png</file>

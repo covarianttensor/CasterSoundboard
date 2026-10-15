@@ -1,3 +1,7 @@
+#include "audio/AudioDeviceController.h"
+#include "audio/AudioDevicesDialog.h"
+#include <QCoreApplication>
+#include <QAction>
 /*
  *
  *
@@ -156,6 +160,17 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent)
     mainToolbar->addWidget(stopAllSoundsButton);
     mainToolbar->addWidget(toggleAudioDuckingButton);
     mainToolbar->addWidget(openSoundControlButton);
+    auto audioController = new Audio::AudioDeviceController(QCoreApplication::instance());
+    auto audioDialog = new Audio::AudioDevicesDialog(audioController, this);
+    auto audioButton = new QPushButton;
+    audioButton->setIcon(QIcon(":/res/img/audio_devices.png"));
+    audioButton->setIconSize(QSize(40,40));
+    audioButton->setToolTip(tr("Audio Devices"));
+    audioButton->setAccessibleName(tr("Audio Devices"));
+    audioButton->setObjectName("audioDevicesButton");
+    connect(audioButton, &QPushButton::clicked, audioDialog, &Audio::AudioDevicesDialog::openSettings);
+
+    mainToolbar->addWidget(audioButton);
     mainToolbar->addWidget(settingsButton);
     mainToolbar->addWidget(aboutButton);
 
@@ -165,13 +180,31 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent)
     audioOutputLabel->setContentsMargins(8, 0, 4, 0);
 
     audioOutputComboBox = new QComboBox;
+    audioOutputComboBox->setObjectName("audioOutputComboBox");
     audioOutputComboBox->setMinimumWidth(160);
     audioOutputComboBox->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
     audioOutputComboBox->setToolTip(tr("Select audio output device for playback"));
 
-    mainToolbar->addSeparator();
-    mainToolbar->addWidget(audioOutputLabel);
-    mainToolbar->addWidget(audioOutputComboBox);
+    auto outputSeparator = mainToolbar->addSeparator();
+    auto outputLabelAction = mainToolbar->addWidget(audioOutputLabel);
+    auto outputSelectorAction = mainToolbar->addWidget(audioOutputComboBox);
+    // Keep the basic selector only as a fallback when Devices cannot manage audio.
+    auto updateOutputVisibility = [outputSeparator, outputLabelAction, outputSelectorAction](const Audio::Discovery &d) {
+        const bool fallback = !d.error.isEmpty() || !d.capabilities.defaults;
+        for (auto action : {outputSeparator, outputLabelAction, outputSelectorAction})
+            action->setVisible(fallback);
+    };
+    updateOutputVisibility(audioController->devices());
+    connect(audioController, &Audio::AudioDeviceController::devicesChanged,
+            this, updateOutputVisibility);
+    connect(audioController, &Audio::AudioDeviceController::playbackRoutingChanged,
+            this, [this](bool active) {
+        audioOutputComboBox->setEnabled(!active);
+        audioOutputComboBox->setToolTip(active
+            ? tr("Playback is routed by Audio Devices. Stop that routing to select an output here.")
+            : tr("Select audio output device for playback"));
+        if (!active) populateAudioOutputs();
+    });
 
     // Add toolbar to layout
     layout->addWidget(mainToolbar, 0, Qt::AlignLeft);

@@ -165,3 +165,13 @@ macx {
 
 target.path = $$BINDIR
 INSTALLS += target
+
+SOURCES += audio/PulseCompatBackend.cpp \
+    audio/CasterPlaybackRouter.cpp \
+    audio/AudioDeviceController.cpp \
+    audio/AudioDevicesDialog.cpp
+HEADERS += audio/AudioBackend.h \
+    audio/PulseCompatBackend.h \
+    audio/CasterPlaybackRouter.h \
+    audio/AudioDeviceController.h \
+    audio/AudioDevicesDialog.h

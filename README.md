@@ -67,3 +67,7 @@ nix-build
 
 ### Screenshot ###
 ![Alt text](/docs/img/screenshot.png?raw=true "Running on Ubuntu")
+
+## Audio Devices
+
+See [Audio Devices](docs/audio-devices.md) for functionality, setup and verification.

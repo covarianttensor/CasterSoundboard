@@ -1,0 +1,28 @@
+[
+  {
+    "index": 57,
+    "name": "sink.card.focusrite",
+    "properties": {
+      "device.name": "card.focusrite"
+    },
+    "active_port": "analog-output",
+    "ports": [
+      {
+        "name": "analog-output"
+      }
+    ]
+  },
+  {
+    "index": 59,
+    "name": "sink.card.jbl",
+    "properties": {
+      "device.name": "card.jbl"
+    },
+    "active_port": "analog-output",
+    "ports": [
+      {
+        "name": "analog-output"
+      }
+    ]
+  }
+]
