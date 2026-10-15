@@ -110,6 +110,7 @@ private:
     QPushButton *openSoundControlButton;
     QPushButton *settingsButton;
     QPushButton *aboutButton;
+    QPushButton *actionsButton = nullptr;
     //Lower window area
     QTabWidget *mainTabContainer;
     // Bottom

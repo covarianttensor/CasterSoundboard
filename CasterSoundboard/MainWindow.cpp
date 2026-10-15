@@ -159,8 +159,8 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent)
     mainToolbar->addWidget(stopAllSoundsButton);
     mainToolbar->addWidget(toggleAudioDuckingButton);
     mainToolbar->addWidget(openSoundControlButton);
-    auto actionsButton = new QPushButton;
-    actionsButton->setIcon(QIcon(":/res/img/actions.png"));
+    actionsButton = new QPushButton;
+    actionsButton->setIcon(themedIcon("actions.png"));
     actionsButton->setIconSize(QSize(40,40));
     actionsButton->setToolTip(tr("Actions"));
     actionsButton->setAccessibleName(tr("Actions"));
@@ -1239,6 +1239,8 @@ QIcon MainWindow::themedIcon(const QString &iconFileName) const
 
 void MainWindow::updateThemeIcons()
 {
+    if (actionsButton)
+        actionsButton->setIcon(themedIcon("actions.png"));
     addNewTabButton->setIcon(themedIcon("newTab.png"));
     openTabButton->setIcon(themedIcon("open.png"));
     saveTabButton->setIcon(themedIcon("save.png"));
