@@ -63,6 +63,7 @@ int main(int argc, char *argv[])
     QCommandLineOption widthOption("window-width", "Initial window width in pixels.", "width");
     QCommandLineOption heightOption("window-height", "Initial window height in pixels.", "height");
     QCommandLineOption hotkeyPromptOption("open-hotkey-prompt", "Open hotkey prompt dialog on startup for testing.");
+    QCommandLineOption testSeekMsOption("test-seek-ms", "Set position in ms on tile 0 for visual verification.", "ms");
     parser.addOption(screenshotOption);
     parser.addOption(drawerOption);
     parser.addOption(drawerIndexOption);
@@ -71,6 +72,7 @@ int main(int argc, char *argv[])
     parser.addOption(widthOption);
     parser.addOption(heightOption);
     parser.addOption(hotkeyPromptOption);
+    parser.addOption(testSeekMsOption);
     parser.addPositionalArgument("project", "Project file (.caster) to open on launch.", "[project]");
     parser.process(app);
 
@@ -131,9 +133,26 @@ int main(int argc, char *argv[])
 
     engine.loadFromModule("CasterSoundboard", "Main");
 
+    if (parser.isSet(testSeekMsOption)) {
+        int seekMs = parser.value(testSeekMsOption).toInt();
+        QTimer::singleShot(200, [&projectController, seekMs]() {
+            if (projectController.tabModel()->count() > 0) {
+                auto *grid = projectController.tabModel()->gridModelAt(0);
+                if (grid && grid->count() > 0) {
+                    auto *tile = grid->tileAt(0);
+                    if (tile) {
+                        tile->onDurationChanged(1200);
+                        tile->onPositionChanged(seekMs);
+                    }
+                }
+            }
+        });
+    }
+
     if (parser.isSet(screenshotOption)) {
         const QString outPath = parser.value(screenshotOption);
-        QTimer::singleShot(350, [&engine, outPath, &app]() {
+        int delay = parser.isSet(testSeekMsOption) ? 500 : 350;
+        QTimer::singleShot(delay, [&engine, outPath, &app]() {
             if (!engine.rootObjects().isEmpty()) {
                 if (auto *window = qobject_cast<QQuickWindow*>(engine.rootObjects().first())) {
                     QImage img = window->grabWindow();

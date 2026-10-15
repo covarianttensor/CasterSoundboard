@@ -30,6 +30,7 @@ class SoundTileController : public QObject
     Q_PROPERTY(qint64 durationMs READ durationMs NOTIFY durationMsChanged)
     Q_PROPERTY(QObject* player READ playerObject CONSTANT)
     Q_PROPERTY(QObject* videoOutput READ videoOutput WRITE setVideoOutput NOTIFY videoOutputChanged)
+    Q_PROPERTY(QVariantList waveform READ waveform NOTIFY waveformChanged)
 
 public:
     enum TriggerStyle {
@@ -81,6 +82,7 @@ public:
     QMediaPlayer::PlaybackState playbackState() const { return m_playbackState; }
     qint64 positionMs() const { return m_positionMs; }
     qint64 durationMs() const { return m_durationMs; }
+    QVariantList waveform() const { return m_waveform; }
 
     QObject* playerObject() const { return m_player; }
     QMediaPlayer* mediaPlayer() const { return m_player; }
@@ -120,6 +122,7 @@ signals:
     void positionMsChanged();
     void durationMsChanged();
     void videoOutputChanged();
+    void waveformChanged();
     void playbackFinished();
 
 private slots:
@@ -130,6 +133,7 @@ private slots:
 private:
     void updateEffectiveVolume();
     void autoDetectDisplayName(const QString &path);
+    void updateWaveform();
 
     QString m_id;
     QString m_filePath;
@@ -147,6 +151,7 @@ private:
     QMediaPlayer::PlaybackState m_playbackState{QMediaPlayer::StoppedState};
     qint64 m_positionMs{0};
     qint64 m_durationMs{0};
+    QVariantList m_waveform;
 
     QMediaPlayer *m_player{nullptr};
     QAudioOutput *m_audioOutput{nullptr};

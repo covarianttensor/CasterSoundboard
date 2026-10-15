@@ -2,6 +2,10 @@
 #include <QFileInfo>
 #include <QUuid>
 #include <QMediaMetaData>
+#include <QFile>
+#include <QProcess>
+#include <QVector>
+#include <QtMath>
 #include <QDebug>
 
 SoundTileController::SoundTileController(QObject *parent)
@@ -43,6 +47,8 @@ void SoundTileController::setFilePath(const QString &path)
         autoDetectDisplayName(path);
     }
 
+    updateWaveform();
+
     if (!m_filePath.isEmpty()) {
         QUrl url = QUrl::fromUserInput(m_filePath);
         if (url.isLocalFile() || !url.isValid()) {
@@ -65,6 +71,149 @@ void SoundTileController::autoDetectDisplayName(const QString &path)
     }
     QFileInfo info(path);
     setDisplayName(info.completeBaseName());
+}
+
+void SoundTileController::updateWaveform()
+{
+    if (m_filePath.isEmpty()) {
+        if (!m_waveform.isEmpty()) {
+            m_waveform.clear();
+            emit waveformChanged();
+        }
+        return;
+    }
+
+    QString localPath = m_filePath;
+    if (localPath.startsWith("file://")) {
+        localPath = QUrl(localPath).toLocalFile();
+    } else {
+        QUrl url = QUrl::fromUserInput(localPath);
+        if (url.isLocalFile()) {
+            localPath = url.toLocalFile();
+        }
+    }
+
+    QVariantList points;
+    constexpr int numBins = 50;
+
+    // First attempt direct WAV parsing if it's a RIFF PCM file
+    QFile file(localPath);
+    bool parsedDirect = false;
+    if (file.open(QIODevice::ReadOnly)) {
+        QByteArray header = file.read(12);
+        if (header.size() == 12 && header.startsWith("RIFF") && header.mid(8, 4) == "WAVE") {
+            quint16 audioFormat = 0;
+            quint16 numChannels = 0;
+            quint16 blockAlign = 0;
+            quint16 bitsPerSample = 0;
+            qint64 dataOffset = 0;
+            qint64 dataSize = 0;
+
+            while (!file.atEnd()) {
+                QByteArray chunkHeader = file.read(8);
+                if (chunkHeader.size() < 8) break;
+                QByteArray chunkId = chunkHeader.left(4);
+                quint32 chunkSize = *reinterpret_cast<const quint32*>(chunkHeader.constData() + 4);
+
+                if (chunkId == "fmt ") {
+                    QByteArray fmtData = file.read(chunkSize);
+                    if (fmtData.size() >= 16) {
+                        audioFormat = *reinterpret_cast<const quint16*>(fmtData.constData());
+                        numChannels = *reinterpret_cast<const quint16*>(fmtData.constData() + 2);
+                        blockAlign = *reinterpret_cast<const quint16*>(fmtData.constData() + 12);
+                        bitsPerSample = *reinterpret_cast<const quint16*>(fmtData.constData() + 14);
+                    }
+                } else if (chunkId == "data") {
+                    dataOffset = file.pos();
+                    dataSize = chunkSize;
+                    break;
+                } else {
+                    file.seek(file.pos() + chunkSize);
+                }
+            }
+
+            if (audioFormat == 1 && bitsPerSample == 16 && blockAlign > 0 && dataSize > 0) {
+                file.seek(dataOffset);
+                QByteArray audioBytes = file.read(dataSize);
+                int totalSamples = audioBytes.size() / blockAlign;
+                if (totalSamples > 0) {
+                    const qint16 *samples = reinterpret_cast<const qint16*>(audioBytes.constData());
+                    int channelStride = blockAlign / 2;
+                    QVector<double> rawPeaks(numBins, 0.0);
+                    double maxPeak = 0.0;
+
+                    for (int b = 0; b < numBins; ++b) {
+                        int startSample = static_cast<int>((static_cast<qint64>(b) * totalSamples) / numBins);
+                        int endSample = static_cast<int>((static_cast<qint64>(b + 1) * totalSamples) / numBins);
+                        if (endSample <= startSample) endSample = startSample + 1;
+                        if (endSample > totalSamples) endSample = totalSamples;
+
+                        double peak = 0.0;
+                        int step = qMax(1, (endSample - startSample) / 256);
+                        for (int s = startSample; s < endSample; s += step) {
+                            qint16 val = samples[s * channelStride];
+                            double absVal = qAbs(static_cast<double>(val));
+                            if (absVal > peak) peak = absVal;
+                        }
+                        rawPeaks[b] = peak;
+                        if (peak > maxPeak) maxPeak = peak;
+                    }
+
+                    for (int b = 0; b < numBins; ++b) {
+                        double norm = (maxPeak > 0.0) ? (rawPeaks[b] / maxPeak) : 0.08;
+                        norm = qMax(0.08, qMin(1.0, norm));
+                        points.append(norm);
+                    }
+                    parsedDirect = true;
+                }
+            }
+        }
+        file.close();
+    }
+
+    // Fallback: If not PCM WAV (e.g. MP3, OGG, FLAC, M4A, etc.), decode downsampled PCM via ffmpeg
+    if (!parsedDirect) {
+        QProcess proc;
+        proc.start("ffmpeg", QStringList() << "-v" << "error" << "-i" << localPath
+                                           << "-vn" << "-ac" << "1" << "-ar" << "2000"
+                                           << "-f" << "s16le" << "-");
+        if (proc.waitForFinished(2000)) {
+            QByteArray pcmData = proc.readAllStandardOutput();
+            int totalSamples = pcmData.size() / 2;
+            if (totalSamples > 0) {
+                const qint16 *samples = reinterpret_cast<const qint16*>(pcmData.constData());
+                QVector<double> rawPeaks(numBins, 0.0);
+                double maxPeak = 0.0;
+
+                for (int b = 0; b < numBins; ++b) {
+                    int startSample = static_cast<int>((static_cast<qint64>(b) * totalSamples) / numBins);
+                    int endSample = static_cast<int>((static_cast<qint64>(b + 1) * totalSamples) / numBins);
+                    if (endSample <= startSample) endSample = startSample + 1;
+                    if (endSample > totalSamples) endSample = totalSamples;
+
+                    double peak = 0.0;
+                    int step = qMax(1, (endSample - startSample) / 128);
+                    for (int s = startSample; s < endSample; s += step) {
+                        double absVal = qAbs(static_cast<double>(samples[s]));
+                        if (absVal > peak) peak = absVal;
+                    }
+                    rawPeaks[b] = peak;
+                    if (peak > maxPeak) maxPeak = peak;
+                }
+
+                for (int b = 0; b < numBins; ++b) {
+                    double norm = (maxPeak > 0.0) ? (rawPeaks[b] / maxPeak) : 0.08;
+                    norm = qMax(0.08, qMin(1.0, norm));
+                    points.append(norm);
+                }
+            }
+        }
+    }
+
+    if (m_waveform != points) {
+        m_waveform = points;
+        emit waveformChanged();
+    }
 }
 
 void SoundTileController::setDisplayName(const QString &name)

@@ -34,30 +34,181 @@ Rectangle {
         return (min < 10 ? "0" + min : min) + ":" + (sec < 10 ? "0" + sec : sec);
     }
 
-    // Video Output container for video files
-    VideoOutput {
-        id: videoOutput
+    // Track playback fraction (0.0 to 1.0)
+    readonly property real playbackFraction: {
+        if (!tile || tile.durationMs <= 0) return 0.0;
+        if (typeof scrubContainer !== "undefined" && scrubContainer.isScrubbing) {
+            return Math.max(0.0, Math.min(1.0, scrubContainer.scrubFraction));
+        }
+        return Math.max(0.0, Math.min(1.0, tile.positionMs / tile.durationMs));
+    }
+
+    onTileChanged: {
+        if (waveformCanvas) waveformCanvas.requestPaint();
+        if (playedWaveformCanvas) playedWaveformCanvas.requestPaint();
+    }
+
+    // Background Layer Container
+    Item {
+        id: tileBackgroundContainer
         anchors.fill: parent
         anchors.margins: 2
-        visible: tile && tile.hasVideo
-        opacity: (tile && tile.playbackState === 1) ? 0.65 : 0.35
-        fillMode: VideoOutput.PreserveAspectCrop
         clip: true
 
-        Component.onCompleted: {
-            if (tile) {
-                tile.setVideoOutput(videoOutput);
+        // 1. Dark base background fill
+        Rectangle {
+            anchors.fill: parent
+            radius: root.radius - 2
+            color: "#181A1D"
+        }
+
+        // 2. Video Output container for video files
+        VideoOutput {
+            id: videoOutput
+            anchors.fill: parent
+            visible: tile && tile.hasVideo
+            opacity: (tile && tile.playbackState === 1) ? 0.65 : 0.35
+            fillMode: VideoOutput.PreserveAspectCrop
+            clip: true
+
+            Component.onCompleted: {
+                if (tile) {
+                    tile.setVideoOutput(videoOutput);
+                }
+            }
+        }
+
+        // Dark tint overlay on top of video so controls remain clearly legible
+        Rectangle {
+            anchors.fill: parent
+            radius: root.radius - 2
+            color: "#181A1D"
+            visible: tile && tile.hasVideo
+            opacity: 0.45
+        }
+
+        // 3. Audio Waveform Background (Unplayed - subtle white bars)
+        Canvas {
+            id: waveformCanvas
+            anchors.fill: parent
+            anchors.leftMargin: 6
+            anchors.rightMargin: 6
+            anchors.topMargin: 10
+            anchors.bottomMargin: 10
+            visible: tile && !tile.hasVideo && tile.waveform && tile.waveform.length > 0
+            opacity: 0.22
+
+            onPaint: {
+                var ctx = getContext("2d");
+                ctx.reset();
+                var data = (tile && tile.waveform) ? tile.waveform : [];
+                if (!data || data.length === 0) return;
+
+                var w = width;
+                var h = height;
+                var count = data.length;
+                var step = w / count;
+                var barWidth = Math.max(1.5, step * 0.68);
+
+                ctx.fillStyle = "#FFFFFF";
+                for (var i = 0; i < count; ++i) {
+                    var amp = Math.max(0.06, Math.min(1.0, Number(data[i])));
+                    var barH = Math.max(3, amp * (h * 0.60));
+                    var barX = i * step + (step - barWidth) / 2;
+                    var barY = (h - barH) / 2;
+                    ctx.fillRect(barX, barY, barWidth, barH);
+                }
+            }
+
+            onWidthChanged: requestPaint()
+            onHeightChanged: requestPaint()
+            Component.onCompleted: requestPaint()
+        }
+
+        // 4. Visual Progress Color Sweep (changes color from left to right based on track progress)
+        Rectangle {
+            id: progressColorSweep
+            anchors.left: parent.left
+            anchors.top: parent.top
+            anchors.bottom: parent.bottom
+            width: Math.round(parent.width * root.playbackFraction)
+            visible: tile && tile.filePath && tile.filePath.length > 0 && root.playbackFraction > 0
+            clip: true
+
+            topLeftRadius: root.radius - 2
+            bottomLeftRadius: root.radius - 2
+            topRightRadius: (width >= parent.width - 2) ? (root.radius - 2) : 0
+            bottomRightRadius: (width >= parent.width - 2) ? (root.radius - 2) : 0
+
+            gradient: Gradient {
+                orientation: Gradient.Horizontal
+                GradientStop {
+                    position: 0.0
+                    color: (tile && tile.color && tile.color !== "#3A3D40") ? Qt.darker(tile.color, 1.35) : "#667eea"
+                }
+                GradientStop {
+                    position: 1.0
+                    color: (tile && tile.color && tile.color !== "#3A3D40") ? tile.color : "#764ba2"
+                }
+            }
+            opacity: (tile && tile.playbackState === 1) ? 0.65 : 0.45
+
+            // Illuminated played waveform bars inside the progress sweep
+            Canvas {
+                id: playedWaveformCanvas
+                x: 6
+                y: 10
+                width: tileBackgroundContainer.width - 12
+                height: tileBackgroundContainer.height - 20
+                visible: tile && !tile.hasVideo && tile.waveform && tile.waveform.length > 0
+                opacity: 0.85
+
+                onPaint: {
+                    var ctx = getContext("2d");
+                    ctx.reset();
+                    var data = (tile && tile.waveform) ? tile.waveform : [];
+                    if (!data || data.length === 0) return;
+
+                    var w = width;
+                    var h = height;
+                    var count = data.length;
+                    var step = w / count;
+                    var barWidth = Math.max(1.5, step * 0.68);
+
+                    ctx.fillStyle = "#FFFFFF";
+                    for (var i = 0; i < count; ++i) {
+                        var amp = Math.max(0.06, Math.min(1.0, Number(data[i])));
+                        var barH = Math.max(3, amp * (h * 0.60));
+                        var barX = i * step + (step - barWidth) / 2;
+                        var barY = (h - barH) / 2;
+                        ctx.fillRect(barX, barY, barWidth, barH);
+                    }
+                }
+
+                onWidthChanged: requestPaint()
+                onHeightChanged: requestPaint()
+                Component.onCompleted: requestPaint()
+            }
+
+            // Playhead indicator beam at the leading right edge of the progression
+            Rectangle {
+                anchors.right: parent.right
+                anchors.top: parent.top
+                anchors.bottom: parent.bottom
+                width: 2
+                color: (tile && tile.playbackState === 1) ? "#2ECC71" : "#FFFFFF"
+                opacity: 0.8
+                visible: parent.width > 2 && parent.width < parent.parent.width - 2
             }
         }
     }
 
-    // Dark tint overlay on top of video so controls remain clearly legible
-    Rectangle {
-        anchors.fill: parent
-        anchors.margins: 2
-        radius: 10
-        color: "#181A1D"
-        opacity: (tile && tile.hasVideo) ? 0.45 : 1.0
+    Connections {
+        target: tile
+        function onWaveformChanged() {
+            if (waveformCanvas) waveformCanvas.requestPaint();
+            if (playedWaveformCanvas) playedWaveformCanvas.requestPaint();
+        }
     }
 
     // Playing Pulse Glow
@@ -367,7 +518,7 @@ Rectangle {
                         anchors.top: parent.top
                         anchors.bottom: parent.bottom
                         radius: parent.radius
-                        color: (tile && tile.playbackState === 1) ? "#2ECC71" : "#8E2DE2"
+                        color: (tile && tile.playbackState === 1) ? "#2ECC71" : ((tile && tile.color && tile.color !== "#3A3D40") ? tile.color : "#8E2DE2")
                         width: {
                             if (!tile || tile.durationMs <= 0) return 0;
                             if (scrubContainer.isScrubbing) {
@@ -384,7 +535,7 @@ Rectangle {
                         height: 14
                         radius: 7
                         color: "#FFFFFF"
-                        border.color: (tile && tile.playbackState === 1) ? "#2ECC71" : "#8E2DE2"
+                        border.color: (tile && tile.playbackState === 1) ? "#2ECC71" : ((tile && tile.color && tile.color !== "#3A3D40") ? tile.color : "#8E2DE2")
                         border.width: 2
                         anchors.verticalCenter: parent.verticalCenter
                         x: Math.max(0, Math.min(progressTrack.width - width, progressFill.width - (width / 2)))
@@ -405,7 +556,7 @@ Rectangle {
                     height: 22
                     radius: 4
                     color: "#111315"
-                    border.color: "#8E2DE2"
+                    border.color: (tile && tile.color && tile.color !== "#3A3D40") ? tile.color : "#8E2DE2"
                     border.width: 1
 
                     Text {

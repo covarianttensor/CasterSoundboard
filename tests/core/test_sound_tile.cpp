@@ -142,6 +142,36 @@ private slots:
         QCOMPARE(tile.positionMs(), 10000);
         QCOMPARE(posSpy.count(), 3);
     }
+
+    void testWaveformExtraction()
+    {
+        SoundTileController tile;
+        QCOMPARE(tile.waveform().isEmpty(), true);
+
+        QSignalSpy waveSpy(&tile, &SoundTileController::waveformChanged);
+
+        QString chimePath = QFileInfo(QString::fromUtf8(__FILE__)).dir().filePath("../cues/test_loop_chime.wav");
+        QVERIFY(QFile::exists(chimePath));
+
+        tile.setFilePath(chimePath);
+        QCOMPARE(waveSpy.count(), 1);
+
+        QVariantList wave = tile.waveform();
+        QCOMPARE(wave.size(), 50);
+
+        double maxVal = 0.0;
+        for (const QVariant &pt : wave) {
+            double v = pt.toDouble();
+            QVERIFY(v >= 0.08);
+            QVERIFY(v <= 1.0);
+            if (v > maxVal) maxVal = v;
+        }
+        QCOMPARE(maxVal, 1.0);
+
+        // Clearing file path should clear waveform
+        tile.setFilePath("");
+        QCOMPARE(tile.waveform().isEmpty(), true);
+    }
 };
 
 QTEST_MAIN(TestSoundTile)
