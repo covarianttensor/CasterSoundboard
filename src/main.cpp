@@ -14,6 +14,7 @@
 #include "SoundboardTabModel.h"
 #include "SoundboardGridModel.h"
 #include "SoundTileController.h"
+#include "OscServerController.h"
 
 class GlobalHotkeyFilter : public QObject
 {
@@ -55,8 +56,10 @@ int main(int argc, char *argv[])
     parser.addVersionOption();
     QCommandLineOption screenshotOption(QStringList() << "s" << "screenshot", "Capture window screenshot to path and exit.", "path");
     QCommandLineOption drawerOption("open-drawer", "Open tile settings drawer on startup for testing.");
+    QCommandLineOption viewOption("view", "Initial view index (0=Soundboards, 1=Audio, 2=OSC, 3=Preferences).", "index", "0");
     parser.addOption(screenshotOption);
     parser.addOption(drawerOption);
+    parser.addOption(viewOption);
     parser.addPositionalArgument("project", "Project file (.caster) to open on launch.", "[project]");
     parser.process(app);
 
@@ -66,10 +69,14 @@ int main(int argc, char *argv[])
     qmlRegisterType<SoundboardTabModel>("CasterCore", 1, 0, "SoundboardTabModel");
     qmlRegisterType<SoundboardGridModel>("CasterCore", 1, 0, "SoundboardGridModel");
     qmlRegisterType<SoundTileController>("CasterCore", 1, 0, "SoundTileController");
+    qmlRegisterType<OscServerController>("CasterCore", 1, 0, "OscServerController");
 
     SoundboardProjectController projectController;
     HotkeyManager hotkeyManager;
     hotkeyManager.monitorProject(&projectController);
+
+    OscServerController oscController;
+    oscController.setProjectController(&projectController);
 
     // Load initial project from CLI or create a fresh default project
     const QStringList posArgs = parser.positionalArguments();
@@ -82,7 +89,9 @@ int main(int argc, char *argv[])
     QQmlApplicationEngine engine;
     engine.rootContext()->setContextProperty("projectController", &projectController);
     engine.rootContext()->setContextProperty("hotkeyManager", &hotkeyManager);
+    engine.rootContext()->setContextProperty("oscController", &oscController);
     engine.rootContext()->setContextProperty("openDrawerOnStart", parser.isSet(drawerOption));
+    engine.rootContext()->setContextProperty("initialViewIndex", parser.value(viewOption).toInt());
 
     // Install application-wide hotkey event filter
     GlobalHotkeyFilter hotkeyFilter(&hotkeyManager, &app);

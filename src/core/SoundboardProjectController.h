@@ -26,6 +26,7 @@ class SoundboardProjectController : public QObject
     Q_PROPERTY(bool isDuckingActive READ isDuckingActive WRITE setIsDuckingActive NOTIFY isDuckingActiveChanged)
     Q_PROPERTY(qreal duckingVolumeRatio READ duckingVolumeRatio WRITE setDuckingVolumeRatio NOTIFY duckingVolumeRatioChanged)
     Q_PROPERTY(QString outputDeviceName READ outputDeviceName WRITE setOutputDeviceName NOTIFY outputDeviceNameChanged)
+    Q_PROPERTY(QStringList availableAudioOutputs READ availableAudioOutputs NOTIFY availableAudioOutputsChanged)
 
 public:
     explicit SoundboardProjectController(QObject *parent = nullptr);
@@ -60,6 +61,9 @@ public:
     QString outputDeviceName() const { return m_outputDeviceName; }
     void setOutputDeviceName(const QString &deviceName);
 
+    QStringList availableAudioOutputs() const;
+    Q_INVOKABLE void refreshAudioDevices();
+
     // Serialization
     QJsonObject toJson() const;
     bool fromJson(const QJsonObject &json);
@@ -83,6 +87,7 @@ signals:
     void isDuckingActiveChanged();
     void duckingVolumeRatioChanged();
     void outputDeviceNameChanged();
+    void availableAudioOutputsChanged();
     void projectLoaded();
     void projectSaved();
     void errorOccurred(const QString &errorMessage);
@@ -93,6 +98,7 @@ private:
     void applyOutputDeviceToAllTiles();
 
     SoundboardTabModel *m_tabModel{nullptr};
+    QMediaDevices *m_mediaDevices{nullptr};
     QString m_filePath;
     bool m_isDirty{false};
 

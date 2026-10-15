@@ -251,4 +251,10 @@ ApplicationWindow {
             }
         }
     }
+
+    Component.onCompleted: {
+        if (typeof initialViewIndex !== "undefined" && initialViewIndex > 0) {
+            sidebar.currentIndex = initialViewIndex;
+        }
+    }
 }

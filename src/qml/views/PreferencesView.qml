@@ -25,7 +25,9 @@ Item {
                     spacing: 12
                     Image {
                         source: "../icons/cog.png"
-                        width: 36; height: 36
+                        Layout.preferredWidth: 36
+                        Layout.preferredHeight: 36
+                        sourceSize: Qt.size(36, 36)
                         fillMode: Image.PreserveAspectFit
                     }
                     ColumnLayout {

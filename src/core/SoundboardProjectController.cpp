@@ -13,6 +13,8 @@ SoundboardProjectController::SoundboardProjectController(QObject *parent)
     : QObject(parent)
 {
     m_tabModel = new SoundboardTabModel(this);
+    m_mediaDevices = new QMediaDevices(this);
+    connect(m_mediaDevices, &QMediaDevices::audioOutputsChanged, this, &SoundboardProjectController::availableAudioOutputsChanged);
     newProject();
 }
 
@@ -99,6 +101,25 @@ void SoundboardProjectController::setOutputDeviceName(const QString &deviceName)
     applyOutputDeviceToAllTiles();
     setDirty(true);
     emit outputDeviceNameChanged();
+}
+
+QStringList SoundboardProjectController::availableAudioOutputs() const
+{
+    QStringList list;
+    list.append(tr("Default System Output"));
+    const auto outputs = QMediaDevices::audioOutputs();
+    for (const auto &dev : outputs) {
+        QString desc = dev.description();
+        if (!desc.isEmpty() && !list.contains(desc)) {
+            list.append(desc);
+        }
+    }
+    return list;
+}
+
+void SoundboardProjectController::refreshAudioDevices()
+{
+    emit availableAudioOutputsChanged();
 }
 
 void SoundboardProjectController::setDirty(bool dirty)
@@ -231,15 +252,16 @@ void SoundboardProjectController::applyDuckingToAllTiles()
 
 void SoundboardProjectController::applyOutputDeviceToAllTiles()
 {
-    if (m_outputDeviceName.isEmpty())
-        return;
-
     QAudioDevice targetDevice;
-    const auto devices = QMediaDevices::audioOutputs();
-    for (const auto &dev : devices) {
-        if (dev.description() == m_outputDeviceName) {
-            targetDevice = dev;
-            break;
+    if (m_outputDeviceName.isEmpty() || m_outputDeviceName == tr("Default System Output")) {
+        targetDevice = QMediaDevices::defaultAudioOutput();
+    } else {
+        const auto devices = QMediaDevices::audioOutputs();
+        for (const auto &dev : devices) {
+            if (dev.description() == m_outputDeviceName) {
+                targetDevice = dev;
+                break;
+            }
         }
     }
 

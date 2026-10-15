@@ -27,6 +27,8 @@ set(CORE_SOURCES
     src/core/SoundboardProjectController.cpp
     src/core/HotkeyManager.h
     src/core/HotkeyManager.cpp
+    src/core/OscServerController.h
+    src/core/OscServerController.cpp
 )
 
 add_library(CasterCore STATIC ${CORE_SOURCES})
@@ -135,3 +137,4 @@ add_caster_test(test_grid_model tests/core/test_grid_model.cpp)
 add_caster_test(test_tab_model tests/core/test_tab_model.cpp)
 add_caster_test(test_project_serialization tests/core/test_project_serialization.cpp)
 add_caster_test(test_hotkey_manager tests/core/test_hotkey_manager.cpp)
+add_caster_test(test_osc_server tests/core/test_osc_server.cpp)
