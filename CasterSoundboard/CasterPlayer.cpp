@@ -95,8 +95,19 @@ void CasterMediaPlayer::setGlobalAudioDevice(const QAudioDevice &device)
     const QAudioDevice target = device.isNull() ? QMediaDevices::defaultAudioOutput() : device;
     if (!target.isNull()) {
         for (CasterMediaPlayer *player : s_allPlayers) {
-            if (player && player->m_audioOutput) {
+            if (player && player->m_audioOutput && player->m_audioOutput->device() != target) {
+#if defined(Q_OS_LINUX) && QT_VERSION < QT_VERSION_CHECK(6, 5, 0)
+                const auto backend = qgetenv("QT_MEDIA_BACKEND");
+                const bool detach = backend.isEmpty() || backend == "gstreamer";
+                // Qt 6.4 GStreamer can wait forever when changing a sink that
+                // is attached to a loaded pipeline. Detach it for the change;
+                // keep the media source, playback position and state intact.
+                if (detach) player->setAudioOutput(nullptr);
+#endif
                 player->m_audioOutput->setDevice(target);
+#if defined(Q_OS_LINUX) && QT_VERSION < QT_VERSION_CHECK(6, 5, 0)
+                if (detach) player->setAudioOutput(player->m_audioOutput);
+#endif
             }
         }
     }

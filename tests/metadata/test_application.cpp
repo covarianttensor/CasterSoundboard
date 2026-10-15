@@ -1,6 +1,7 @@
 #include "MainWindow.h"
 #include "CasterBoard.h"
 #include "CasterPlayer.h"
+#include "CasterPlayerState.h"
 #include "CasterLabelColorPicker.h"
 #include "CasterOSCServerConfigPicker.h"
 #include <QApplication>
@@ -168,6 +169,36 @@ private slots:
             // Cleanup
             settings.remove("audio/outputDeviceId");
         }
+    }
+
+    void loadedAudioOutputSwitch() {
+        const auto devices = QMediaDevices::audioOutputs();
+        if (devices.size() < 2) QSKIP("Requires two audio outputs (use the private audio server).");
+        CasterMediaPlayer::setGlobalAudioDevice(devices[0]);
+        CasterPlayerWidget widget;
+        *widget.playerState->filePath = QFINDTESTDATA("../cues/test_loop_chime.wav");
+        widget.reloadFromPlayerState();
+        QTRY_COMPARE(widget.player->mediaStatus(), QMediaPlayer::LoadedMedia);
+        const auto source = widget.player->source();
+        // This previously deadlocked inside QGstreamerAudioOutput::setAudioDevice.
+        CasterMediaPlayer::setGlobalAudioDevice(devices[1]);
+        QCOMPARE(widget.player->audioDevice().id(), devices[1].id());
+        QCOMPARE(widget.player->source(), source);
+        QCOMPARE(widget.player->state(), QMediaPlayer::StoppedState);
+        widget.playSound();
+        QTRY_COMPARE(widget.player->state(), QMediaPlayer::PlayingState);
+        QTRY_VERIFY(widget.player->position() > 50);
+        CasterMediaPlayer::setGlobalAudioDevice(devices[0]);
+        QCOMPARE(widget.player->state(), QMediaPlayer::PlayingState);
+        QCOMPARE(widget.player->source(), source);
+        widget.pauseSound();
+        const auto pausedPosition = widget.player->position();
+        CasterMediaPlayer::setGlobalAudioDevice(devices[1]);
+        QCOMPARE(widget.player->state(), QMediaPlayer::PausedState);
+        QCOMPARE(widget.player->position(), pausedPosition);
+        QCOMPARE(widget.player->source(), source);
+        widget.stopSound();
+        CasterMediaPlayer::setGlobalAudioDevice({});
     }
 
     void oscServerProgrammaticControl() {
