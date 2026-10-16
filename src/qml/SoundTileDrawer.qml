@@ -68,9 +68,64 @@ Dialog {
         return Math.round(val * 1000);
     }
 
+    function colorToHex(c) {
+        if (!c) return "#8E2DE2";
+        try {
+            var col = Qt.color(c);
+            var r = Math.round(col.r * 255).toString(16);
+            var g = Math.round(col.g * 255).toString(16);
+            var b = Math.round(col.b * 255).toString(16);
+            if (r.length < 2) r = "0" + r;
+            if (g.length < 2) g = "0" + g;
+            if (b.length < 2) b = "0" + b;
+            return ("#" + r + g + b).toUpperCase();
+        } catch (e) {
+            return (typeof c === "string" && c.startsWith("#")) ? c.toUpperCase() : "#8E2DE2";
+        }
+    }
+
+    property real colorHue: 0.77
+    property real colorSat: 0.80
+    property real colorVal: 0.88
+
+    function loadColorHsv(hex) {
+        try {
+            var col = Qt.color(hex);
+            if (col.hsvHue >= 0) {
+                colorHue = col.hsvHue;
+            }
+            colorSat = col.hsvSaturation;
+            colorVal = col.hsvValue;
+        } catch (e) {
+        }
+    }
+
+    function applyHsvToTile() {
+        var c = Qt.hsva(colorHue, colorSat, colorVal, 1.0);
+        var hex = colorToHex(c);
+        if (tile) tile.color = hex;
+        if (hexField) hexField.text = hex;
+    }
+
+    ColorDialog {
+        id: systemColorDialog
+        title: qsTr("Choose Tile Accent Color")
+        selectedColor: (tile && tile.color) ? tile.color : "#8E2DE2"
+        onAccepted: {
+            var hex = root.colorToHex(selectedColor);
+            if (tile) tile.color = hex;
+            if (hexField) hexField.text = hex;
+            root.loadColorHsv(hex);
+        }
+    }
+
     onTileChanged: {
         if (cueInField) cueInField.text = tile ? root.formatPreciseTime(tile.cueBeginMs) : "00:00.00";
         if (cueOutField) cueOutField.text = tile ? root.formatPreciseTime(tile.cueEndMs > 0 ? tile.cueEndMs : tile.durationMs) : "00:00.00";
+        if (tile && tile.color) {
+            root.loadColorHsv(tile.color);
+            if (hexField) hexField.text = root.colorToHex(tile.color);
+        }
     }
 
     title: qsTr("Sound Tile Properties")
@@ -88,6 +143,10 @@ Dialog {
     onOpened: {
         if (cueInField && tile) cueInField.text = root.formatPreciseTime(tile.cueBeginMs);
         if (cueOutField && tile) cueOutField.text = root.formatPreciseTime(tile.cueEndMs > 0 ? tile.cueEndMs : tile.durationMs);
+        if (tile && tile.color) {
+            root.loadColorHsv(tile.color);
+            if (hexField) hexField.text = root.colorToHex(tile.color);
+        }
         if (typeof scrollToCueOnStart !== "undefined" && scrollToCueOnStart) {
             flickable.contentY = 320;
         }
@@ -576,37 +635,294 @@ Dialog {
             }
 
             // --- 4. Tile Accent Color ---
-            ColumnLayout {
+            Rectangle {
                 Layout.fillWidth: true
-                spacing: 6
-                Text { text: qsTr("Tile Color Accent:"); color: "#AAAAAA"; font.pointSize: 10; font.bold: true }
+                Layout.preferredHeight: colorCol.implicitHeight + 24
+                radius: 8
+                color: "#1D1F23"
+                border.color: "#343940"
+                border.width: 1
 
-                RowLayout {
-                    spacing: 8
-                    Repeater {
-                        model: ["#8E2DE2", "#E74C3C", "#2ECC71", "#3498DB", "#E67E22", "#1ABC9C", "#E91E63", "#95A5A6"]
-                        delegate: Rectangle {
-                            required property string modelData
-                            width: 32
-                            height: 32
-                            radius: 16
-                            color: modelData
-                            border.color: (tile && tile.color === modelData) ? "#FFFFFF" : "#444444"
-                            border.width: (tile && tile.color === modelData) ? 3 : 1
+                ColumnLayout {
+                    id: colorCol
+                    anchors.fill: parent
+                    anchors.margins: 12
+                    spacing: 10
+
+                    // Top Header Row: Label & System Picker Button
+                    RowLayout {
+                        Layout.fillWidth: true
+                        Text {
+                            text: qsTr("Tile Color Accent:")
+                            color: "#AAAAAA"
+                            font.pointSize: 10
+                            font.bold: true
+                        }
+                        Item { Layout.fillWidth: true }
+                        DarkButton {
+                            text: qsTr("🎨 System Picker...")
+                            Layout.preferredHeight: 28
+                            Layout.preferredWidth: 130
+                            ToolTip.visible: hovered
+                            ToolTip.text: qsTr("Open system color picker dialog")
+                            onClicked: systemColorDialog.open()
+                        }
+                    }
+
+                    // Preset Swatches Row + Custom Swatch
+                    RowLayout {
+                        spacing: 8
+
+                        Repeater {
+                            model: ["#8E2DE2", "#E74C3C", "#2ECC71", "#00D2FF", "#3498DB", "#E67E22", "#E91E63", "#95A5A6"]
+                            delegate: Rectangle {
+                                required property string modelData
+                                width: 30
+                                height: 30
+                                radius: 15
+                                color: modelData
+                                border.color: (tile && tile.color.toUpperCase() === modelData.toUpperCase()) ? "#FFFFFF" : "#383E46"
+                                border.width: (tile && tile.color.toUpperCase() === modelData.toUpperCase()) ? 3 : 1
+
+                                Text {
+                                    anchors.centerIn: parent
+                                    text: "✓"
+                                    color: "#FFFFFF"
+                                    font.bold: true
+                                    font.pointSize: 10
+                                    visible: tile && tile.color.toUpperCase() === modelData.toUpperCase()
+                                }
+
+                                MouseArea {
+                                    anchors.fill: parent
+                                    cursorShape: Qt.PointingHandCursor
+                                    onClicked: {
+                                        if (tile) {
+                                            tile.color = modelData;
+                                            root.loadColorHsv(modelData);
+                                            if (hexField) hexField.text = modelData;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        // Custom Swatch Indicator
+                        Rectangle {
+                            id: customSwatch
+                            width: 30
+                            height: 30
+                            radius: 15
+                            color: tile ? tile.color : "#8E2DE2"
+                            border.color: isCustom ? "#FFFFFF" : "#555E6B"
+                            border.width: isCustom ? 3 : 1
+
+                            readonly property bool isCustom: {
+                                if (!tile || !tile.color) return false;
+                                var presets = ["#8E2DE2", "#E74C3C", "#2ECC71", "#00D2FF", "#3498DB", "#E67E22", "#E91E63", "#95A5A6"];
+                                return presets.indexOf(tile.color.toUpperCase()) === -1;
+                            }
 
                             Text {
                                 anchors.centerIn: parent
-                                text: "✓"
+                                text: customSwatch.isCustom ? "✓" : "+"
                                 color: "#FFFFFF"
                                 font.bold: true
-                                visible: tile && tile.color === modelData
+                                font.pointSize: customSwatch.isCustom ? 10 : 12
                             }
 
+                            ToolTip.visible: customMouse.containsMouse
+                            ToolTip.text: customSwatch.isCustom ? qsTr("Current Custom Color") : qsTr("Custom Color")
+
                             MouseArea {
+                                id: customMouse
                                 anchors.fill: parent
+                                hoverEnabled: true
                                 cursorShape: Qt.PointingHandCursor
                                 onClicked: {
-                                    if (tile) tile.color = modelData;
+                                    if (hexField) hexField.forceActiveFocus();
+                                }
+                            }
+                        }
+                    }
+
+                    // 2D Saturation-Value Gradient Canvas Box
+                    Rectangle {
+                        id: svBox
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 90
+                        radius: 6
+                        clip: true
+                        color: Qt.hsva(root.colorHue, 1.0, 1.0, 1.0)
+                        border.color: "#343940"
+                        border.width: 1
+
+                        // Horizontal Saturation Gradient (White -> Transparent)
+                        Rectangle {
+                            anchors.fill: parent
+                            gradient: Gradient {
+                                orientation: Gradient.Horizontal
+                                GradientStop { position: 0.0; color: "#FFFFFF" }
+                                GradientStop { position: 1.0; color: "#00FFFFFF" }
+                            }
+                        }
+
+                        // Vertical Value Gradient (Transparent -> Black)
+                        Rectangle {
+                            anchors.fill: parent
+                            gradient: Gradient {
+                                orientation: Gradient.Vertical
+                                GradientStop { position: 0.0; color: "#00000000" }
+                                GradientStop { position: 1.0; color: "#000000" }
+                            }
+                        }
+
+                        // Crosshair Reticle Thumb
+                        Rectangle {
+                            x: Math.max(0, Math.min(svBox.width - width, root.colorSat * svBox.width - width / 2))
+                            y: Math.max(0, Math.min(svBox.height - height, (1.0 - root.colorVal) * svBox.height - height / 2))
+                            width: 14
+                            height: 14
+                            radius: 7
+                            color: "transparent"
+                            border.color: (root.colorVal > 0.5) ? "#000000" : "#FFFFFF"
+                            border.width: 2
+
+                            Rectangle {
+                                anchors.centerIn: parent
+                                width: 10
+                                height: 10
+                                radius: 5
+                                color: "transparent"
+                                border.color: (root.colorVal > 0.5) ? "#FFFFFF" : "#000000"
+                                border.width: 1.5
+                            }
+                        }
+
+                        MouseArea {
+                            anchors.fill: parent
+                            cursorShape: Qt.CrossCursor
+                            function updateSV(mouseX, mouseY) {
+                                var s = Math.max(0.0, Math.min(1.0, mouseX / svBox.width));
+                                var v = Math.max(0.0, Math.min(1.0, 1.0 - (mouseY / svBox.height)));
+                                root.colorSat = s;
+                                root.colorVal = v;
+                                root.applyHsvToTile();
+                            }
+                            onPressed: (mouse) => updateSV(mouse.x, mouse.y)
+                            onPositionChanged: (mouse) => {
+                                if (pressed) updateSV(mouse.x, mouse.y);
+                            }
+                        }
+                    }
+
+                    // Rainbow Hue Slider Track
+                    Rectangle {
+                        id: hueTrack
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 18
+                        radius: 9
+                        border.color: "#343940"
+                        border.width: 1
+
+                        gradient: Gradient {
+                            orientation: Gradient.Horizontal
+                            GradientStop { position: 0.00; color: "#FF0000" }
+                            GradientStop { position: 0.17; color: "#FFFF00" }
+                            GradientStop { position: 0.33; color: "#00FF00" }
+                            GradientStop { position: 0.50; color: "#00FFFF" }
+                            GradientStop { position: 0.67; color: "#0000FF" }
+                            GradientStop { position: 0.83; color: "#FF00FF" }
+                            GradientStop { position: 1.00; color: "#FF0000" }
+                        }
+
+                        // Draggable Hue Thumb
+                        Rectangle {
+                            x: Math.max(0, Math.min(hueTrack.width - width, root.colorHue * hueTrack.width - width / 2))
+                            anchors.verticalCenter: parent.verticalCenter
+                            width: 18
+                            height: 18
+                            radius: 9
+                            color: Qt.hsva(root.colorHue, 1.0, 1.0, 1.0)
+                            border.color: "#FFFFFF"
+                            border.width: 2
+                        }
+
+                        MouseArea {
+                            anchors.fill: parent
+                            cursorShape: Qt.PointingHandCursor
+                            function updateHue(mouseX) {
+                                var h = Math.max(0.0, Math.min(1.0, mouseX / hueTrack.width));
+                                root.colorHue = h;
+                                root.applyHsvToTile();
+                            }
+                            onPressed: (mouse) => updateHue(mouse.x)
+                            onPositionChanged: (mouse) => {
+                                if (pressed) updateHue(mouse.x);
+                            }
+                        }
+                    }
+
+                    // Hex Input & Live Color Swatch Row
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: 8
+
+                        // Live Color Swatch Preview
+                        Rectangle {
+                            width: 36
+                            height: 36
+                            radius: 6
+                            color: tile ? tile.color : "#8E2DE2"
+                            border.color: "#4A525D"
+                            border.width: 1
+                            ToolTip.visible: swatchHover.hovered
+                            ToolTip.text: qsTr("Current Accent Color: %1").arg(tile ? tile.color.toUpperCase() : "")
+                            HoverHandler { id: swatchHover }
+                        }
+
+                        Text {
+                            text: qsTr("Hex Code:")
+                            color: "#AAAAAA"
+                            font.bold: true
+                            font.pointSize: 9
+                        }
+
+                        DarkTextField {
+                            id: hexField
+                            text: tile ? root.colorToHex(tile.color) : "#8E2DE2"
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: 36
+                            font.family: "Monospace"
+                            font.pointSize: 10
+                            font.capitalization: Font.AllUppercase
+                            placeholderText: "#RRGGBB"
+                            ToolTip.visible: hovered
+                            ToolTip.text: qsTr("Enter hex color code (e.g. #00D2FF or #FF5500). Press Enter to apply.")
+
+                            onTextEdited: {
+                                var clean = text.trim();
+                                if (!clean.startsWith("#")) clean = "#" + clean;
+                                if (/^#[0-9A-Fa-f]{6}$/.test(clean)) {
+                                    clean = clean.toUpperCase();
+                                    if (tile) tile.color = clean;
+                                    root.loadColorHsv(clean);
+                                }
+                            }
+
+                            onEditingFinished: {
+                                var clean = text.trim();
+                                if (!clean.startsWith("#")) clean = "#" + clean;
+                                if (/^#[0-9A-Fa-f]{3}$/.test(clean)) {
+                                    clean = "#" + clean[1] + clean[1] + clean[2] + clean[2] + clean[3] + clean[3];
+                                }
+                                if (/^#[0-9A-Fa-f]{6}$/.test(clean)) {
+                                    clean = clean.toUpperCase();
+                                    if (tile) tile.color = clean;
+                                    root.loadColorHsv(clean);
+                                    text = clean;
+                                } else {
+                                    text = root.colorToHex(tile ? tile.color : "#8E2DE2");
                                 }
                             }
                         }
@@ -1450,6 +1766,15 @@ Dialog {
                     if (cueWaveformActive) cueWaveformActive.requestPaint();
                     if (cueOutField && !cueOutField.activeFocus && tile && tile.cueEndMs === 0) {
                         cueOutField.text = root.formatPreciseTime(tile.durationMs);
+                    }
+                }
+                function onColorChanged() {
+                    if (tile && tile.color) {
+                        if (hexField && !hexField.activeFocus) {
+                            hexField.text = root.colorToHex(tile.color);
+                        }
+                        root.loadColorHsv(tile.color);
+                        if (cueWaveformActive) cueWaveformActive.requestPaint();
                     }
                 }
             }
