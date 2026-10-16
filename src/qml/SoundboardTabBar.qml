@@ -48,9 +48,31 @@ Rectangle {
 
                     property bool showCloseBtn: root.tabModel ? root.tabModel.count > 1 : false
 
+                    // Main Tab Click & Right-click MouseArea
+                    // Restricted to not overlap the close button on the right
+                    MouseArea {
+                        id: tabMouse
+                        anchors.fill: parent
+                        anchors.rightMargin: tabItem.showCloseBtn ? 32 : 0
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        acceptedButtons: Qt.LeftButton | Qt.RightButton
+
+                        onClicked: (mouse) => {
+                            if (mouse.button === Qt.LeftButton) {
+                                if (root.tabModel) {
+                                    root.tabModel.setCurrentIndex(tabItem.index);
+                                }
+                            } else if (mouse.button === Qt.RightButton) {
+                                tabContextMenu.popup();
+                            }
+                        }
+                        onDoubleClicked: root.renameTabRequested(tabItem.index)
+                    }
+
                     RowLayout {
                         anchors.fill: parent
-                        anchors.leftMargin: 10
+                        anchors.leftMargin: 12
                         anchors.rightMargin: 6
                         spacing: 6
 
@@ -67,47 +89,48 @@ Rectangle {
 
                         // Close Tab Button (X)
                         Button {
+                            id: closeBtn
                             visible: tabItem.showCloseBtn
-                            Layout.preferredWidth: 22
-                            Layout.preferredHeight: 22
+                            Layout.preferredWidth: 24
+                            Layout.preferredHeight: 24
+                            Layout.alignment: Qt.AlignVCenter
                             flat: true
+                            z: 2
                             onClicked: root.closeTabRequested(tabItem.index)
 
                             background: Rectangle {
-                                color: parent.hovered ? "#E74C3C" : "transparent"
-                                radius: 11
+                                color: closeBtn.hovered ? "#E74C3C" : (closeBtn.pressed ? "#C0392B" : "transparent")
+                                radius: 12
                             }
 
                             contentItem: Text {
                                 text: "×"
-                                color: parent.hovered ? "#FFFFFF" : "#888888"
+                                color: closeBtn.hovered ? "#FFFFFF" : "#888888"
                                 font.bold: true
-                                font.pointSize: 12
+                                font.pointSize: 15
                                 horizontalAlignment: Text.AlignHCenter
                                 verticalAlignment: Text.AlignVCenter
                             }
 
                             ToolTip.visible: hovered
-                            ToolTip.text: qsTr("Close Tab")
+                            ToolTip.text: qsTr("Delete Tab '%1'").arg(tabItem.name)
                         }
                     }
 
-                    MouseArea {
-                        id: tabMouse
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        cursorShape: Qt.PointingHandCursor
-                        acceptedButtons: Qt.LeftButton | Qt.RightButton
-                        onClicked: (mouse) => {
-                            if (mouse.button === Qt.LeftButton) {
-                                if (root.tabModel) {
-                                    root.tabModel.setCurrentIndex(tabItem.index);
-                                }
-                            } else if (mouse.button === Qt.RightButton) {
-                                root.renameTabRequested(tabItem.index);
-                            }
+                    // Tab Context Menu (Right Click)
+                    Menu {
+                        id: tabContextMenu
+
+                        MenuItem {
+                            text: qsTr("Rename Tab...")
+                            onTriggered: root.renameTabRequested(tabItem.index)
                         }
-                        onDoubleClicked: root.renameTabRequested(tabItem.index)
+
+                        MenuItem {
+                            text: qsTr("Delete Tab")
+                            enabled: tabItem.showCloseBtn
+                            onTriggered: root.closeTabRequested(tabItem.index)
+                        }
                     }
                 }
             }

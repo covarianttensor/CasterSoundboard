@@ -65,6 +65,16 @@ ApplicationWindow {
     }
 
     Shortcut {
+        sequence: "Ctrl+W"
+        context: Qt.ApplicationShortcut
+        onActivated: {
+            if (projectController && projectController.tabModel && projectController.tabModel.count > 1) {
+                soundboardsView.requestCloseTab(projectController.tabModel.currentIndex);
+            }
+        }
+    }
+
+    Shortcut {
         sequence: "Ctrl+O"
         context: Qt.ApplicationShortcut
         onActivated: openDialog.open()
@@ -201,7 +211,7 @@ ApplicationWindow {
                 onSaveAsProjectRequested: saveAsDialog.open()
                 onRenameTabRequested: {
                     if (sidebar.currentIndex === 0) {
-                        // Forward rename trigger to current tab
+                        soundboardsView.requestRenameCurrentTab();
                     }
                 }
                 onStopAllRequested: {

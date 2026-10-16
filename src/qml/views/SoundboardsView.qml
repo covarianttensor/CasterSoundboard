@@ -16,6 +16,7 @@ Item {
 
         // Dynamic Tab Bar
         SoundboardTabBar {
+            id: tabBar
             Layout.fillWidth: true
             tabModel: typeof projectController !== "undefined" ? projectController.tabModel : null
             onAddTabRequested: {
@@ -24,9 +25,7 @@ Item {
                 }
             }
             onCloseTabRequested: (index) => {
-                if (projectController && projectController.tabModel) {
-                    projectController.tabModel.removeTab(index);
-                }
+                root.requestCloseTab(index);
             }
             onRenameTabRequested: (index) => {
                 renameDialog.targetIndex = index;
@@ -414,38 +413,270 @@ Item {
         }
     }
 
+    function requestCloseTab(index) {
+        if (!projectController || !projectController.tabModel) return;
+        if (projectController.tabModel.count <= 1) return;
+        if (index < 0 || index >= projectController.tabModel.count) return;
+
+        deleteTabDialog.targetIndex = index;
+        deleteTabDialog.tabName = projectController.tabModel.tabNameAt(index);
+        var g = projectController.tabModel.gridModelAt(index);
+        deleteTabDialog.tileCount = g ? g.count : 0;
+        deleteTabDialog.open();
+    }
+
+    function requestRenameCurrentTab() {
+        if (!projectController || !projectController.tabModel) return;
+        var idx = projectController.tabModel.currentIndex;
+        if (idx >= 0 && idx < projectController.tabModel.count) {
+            renameDialog.targetIndex = idx;
+            renameField.text = projectController.tabModel.tabNameAt(idx);
+            renameDialog.open();
+        }
+    }
+
     // Rename Tab Dialog
     Dialog {
         id: renameDialog
-        title: qsTr("Rename Soundboard Tab")
+        parent: Overlay.overlay
         anchors.centerIn: parent
         modal: true
-        standardButtons: Dialog.Ok | Dialog.Cancel
+        closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
+        implicitWidth: 380
+        topPadding: 16
+        bottomPadding: 16
+        leftPadding: 20
+        rightPadding: 20
 
         property int targetIndex: -1
 
-        ColumnLayout {
-            spacing: 8
+        background: Rectangle {
+            color: "#202327"
+            radius: 10
+            border.color: "#343940"
+            border.width: 1
+        }
+
+        header: Rectangle {
+            implicitHeight: 46
+            height: 46
+            color: "#181A1D"
+            radius: 10
             Text {
-                text: qsTr("Enter new name for tab:")
+                anchors.left: parent.left
+                anchors.leftMargin: 16
+                anchors.verticalCenter: parent.verticalCenter
+                text: qsTr("Rename Soundboard Tab")
                 color: "#FFFFFF"
-            }
-            TextField {
-                id: renameField
-                Layout.preferredWidth: 260
-                selectByMouse: true
-                color: "#FFFFFF"
+                font.bold: true
+                font.pointSize: 11
             }
         }
 
-        onAccepted: {
-            if (targetIndex >= 0 && projectController && projectController.tabModel) {
-                projectController.tabModel.renameTab(targetIndex, renameField.text);
+        contentItem: ColumnLayout {
+            spacing: 10
+            Text {
+                text: qsTr("Enter new name for tab:")
+                color: "#AAAAAA"
+                font.pointSize: 10
+            }
+            TextField {
+                id: renameField
+                Layout.fillWidth: true
+                Layout.preferredHeight: 38
+                selectByMouse: true
+                color: "#FFFFFF"
+                font.pointSize: 10
+                background: Rectangle {
+                    color: "#282C32"
+                    radius: 6
+                    border.color: renameField.activeFocus ? "#8E2DE2" : "#454B54"
+                    border.width: renameField.activeFocus ? 2 : 1
+                }
+                onAccepted: {
+                    renameDialog.applyRename();
+                }
+            }
+        }
+
+        footer: Rectangle {
+            implicitHeight: 52
+            height: 52
+            color: "#181A1D"
+            radius: 10
+            RowLayout {
+                anchors.fill: parent
+                anchors.margins: 10
+                spacing: 8
+                Item { Layout.fillWidth: true }
+                Button {
+                    text: qsTr("Cancel")
+                    Layout.preferredWidth: 80
+                    Layout.preferredHeight: 34
+                    onClicked: renameDialog.close()
+                    contentItem: Text {
+                        text: parent.text
+                        color: "#FFFFFF"
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                    }
+                    background: Rectangle {
+                        color: parent.hovered ? "#3A3F47" : "#282C32"
+                        radius: 6
+                    }
+                }
+                Button {
+                    text: qsTr("Save")
+                    Layout.preferredWidth: 80
+                    Layout.preferredHeight: 34
+                    onClicked: renameDialog.applyRename()
+                    contentItem: Text {
+                        text: parent.text
+                        color: "#FFFFFF"
+                        font.bold: true
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                    }
+                    background: Rectangle {
+                        color: parent.hovered ? "#9D3BF0" : "#8E2DE2"
+                        radius: 6
+                    }
+                }
+            }
+        }
+
+        function applyRename() {
+            if (targetIndex >= 0 && projectController && projectController.tabModel && renameField.text.trim().length > 0) {
+                projectController.tabModel.renameTab(targetIndex, renameField.text.trim());
+            }
+            close();
+        }
+    }
+
+    // Delete Tab Confirmation Dialog
+    Dialog {
+        id: deleteTabDialog
+        parent: Overlay.overlay
+        anchors.centerIn: parent
+        modal: true
+        closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
+        implicitWidth: 420
+        topPadding: 20
+        bottomPadding: 20
+        leftPadding: 24
+        rightPadding: 24
+
+        property int targetIndex: -1
+        property string tabName: ""
+        property int tileCount: 0
+
+        background: Rectangle {
+            color: "#202327"
+            radius: 10
+            border.color: "#343940"
+            border.width: 1
+        }
+
+        header: Rectangle {
+            implicitHeight: 46
+            height: 46
+            color: "#181A1D"
+            radius: 10
+            RowLayout {
+                anchors.fill: parent
+                anchors.leftMargin: 16
+                anchors.rightMargin: 16
+                Text {
+                    text: qsTr("Delete Soundboard Tab")
+                    color: "#E74C3C"
+                    font.bold: true
+                    font.pointSize: 11
+                }
+            }
+        }
+
+        contentItem: ColumnLayout {
+            spacing: 12
+
+            Text {
+                text: deleteTabDialog.tileCount > 0
+                    ? qsTr("Are you sure you want to delete tab \"%1\" and all %2 sound tile(s) inside it?").arg(deleteTabDialog.tabName).arg(deleteTabDialog.tileCount)
+                    : qsTr("Are you sure you want to delete tab \"%1\"?").arg(deleteTabDialog.tabName)
+                color: "#FFFFFF"
+                font.pointSize: 10
+                wrapMode: Text.WordWrap
+                Layout.fillWidth: true
+                Layout.maximumWidth: 370
+            }
+
+            Text {
+                text: qsTr("This action cannot be undone.")
+                color: "#E74C3C"
+                font.pointSize: 8.5
+            }
+        }
+
+        footer: Rectangle {
+            implicitHeight: 52
+            height: 52
+            color: "#181A1D"
+            radius: 10
+
+            RowLayout {
+                anchors.fill: parent
+                anchors.leftMargin: 14
+                anchors.rightMargin: 14
+                spacing: 10
+
+                Item { Layout.fillWidth: true }
+
+                Button {
+                    text: qsTr("Cancel")
+                    Layout.preferredWidth: 80
+                    Layout.preferredHeight: 34
+                    onClicked: deleteTabDialog.close()
+                    contentItem: Text {
+                        text: parent.text
+                        color: "#FFFFFF"
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                    }
+                    background: Rectangle {
+                        color: parent.hovered ? "#3A3F47" : "#282C32"
+                        radius: 6
+                    }
+                }
+
+                Button {
+                    text: qsTr("Delete Tab")
+                    Layout.preferredWidth: 100
+                    Layout.preferredHeight: 34
+                    onClicked: {
+                        if (deleteTabDialog.targetIndex >= 0 && projectController && projectController.tabModel) {
+                            projectController.tabModel.removeTab(deleteTabDialog.targetIndex);
+                        }
+                        deleteTabDialog.close();
+                    }
+                    contentItem: Text {
+                        text: parent.text
+                        color: "#FFFFFF"
+                        font.bold: true
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                    }
+                    background: Rectangle {
+                        color: parent.hovered ? "#C0392B" : "#E74C3C"
+                        radius: 6
+                    }
+                }
             }
         }
     }
 
     Component.onCompleted: {
+        if (typeof openDeleteTabPromptOnStart !== "undefined" && openDeleteTabPromptOnStart) {
+            root.requestCloseTab(1);
+        }
         if (typeof openDrawerOnStart !== "undefined" && openDrawerOnStart) {
             if (root.currentGrid && root.currentGrid.count > 0) {
                 var idx = (typeof drawerTileIndex !== "undefined") ? drawerTileIndex : 0;

@@ -65,6 +65,7 @@ int main(int argc, char *argv[])
     QCommandLineOption hotkeyPromptOption("open-hotkey-prompt", "Open hotkey prompt dialog on startup for testing.");
     QCommandLineOption testSeekMsOption("test-seek-ms", "Set position in ms on tile 0 for visual verification.", "ms");
     QCommandLineOption scrollCueOption("scroll-cue", "Scroll to cue region in drawer on startup for testing.");
+    QCommandLineOption deleteTabPromptOption("open-delete-tab-prompt", "Open delete tab confirmation dialog on startup for testing.");
     parser.addOption(screenshotOption);
     parser.addOption(drawerOption);
     parser.addOption(drawerIndexOption);
@@ -75,6 +76,7 @@ int main(int argc, char *argv[])
     parser.addOption(hotkeyPromptOption);
     parser.addOption(testSeekMsOption);
     parser.addOption(scrollCueOption);
+    parser.addOption(deleteTabPromptOption);
     parser.addPositionalArgument("project", "Project file (.caster) to open on launch.", "[project]");
     parser.process(app);
 
@@ -125,6 +127,7 @@ int main(int argc, char *argv[])
     engine.rootContext()->setContextProperty("initialViewIndex", parser.value(viewOption).toInt());
     engine.rootContext()->setContextProperty("openHotkeyPromptOnStart", parser.isSet(hotkeyPromptOption));
     engine.rootContext()->setContextProperty("scrollToCueOnStart", parser.isSet(scrollCueOption));
+    engine.rootContext()->setContextProperty("openDeleteTabPromptOnStart", parser.isSet(deleteTabPromptOption));
 
     // Install application-wide hotkey event filter
     GlobalHotkeyFilter hotkeyFilter(&hotkeyManager, &app);
