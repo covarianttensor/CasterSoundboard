@@ -54,7 +54,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: appimage-bundle
-          path: CasterSoundboard*.AppImage
+          path: CasterSoundboard-*.AppImage
 
   flatpak:
     name: Build Flatpak Bundle
@@ -79,15 +79,16 @@ jobs:
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
           if [ "${GITHUB_REF_TYPE:-}" = "tag" ] && [ -n "${VERSION}" ]; then
-            cp -f CasterSoundboard.flatpak "CasterSoundboard-${VERSION}-x86_64.flatpak"
+            mv -f CasterSoundboard.flatpak "CasterSoundboard-${VERSION}-x86_64.flatpak"
+          else
+            mv -f CasterSoundboard.flatpak "CasterSoundboard-x86_64.flatpak"
           fi
-          cp -f CasterSoundboard.flatpak CasterSoundboard-x86_64.flatpak
 
       - name: Upload Flatpak artifacts
         uses: actions/upload-artifact@v4
         with:
           name: flatpak-bundle
-          path: CasterSoundboard*.flatpak
+          path: CasterSoundboard-*.flatpak
 
   release:
     name: Publish GitHub Release

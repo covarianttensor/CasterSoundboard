@@ -89,9 +89,8 @@ GENERATED_APPIMAGE=$(ls -t CasterSoundboard*.AppImage 2>/dev/null | head -n 1)
 if [ -n "${GENERATED_APPIMAGE}" ]; then
     TARGET_APPIMAGE="CasterSoundboard-${VERSION}-x86_64.AppImage"
     if [ "${GENERATED_APPIMAGE}" != "${TARGET_APPIMAGE}" ]; then
-        cp -f "${GENERATED_APPIMAGE}" "${TARGET_APPIMAGE}"
+        mv -f "${GENERATED_APPIMAGE}" "${TARGET_APPIMAGE}"
     fi
-    cp -f "${TARGET_APPIMAGE}" "CasterSoundboard-x86_64.AppImage"
     echo "AppImage created: ${TARGET_APPIMAGE}"
 fi
 popd >/dev/null
