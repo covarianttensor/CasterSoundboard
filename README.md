@@ -1,73 +1,157 @@
+# Caster Soundboard
 
+<p align="center">
+  <img src="dist/linux/io.github.covarianttensor.CasterSoundboard.png" alt="Caster Soundboard Logo" width="128" height="128">
+</p>
 
-CasterSoundboard
-================
-[![License](https://img.shields.io/github/license/covarianttensor/CasterSoundboard.svg)](https://github.com/covarianttensor/CasterSoundboard/blob/master/LICENSE)
+<p align="center">
+  <b>A modern, touch-first soundboard designed for podcasters, live streamers, broadcasters, and tabletop gamers.</b>
+</p>
 
-A soundboard for hot-keying and playing back sounds. (For podcasting)
+<p align="center">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-LGPL%20v3.0-blue.svg" alt="License: LGPL-3.0"></a>
+  <img src="https://img.shields.io/badge/Qt-6.8%20%7C%20QML-41CD52.svg?logo=qt" alt="Qt 6">
+  <img src="https://img.shields.io/badge/Audio-PipeWire%20%2F%20PulseAudio-orange.svg" alt="Audio Backend">
+  <img src="https://img.shields.io/badge/Platform-Linux%20(Wayland%20%26%20X11)-informational.svg" alt="Platform">
+</p>
 
-CasterSoundboard is written in C++ Qt6.
 ---
 
-## Guides
-+ [OSC colour and grid metadata API](docs/osc-metadata.md)
-+ [Control CasterSoundboard with your phone or tablet via a network](https://github.com/covarianttensor/CasterSoundboard/wiki/Guide:-How-to-Control-CasterSoundboard-Using-Your-Phone-or-Tablet "CasterSoundboard's Wiki")
+## Overview
+
+**Caster Soundboard** is a fast, tactile audio playback tool engineered for live broadcast environments. Built with a high-performance **C++ engine** and a fluid **Qt 6 / QML touch interface**, Caster Soundboard allows you to trigger clips, jingles, sound effects, and background music loops instantly.
+
+It features integrated **virtual microphone audio routing**, enabling you to pipe your voice and soundboard clips directly into VoIP applications like **Discord, OBS Studio, Zoom, and Twitch** without needing external mixer hardware or messy patch cables.
+
 ---
 
-## Profile window size
+## Screenshots
 
-The main window size is stored only in saved `.caster` profiles. Saving a
-profile, closing its tab, or closing the visible app updates that size;
-loading the profile restores it. When several saved tabs are open, closing
-the app stores the final window size in each profile. Automatic size updates
-preserve saved soundboard content without saving other pending edits.
-Unsaved tabs and headless runs do not automatically store a window size.
-Maximized, minimized, and fullscreen windows store their normal window size.
-Older profiles without size metadata retain the existing window size on load.
+### Main Soundboard Grid
+> Fluid multi-tab sound banks with real-time waveform progress, dedicated volume sliders, and hotkey indicators.
 
-See [window-size validation](docs/window-size-persistence.md) for test commands.
+![Main Soundboard Grid](docs/img/screenshot_main.png)
 
-## Libraries Used
-+ [osc-cpp-qt](https://github.com/MugenSAS/osc-cpp-qt)
+### Virtual Audio Routing & Signal Flow
+> Interactive orthogonal circuit diagram visualizing your physical mic, soundboard audio, and virtual microphone endpoints.
+
+![Audio Devices and Virtual Microphone Flow](docs/img/screenshot_audio_routing.png)
+
+### Preferences & Workspace Settings
+> Ducking attenuation controls, hotkey scope preferences, and global emergency action shortcuts.
+
+![Preferences and Settings](docs/img/screenshot_preferences.png)
+
 ---
 
-## How to Install
+## Key Features
 
-### Flatpak (Universal Linux)
-Download the pre-built `CasterSoundboard.flatpak` bundle from the [Releases page](https://github.com/covarianttensor/CasterSoundboard/releases/latest), then install and run:
+- **Touch-First Grid Interface**: Resizable tile grid with pinch/slider zoom, horizontal & vertical touch scrolling, and seamless file drag-and-drop.
+- **Virtual Microphone (PipeWire / PulseAudio)**: Merges your hardware microphone with soundboard clips into a first-class virtual audio input recognized by Discord, OBS, Zoom, and WebRTC browsers.
+- **Waveform Sweeper & Cue Editing**: Visual audio waveform rendering with dual interactive drag handles for non-destructive intro/outro cue trimming and loop playback.
+- **Sound Banks & Flexible Hotkeys**: Support for multiple tabs with customizable hotkey scopes (**Bank Mode** to reuse keys across tabs, or **Global Mode** to trigger sounds anywhere).
+- **Audio Ducking**: Automatically attenuates soundboard playback volume with assignable shortcuts (`Ctrl+D`) so host commentary cuts through cleanly.
+- **Panic Button**: Instant stop-all shortcut (`Space`) to silence all active audio channels immediately.
+- **Web Remote Control Surface**: Built-in HTTP server (`port 8080`) providing a touch-friendly web remote accessible from any smartphone, tablet, or secondary display on your local network.
+- **Open Sound Control (OSC)**: Two-way OSC UDP server (`port 8000`) compatible with TouchOSC (includes bundled layouts in [`TouchOSC-Layouts/`](TouchOSC-Layouts/)).
+- **Headless Mode**: Run as a low-overhead background audio server on dedicated studio machines using `--headless`.
+
+---
+
+## Installation & Distribution
+
+Caster Soundboard supports multiple universal Linux packaging formats:
+
+### 1. AppImage (Standalone Portable)
+No installation required. Download the pre-built `.AppImage` from [GitHub Releases](https://github.com/covarianttensor/CasterSoundboard/releases/latest), make it executable, and run:
 ```bash
-flatpak install --user CasterSoundboard.flatpak
-flatpak run io.github.covarianttensor.CasterSoundboard
+chmod +x CasterSoundboard-*-x86_64.AppImage
+./CasterSoundboard-*-x86_64.AppImage
 ```
 
-Or build and install locally from source:
-```bash
-flatpak install flathub org.kde.Platform//6.8 org.kde.Sdk//6.8
-flatpak-builder --user --install --force-clean build-flatpak io.github.covarianttensor.CasterSoundboard.yml
-```
-
-### AppImage (Standalone Portable)
-Download the pre-built `CasterSoundboard-x86_64.AppImage` from the [Releases page](https://github.com/covarianttensor/CasterSoundboard/releases/latest), then make it executable and run:
-```bash
-chmod +x CasterSoundboard-x86_64.AppImage
-./CasterSoundboard-x86_64.AppImage
-```
-
-Or build a standalone AppImage locally:
+To compile a standalone AppImage locally:
 ```bash
 ./scripts/build-appimage.sh
 ```
 
-### Nix
-Build and run using `default.nix`:
+### 2. Flatpak (Universal Linux)
+Download the `.flatpak` bundle from [GitHub Releases](https://github.com/covarianttensor/CasterSoundboard/releases/latest):
+```bash
+flatpak install --user CasterSoundboard-*-x86_64.flatpak
+flatpak run io.github.covarianttensor.CasterSoundboard
+```
+
+Or build from source using `flatpak-builder`:
+```bash
+./scripts/build-flatpak.sh
+```
+
+### 3. NixOS / Nix Flakes
+Run directly via Nix Flakes:
+```bash
+nix run github:covarianttensor/CasterSoundboard
+```
+
+Or build locally with `default.nix`:
 ```bash
 nix-build
 ./result/bin/CasterSoundboard
 ```
 
-### Screenshot ###
-![Alt text](/docs/img/screenshot.png?raw=true "Running on Ubuntu")
+### 4. Native Build (CMake)
+Build and install natively on any Linux distribution (Ubuntu, Debian, Fedora, Arch):
 
-## Audio Devices
+#### Prerequisites
+- C++17 compiler (GCC 9+ or Clang 10+)
+- CMake 3.16+
+- Qt 6.5+ (`qt6-base`, `qt6-declarative`, `qt6-quickcontrols2`, `qt6-multimedia`, `qt6-network`)
+- FFmpeg (for waveform extraction and multi-codec playback)
+- PulseAudio / PipeWire (`pulseaudio-utils`)
 
-See [Audio Devices](docs/audio-devices.md) for functionality, setup and verification.
+```bash
+# Clone the repository
+git clone https://github.com/covarianttensor/CasterSoundboard.git
+cd CasterSoundboard
+
+# Configure and compile
+cmake -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build -j$(nproc)
+
+# Run tests
+ctest --test-dir build --output-on-failure
+
+# Install to system (optional)
+sudo cmake --install build
+```
+
+---
+
+## Command Line Usage
+
+```bash
+CasterSoundboard [options] [project.caster]
+```
+
+| Option | Description |
+| :--- | :--- |
+| `[project.caster]` | Load a specific `.caster` project file on launch. |
+| `--headless` | Run without a graphical window (ideal for studio servers and OSC/Web controllers). |
+| `--web` | Automatically start the Web Remote server on launch. |
+| `--web-port <port>` | Specify custom port for Web Remote (default: `8080`). |
+| `--web-auth <pass>` | Protect Web Remote with an access password. |
+| `--view <0-4>` | Start directly on a specific view (`0`: Soundboard, `1`: Audio Devices, `2`: OSC, `3`: Settings, `4`: Docs). |
+| `--master-volume <0-100>`| Set initial master playback volume percentage on startup. |
+
+---
+
+## Hardware & TouchOSC Remote Control
+
+Caster Soundboard is designed to be controlled remotely using tablets and mobile devices:
+- **Web Remote**: Open `http://<your-computer-ip>:8080` in any web browser on your tablet or smartphone.
+- **TouchOSC**: Pre-built TouchOSC templates are available in the [`TouchOSC-Layouts/`](TouchOSC-Layouts/) directory. Connect TouchOSC to your computer's IP on UDP port `8000`.
+
+---
+
+## License
+
+Caster Soundboard is free and open-source software licensed under the **GNU Lesser General Public License v3.0 or later** ([LGPL-3.0-or-later](LICENSE)).
