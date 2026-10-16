@@ -48,7 +48,17 @@ void AudioRoutingController::setProjectController(SoundboardProjectController *p
 
 bool AudioRoutingController::isRouting() const
 {
+    if (m_testingRoutingActive)
+        return true;
     return m_audioController && m_audioController->isRouting();
+}
+
+void AudioRoutingController::setRoutingActiveForTesting(bool active)
+{
+    if (m_testingRoutingActive == active)
+        return;
+    m_testingRoutingActive = active;
+    emit routingChanged();
 }
 
 void AudioRoutingController::setSelectedMicrophone(const QString &mic)
@@ -276,6 +286,7 @@ void AudioRoutingController::onPlaybackRoutingChanged(bool active)
         } else {
             m_project->setOutputDeviceName(tr("Default System Output"));
         }
+        m_project->refreshAudioDevices();
     }
 }
 

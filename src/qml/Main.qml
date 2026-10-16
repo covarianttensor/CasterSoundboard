@@ -8,8 +8,8 @@ ApplicationWindow {
     id: window
     visible: true
 
-    width: 1024
-    height: 720
+    width: (typeof projectController !== "undefined" && projectController.windowWidth > 0) ? projectController.windowWidth : 1024
+    height: (typeof projectController !== "undefined" && projectController.windowHeight > 0) ? projectController.windowHeight : 720
     minimumWidth: 640
     minimumHeight: 480
 

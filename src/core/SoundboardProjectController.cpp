@@ -16,11 +16,28 @@ SoundboardProjectController::SoundboardProjectController(QObject *parent)
 {
     m_tabModel = new SoundboardTabModel(this);
     m_mediaDevices = new QMediaDevices(this);
-    connect(m_mediaDevices, &QMediaDevices::audioOutputsChanged, this, &SoundboardProjectController::availableAudioOutputsChanged);
+    connect(m_mediaDevices, &QMediaDevices::audioOutputsChanged, this, [this]() {
+        applyOutputDeviceToAllTiles();
+        emit availableAudioOutputsChanged();
+    });
     connect(m_tabModel, &QAbstractItemModel::dataChanged, this, [this]() { setDirty(true); });
-    connect(m_tabModel, &QAbstractItemModel::rowsInserted, this, [this]() { setDirty(true); });
+    connect(m_tabModel, &QAbstractItemModel::rowsInserted, this, [this](const QModelIndex &, int first, int last) {
+        for (int i = first; i <= last; ++i) {
+            SoundboardGridModel *g = m_tabModel->gridModelAt(i);
+            if (g) {
+                connect(g, &QAbstractItemModel::rowsInserted, this, [this]() {
+                    applyOutputDeviceToAllTiles();
+                });
+            }
+        }
+        applyOutputDeviceToAllTiles();
+        setDirty(true);
+    });
     connect(m_tabModel, &QAbstractItemModel::rowsRemoved, this, [this]() { setDirty(true); });
     connect(m_tabModel, &QAbstractItemModel::rowsMoved, this, [this]() { setDirty(true); });
+    connect(m_tabModel, &SoundboardTabModel::currentGridModelChanged, this, [this]() {
+        applyOutputDeviceToAllTiles();
+    });
     newProject();
 }
 
@@ -301,23 +318,38 @@ void SoundboardProjectController::applyDuckingToAllTiles()
     }
 }
 
-void SoundboardProjectController::applyOutputDeviceToAllTiles()
+QAudioDevice SoundboardProjectController::currentAudioOutputDevice() const
 {
-    QAudioDevice targetDevice;
-    if (m_outputDeviceName.isEmpty() || m_outputDeviceName == tr("Default System Output")) {
-        targetDevice = QMediaDevices::defaultAudioOutput();
-    } else {
-        const auto devices = QMediaDevices::audioOutputs();
+    const auto devices = QMediaDevices::audioOutputs();
+    if (!m_outputDeviceName.isEmpty() && m_outputDeviceName != tr("Default System Output")) {
+        // 1. Direct exact match on description or ID
         for (const auto &dev : devices) {
-            if (dev.description() == m_outputDeviceName) {
-                targetDevice = dev;
-                break;
+            if (dev.description() == m_outputDeviceName || dev.id() == m_outputDeviceName.toUtf8()) {
+                return dev;
+            }
+        }
+
+        // 2. Substring match or virtual managed sink name (e.g. SoundboardSink or Caster_Soundboard)
+        for (const auto &dev : devices) {
+            const QString desc = dev.description();
+            const QByteArray id = dev.id();
+            if (id.contains(m_outputDeviceName.toUtf8()) ||
+                desc.contains(m_outputDeviceName, Qt::CaseInsensitive) ||
+                (m_outputDeviceName.contains("Soundboard", Qt::CaseInsensitive) &&
+                 (desc.contains("Caster_Soundboard", Qt::CaseInsensitive) ||
+                  desc.contains("Caster Soundboard", Qt::CaseInsensitive) ||
+                  desc.contains("Soundboard", Qt::CaseInsensitive)))) {
+                return dev;
             }
         }
     }
 
-    if (targetDevice.isNull())
-        return;
+    return QMediaDevices::defaultAudioOutput();
+}
+
+void SoundboardProjectController::applyOutputDeviceToAllTiles()
+{
+    QAudioDevice targetDevice = currentAudioOutputDevice();
 
     for (int t = 0; t < m_tabModel->count(); ++t) {
         SoundboardGridModel *grid = m_tabModel->gridModelAt(t);

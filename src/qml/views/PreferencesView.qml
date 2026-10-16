@@ -20,6 +20,45 @@ Item {
         }
     }
 
+    component DarkComboBox : ComboBox {
+        id: dcb
+        implicitHeight: 44
+        contentItem: Text {
+            leftPadding: 12
+            rightPadding: dcb.indicator.width + 12
+            text: dcb.displayText
+            font.pointSize: 10
+            color: "#FFFFFF"
+            verticalAlignment: Text.AlignVCenter
+            elide: Text.ElideRight
+        }
+        background: Rectangle {
+            color: "#282C32"
+            radius: 6
+            border.color: dcb.activeFocus ? "#8E2DE2" : "#454B54"
+            border.width: 1
+        }
+        popup: Popup {
+            y: dcb.height + 2
+            width: dcb.width
+            implicitHeight: Math.min(300, contentItem.implicitHeight + 10)
+            padding: 4
+            contentItem: ListView {
+                clip: true
+                implicitHeight: contentHeight
+                model: dcb.popup.visible ? dcb.delegateModel : null
+                currentIndex: dcb.highlightedIndex
+                ScrollIndicator.vertical: ScrollIndicator { }
+            }
+            background: Rectangle {
+                color: "#282C32"
+                radius: 6
+                border.color: "#454B54"
+                border.width: 1
+            }
+        }
+    }
+
     Rectangle {
         anchors.fill: parent
         color: "#181A1B"
@@ -65,6 +104,103 @@ Item {
                     Layout.fillWidth: true
                     height: 1
                     color: "#33373B"
+                }
+
+                // Audio Playback Output Destination Setting
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: prefAudioCol.implicitHeight + 36
+                    color: "#222528"
+                    radius: 8
+                    border.color: "#33373B"
+                    border.width: 1
+
+                    ColumnLayout {
+                        id: prefAudioCol
+                        anchors.fill: parent
+                        anchors.margins: 16
+                        spacing: 10
+
+                        RowLayout {
+                            Layout.fillWidth: true
+                            Text {
+                                text: qsTr("Audio Playback Output Destination")
+                                color: "#FFFFFF"
+                                font.bold: true
+                                font.pointSize: 12
+                            }
+                            Item { Layout.fillWidth: true }
+                            Text {
+                                visible: typeof audioRoutingController !== "undefined" && audioRoutingController.isRouting
+                                text: qsTr("Managed by Virtual Audio Routing")
+                                color: "#2ECC71"
+                                font.bold: true
+                                font.pointSize: 9
+                            }
+                        }
+
+                        Text {
+                            text: qsTr("Choose the audio output device where Caster Soundboard sends its audio playback. When Virtual Audio Routing is active, audio is automatically directed to the virtual microphone sink.")
+                            color: "#AAAAAA"
+                            font.pointSize: 9.5
+                            wrapMode: Text.WordWrap
+                            Layout.fillWidth: true
+                        }
+
+                        RowLayout {
+                            spacing: 12
+                            Layout.fillWidth: true
+
+                            DarkComboBox {
+                                id: prefOutputCombo
+                                Layout.fillWidth: true
+                                enabled: typeof audioRoutingController === "undefined" || !audioRoutingController.isRouting
+                                model: (typeof projectController !== "undefined" && projectController.availableAudioOutputs.length > 0)
+                                       ? projectController.availableAudioOutputs
+                                       : [qsTr("Default System Output")]
+                                currentIndex: {
+                                    if (typeof projectController === "undefined" || !projectController.outputDeviceName)
+                                        return 0;
+                                    var idx = prefOutputCombo.model.indexOf(projectController.outputDeviceName);
+                                    return idx >= 0 ? idx : 0;
+                                }
+                                displayText: (typeof audioRoutingController !== "undefined" && audioRoutingController.isRouting)
+                                             ? qsTr("Virtual Sink (Managed)")
+                                             : currentText
+                                onActivated: (index) => {
+                                    if (typeof projectController !== "undefined") {
+                                        projectController.outputDeviceName = currentText;
+                                    }
+                                }
+                            }
+
+                            Button {
+                                text: qsTr("Refresh Devices")
+                                Layout.preferredHeight: 44
+                                onClicked: {
+                                    if (typeof projectController !== "undefined") {
+                                        projectController.refreshAudioDevices();
+                                    }
+                                    if (typeof audioRoutingController !== "undefined") {
+                                        audioRoutingController.refresh();
+                                    }
+                                }
+                                contentItem: Text {
+                                    text: parent.text
+                                    color: "#FFFFFF"
+                                    font.bold: true
+                                    horizontalAlignment: Text.AlignHCenter
+                                    verticalAlignment: Text.AlignVCenter
+                                }
+                                background: Rectangle {
+                                    color: parent.down ? "#4E545F" : (parent.hovered ? "#3E434D" : "#2E333B")
+                                    radius: 6
+                                    border.color: "#454B54"
+                                    border.width: 1
+                                }
+                            }
+                        }
+                    }
                 }
 
                 // Audio Ducking Ratio Setting

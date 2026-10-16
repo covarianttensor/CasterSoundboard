@@ -715,12 +715,13 @@ Item {
                             }
 
                             Text {
-                                text: qsTr("• <b>Default Audio Output:</b> Plays soundboard audio to your local monitoring speakers or headphones.\n• <b>Virtual Audio Sink / Mic:</b> Use PipeWire (e.g., Helvum / qpwgraph) or PulseAudio null-sink (`pactl load-module module-null-sink sink_name=CasterSink`) to combine your physical microphone with Caster Soundboard's audio stream so Discord, Zoom, OBS, or Twitch hear your sound effects crystal clear.\n• <b>Independent Tile Gain:</b> Each tile supports dedicated volume trimming and custom cue points to balance levels across disparate audio files.")
+                                text: qsTr("• <b>Direct Soundboard Playback Output:</b> Choose the target audio device directly from the Top Action Bar dropdown, Preferences, or the Audio Devices view. Route soundboard playback straight to any physical speaker/headphone or external DAC.\n• <b>Virtual Audio Routing & Mic Loopback:</b> Click 'Apply Routing' in Audio Devices to seamlessly bridge soundboard audio with your physical microphone into a virtual microphone sink (e.g. <i>Caster Soundboard Mic</i>). This allows games, streaming apps (OBS), and VoIP apps (Discord, Zoom) to receive your voice and sound effects simultaneously.\n• <b>Discord & Voice Chat Setup (Critical):</b>\n  1. <i>Input Device:</i> In Discord <i>Settings → Voice & Video</i>, explicitly set <b>Input Device</b> to <b>Caster Soundboard Mic</b>.\n  2. <i>Noise Suppression (Krisp):</i> Set to <b>None / Off</b>. Discord's Krisp AI cancels out non-vocal audio (music, explosions, jingles), making soundboard playback silent to others!\n  3. <i>Echo Cancellation:</i> Turn off <i>Echo Cancellation</i> and <i>Advanced Voice Activity</i> if sound clips cut out prematurely.\n• <b>Independent Tile Gain:</b> Each tile supports dedicated volume trimming and custom cue points to balance levels across disparate audio files.")
                                 color: "#CCCCCC"
                                 font.pointSize: 9
                                 textFormat: Text.RichText
                                 wrapMode: Text.WordWrap
                                 Layout.fillWidth: true
+                                lineHeight: 1.25
                             }
                         }
                     }

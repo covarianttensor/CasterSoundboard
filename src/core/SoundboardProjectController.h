@@ -84,6 +84,7 @@ public:
     void setDuckingHotkey(const QString &hotkey);
 
     QStringList availableAudioOutputs() const;
+    QAudioDevice currentAudioOutputDevice() const;
     Q_INVOKABLE void refreshAudioDevices();
     Q_INVOKABLE void copyToClipboard(const QString &text);
 

@@ -41,6 +41,7 @@ public:
     void setProjectController(SoundboardProjectController *project);
 
     bool isRouting() const;
+    void setRoutingActiveForTesting(bool active);
     bool isBusy() const { return m_isBusy; }
     QString statusMessage() const { return m_statusMessage; }
     QString diagnosticsLog() const { return m_diagnosticsLog; }
@@ -127,6 +128,7 @@ private:
     bool m_mixMicrophone{true};
     bool m_monitorSoundboard{true};
     bool m_useAsDefaultInput{false};
+    bool m_testingRoutingActive{false};
     QString m_virtualMicName{"Caster Soundboard Mic"};
 };
 

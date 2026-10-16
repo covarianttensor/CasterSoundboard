@@ -135,6 +135,105 @@ Rectangle {
             }
         }
 
+        Rectangle {
+            width: 1
+            height: 32
+            color: "#3A3E42"
+            Layout.leftMargin: 4
+            Layout.rightMargin: 4
+        }
+
+        // --- Soundboard Audio Playback Output Selector ---
+        RowLayout {
+            spacing: 6
+
+            Image {
+                source: "icons/audio_devices.png"
+                sourceSize.width: 16
+                sourceSize.height: 16
+                Layout.preferredWidth: 16
+                Layout.preferredHeight: 16
+                fillMode: Image.PreserveAspectFit
+                opacity: 0.85
+            }
+
+            Text {
+                text: qsTr("Output:")
+                color: "#AAAAAA"
+                font.pointSize: 10
+            }
+
+            ComboBox {
+                id: topOutputCombo
+                Layout.preferredWidth: 190
+                implicitHeight: 38
+
+                model: (typeof projectController !== "undefined" && projectController.availableAudioOutputs.length > 0)
+                       ? projectController.availableAudioOutputs
+                       : [qsTr("Default System Output")]
+
+                currentIndex: {
+                    if (typeof projectController === "undefined" || !projectController.outputDeviceName)
+                        return 0;
+                    var idx = topOutputCombo.model.indexOf(projectController.outputDeviceName);
+                    return idx >= 0 ? idx : 0;
+                }
+
+                enabled: typeof audioRoutingController === "undefined" || !audioRoutingController.isRouting
+
+                onActivated: (index) => {
+                    if (typeof projectController !== "undefined") {
+                        projectController.outputDeviceName = currentText;
+                    }
+                }
+
+                contentItem: Text {
+                    leftPadding: 10
+                    rightPadding: topOutputCombo.indicator.width + 10
+                    text: (typeof audioRoutingController !== "undefined" && audioRoutingController.isRouting)
+                          ? qsTr("Virtual Sink (Managed)")
+                          : topOutputCombo.displayText
+                    font.pointSize: 9
+                    color: topOutputCombo.enabled ? "#FFFFFF" : "#2ECC71"
+                    font.bold: !topOutputCombo.enabled
+                    verticalAlignment: Text.AlignVCenter
+                    elide: Text.ElideRight
+                }
+
+                background: Rectangle {
+                    color: topOutputCombo.enabled ? "#2E3236" : "#1C2D24"
+                    radius: 6
+                    border.color: topOutputCombo.enabled ? (topOutputCombo.hovered ? "#4A4E52" : "#3A3E42") : "#2ECC71"
+                    border.width: 1
+                }
+
+                popup: Popup {
+                    y: topOutputCombo.height + 2
+                    width: Math.max(topOutputCombo.width, 240)
+                    implicitHeight: Math.min(300, contentItem.implicitHeight + 10)
+                    padding: 4
+                    contentItem: ListView {
+                        clip: true
+                        implicitHeight: contentHeight
+                        model: topOutputCombo.popup.visible ? topOutputCombo.delegateModel : null
+                        currentIndex: topOutputCombo.highlightedIndex
+                        ScrollIndicator.vertical: ScrollIndicator { }
+                    }
+                    background: Rectangle {
+                        color: "#282C32"
+                        radius: 6
+                        border.color: "#454B54"
+                        border.width: 1
+                    }
+                }
+
+                ToolTip.visible: hovered
+                ToolTip.text: (typeof audioRoutingController !== "undefined" && audioRoutingController.isRouting)
+                              ? qsTr("Audio output is currently managed by Virtual Audio Routing (piped to virtual mic and monitor)")
+                              : qsTr("Select where CasterSoundboard routes its audio playback")
+            }
+        }
+
         Item {
             Layout.fillWidth: true
         }

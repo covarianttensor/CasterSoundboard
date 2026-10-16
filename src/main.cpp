@@ -98,6 +98,7 @@ int main(int argc, char *argv[])
     QCommandLineOption deleteTabPromptOption("open-delete-tab-prompt", "Open delete tab confirmation dialog on startup for testing.");
     QCommandLineOption tabHotkeyPromptOption("open-tab-hotkey-prompt", "Open tab hotkey prompt dialog on startup for testing.");
     QCommandLineOption actionHotkeyPromptOption("open-action-hotkey-prompt", "Open action hotkey prompt dialog on startup for testing.", "action");
+    QCommandLineOption testRoutingActiveOption("test-routing-active", "Simulate active virtual audio routing for visual testing.");
     parser.addOption(headlessOption);
     parser.addOption(autoStartWebOption);
     parser.addOption(webPortOption);
@@ -116,6 +117,7 @@ int main(int argc, char *argv[])
     parser.addOption(deleteTabPromptOption);
     parser.addOption(tabHotkeyPromptOption);
     parser.addOption(actionHotkeyPromptOption);
+    parser.addOption(testRoutingActiveOption);
     parser.addPositionalArgument("project", "Project file (.caster) to open on launch.", "[project]");
     parser.process(app);
 
@@ -145,6 +147,9 @@ int main(int argc, char *argv[])
 
     AudioRoutingController audioRoutingController;
     audioRoutingController.setProjectController(&projectController);
+    if (parser.isSet(testRoutingActiveOption)) {
+        audioRoutingController.setRoutingActiveForTesting(true);
+    }
 
     WebRemoteController webRemoteController;
     webRemoteController.setProjectController(&projectController);
