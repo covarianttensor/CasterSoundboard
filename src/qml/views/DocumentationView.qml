@@ -216,6 +216,10 @@ Item {
                             label: qsTr("Audio")
                             catId: "audio"
                         }
+                        FilterPill {
+                            label: qsTr("Web Remote")
+                            catId: "web"
+                        }
                     }
                 }
 
@@ -317,6 +321,46 @@ Item {
                         badgeColor: "#4EBA6F"
                         description: qsTr("Automatically binds and starts the UDP Open Sound Control server immediately upon launch without requiring manual activation in the UI. Ideal for automated broadcast start scripts or studio controllers (Elgato Stream Deck, Bitfocus Companion, QLab).")
                         exampleCommand: "./CasterSoundboard ~/shows/morning.caster --auto-start-osc"
+                    }
+
+                    // 4. --headless
+                    CliCard {
+                        optFlag: "--headless"
+                        optParams: qsTr("Flag (no arguments)")
+                        optBadge: qsTr("Server / Headless")
+                        badgeColor: "#E74C3C"
+                        description: qsTr("Runs Caster Soundboard in pure headless mode without creating any desktop GUI window, display server requirement (X11/Wayland), or GPU overhead. Automatically runs the audio engine, OSC UDP server, and Web Remote server. Ideal for Raspberry Pi, studio rack mounts, Docker, and background system services.")
+                        exampleCommand: "./CasterSoundboard ~/shows/live.caster --headless"
+                    }
+
+                    // 5. --auto-start-web
+                    CliCard {
+                        optFlag: "--auto-start-web"
+                        optParams: qsTr("Flag (no arguments)")
+                        optBadge: qsTr("Web Remote")
+                        badgeColor: "#00D2FF"
+                        description: qsTr("Automatically starts the embedded HTTP and Server-Sent Events (SSE) Web Remote server upon launch, allowing wireless control from any phone, tablet, or browser on your local network.")
+                        exampleCommand: "./CasterSoundboard ~/shows/morning.caster --auto-start-web"
+                    }
+
+                    // 6. --web-port <port>
+                    CliCard {
+                        optFlag: "--web-port <port>"
+                        optParams: qsTr("Integer port (defaults to 5052)")
+                        optBadge: qsTr("Web Remote")
+                        badgeColor: "#00D2FF"
+                        description: qsTr("Overrides the listening TCP port for the embedded Web Remote server.")
+                        exampleCommand: "./CasterSoundboard --auto-start-web --web-port 8080"
+                    }
+
+                    // 7. --web-user <user> & --web-pass <password>
+                    CliCard {
+                        optFlag: "--web-user <user>  /  --web-pass <pass>"
+                        optParams: qsTr("Strings (defaults to 'caster' / 'caster')")
+                        optBadge: qsTr("Web Remote")
+                        badgeColor: "#00D2FF"
+                        description: qsTr("Configures the HTTP Basic authentication username and password for browser access. Disallows colons in username for security.")
+                        exampleCommand: "./CasterSoundboard --auto-start-web --web-user studio --web-pass secret123"
                     }
 
                     // 4. -s, --screenshot <path>
@@ -678,6 +722,83 @@ Item {
                                 wrapMode: Text.WordWrap
                                 Layout.fillWidth: true
                             }
+                        }
+                    }
+                }
+
+                // ========================================================
+                // SECTION: Web Remote Touch Control & Browser Interface
+                // ========================================================
+                ColumnLayout {
+                    id: webSection
+                    Layout.fillWidth: true
+                    spacing: 14
+                    visible: (root.activeCategory === "all" || root.activeCategory === "web")
+
+                    RowLayout {
+                        spacing: 8
+                        Rectangle {
+                            width: 4
+                            height: 20
+                            radius: 2
+                            color: "#8E2DE2"
+                        }
+                        Text {
+                            text: qsTr("Web Remote Control & Touch Surface")
+                            color: "#FFFFFF"
+                            font.bold: true
+                            font.pointSize: 14
+                        }
+                        Rectangle {
+                            Layout.fillWidth: true
+                            height: 1
+                            color: "#2C3035"
+                        }
+                    }
+
+                    Rectangle {
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: webDocCol.implicitHeight + 24
+                        radius: 8
+                        color: "#222528"
+                        border.color: "#33373B"
+                        border.width: 1
+
+                        ColumnLayout {
+                            id: webDocCol
+                            anchors.fill: parent
+                            anchors.margins: 16
+                            spacing: 12
+
+                            Text {
+                                text: qsTr("Caster Soundboard features an embedded HTTP and Server-Sent Events (SSE) server. Any smartphone, tablet (iPad/Android), or secondary laptop on your local Wi-Fi / Ethernet can act as a wireless touch-pad control surface:")
+                                color: "#AAAAAA"
+                                font.pointSize: 9
+                                wrapMode: Text.WordWrap
+                                Layout.fillWidth: true
+                            }
+
+                            TerminalBox {
+                                commandText: "http://<computer-ip>:5052  (Default credentials: caster / caster)"
+                            }
+
+                            Text {
+                                text: qsTr("• <b>Touch Surface Grid:</b> Displays all active soundboard tabs with their authentic colors, labels, and hotkey badges. Tapping any tile triggers or stops playback on your host computer.\n• <b>Live Status Synchronization:</b> Powered by Server-Sent Events (SSE), all connected browsers receive instant state updates with green glowing halos for playing sounds and amber for paused audio.\n• <b>Panic & Ducking Controls:</b> Dedicated 'Stop All' panic button and 'Ducking' toggle are fixed at the top of the browser view.\n• <b>Browser Keyboard Hotkeys:</b> Whenever the browser tab has focus on a device with a physical keyboard, pressing <kbd>Space</kbd> executes Stop All, <kbd>D</kbd> toggles Ducking, and tile hotkey letters trigger sound tiles.\n• <b>Security Hardened:</b> HTTP Basic Authentication protects all endpoints. State-changing requests enforce the custom <code>X-Caster-Remote: 1</code> header to prevent cross-origin abuse.")
+                                color: "#CCCCCC"
+                                font.pointSize: 9
+                                textFormat: Text.RichText
+                                wrapMode: Text.WordWrap
+                                Layout.fillWidth: true
+                                lineHeight: 1.2
+                            }
+
+                            OscRow { method: "GET /"; desc: qsTr("Serves the single-page responsive touch interface") }
+                            OscRow { method: "GET /api/state"; desc: qsTr("Returns JSON snapshot of all tabs, tiles, and playback states") }
+                            OscRow { method: "GET /events"; desc: qsTr("Server-Sent Events push stream for instant state synchronization") }
+                            OscRow { method: "POST /api/toggle/<tab>/<tile>"; desc: qsTr("Toggles playback on a specific sound tile") }
+                            OscRow { method: "POST /api/stopAll"; desc: qsTr("Panic-stops all playing sounds across all tabs") }
+                            OscRow { method: "POST /api/duck"; desc: qsTr("Toggles audio ducking attenuation") }
+                            OscRow { method: "POST /api/tab/<tab>"; desc: qsTr("Switches the active soundboard tab") }
                         }
                     }
                 }

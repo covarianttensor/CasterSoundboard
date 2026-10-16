@@ -31,6 +31,8 @@ set(CORE_SOURCES
     src/core/OscServerController.cpp
     src/core/AudioRoutingController.h
     src/core/AudioRoutingController.cpp
+    src/core/WebRemoteController.h
+    src/core/WebRemoteController.cpp
     CasterSoundboard/audio/AudioBackend.h
     CasterSoundboard/audio/AudioDeviceController.h
     CasterSoundboard/audio/AudioDeviceController.cpp
@@ -130,6 +132,7 @@ qt_add_qml_module(CasterSoundboard
         src/qml/icons/add_player.png
         src/qml/img/player_gradient.png
         src/qml/img/player_outline.png
+        src/web/index.html
 )
 
 # -------------------------------------------------------------
@@ -150,3 +153,4 @@ add_caster_test(test_project_serialization tests/core/test_project_serialization
 add_caster_test(test_hotkey_manager tests/core/test_hotkey_manager.cpp)
 add_caster_test(test_osc_server tests/core/test_osc_server.cpp)
 add_caster_test(test_audio_routing tests/core/test_audio_routing.cpp)
+add_caster_test(test_web_remote tests/core/test_web_remote.cpp)

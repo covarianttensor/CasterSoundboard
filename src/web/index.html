@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Caster Soundboard Web Remote</title>
+  <style>
+    :root {
+      --bg-color: #121416;
+      --card-bg: #1E2226;
+      --border-color: #33383E;
+      --text-main: #FFFFFF;
+      --text-muted: #8E96A0;
+      --accent: #8E2DE2;
+      --accent-hover: #A855F7;
+      --playing-color: #10B981;
+      --paused-color: #F59E0B;
+      --stop-all: #EF4444;
+      --duck-color: #F97316;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      padding-bottom: 24px;
+    }
+
+    /* --- TOP BAR --- */
+    header {
+      background-color: #1A1D20;
+      border-bottom: 1px solid var(--border-color);
+      padding: 12px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      gap: 12px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand-icon {
+      width: 28px;
+      height: 28px;
+      background: linear-gradient(135deg, #8E2DE2, #4A00E0);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      font-size: 14px;
+      color: #fff;
+    }
+
+    .brand-title {
+      font-weight: 700;
+      font-size: 16px;
+      letter-spacing: -0.3px;
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      padding: 4px 10px;
+      border-radius: 12px;
+      background-color: #262B30;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: #EF4444;
+    }
+
+    .status-dot.connected {
+      background-color: #10B981;
+      box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
+    }
+
+    .status-dot.reconnecting {
+      background-color: #F59E0B;
+      animation: pulse 1.2s infinite;
+    }
+
+    .global-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .action-btn {
+      font-size: 12px;
+      font-weight: 700;
+      padding: 8px 14px;
+      border-radius: 6px;
+      border: 1px solid transparent;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+    }
+
+    .btn-duck {
+      background-color: #2C261E;
+      color: #FDBA74;
+      border-color: #523D26;
+    }
+
+    .btn-duck.active {
+      background-color: var(--duck-color);
+      color: #FFFFFF;
+      box-shadow: 0 0 12px rgba(249, 115, 22, 0.4);
+    }
+
+    .btn-stop-all {
+      background-color: var(--stop-all);
+      color: #FFFFFF;
+      box-shadow: 0 2px 6px rgba(239, 68, 68, 0.3);
+    }
+
+    .btn-stop-all:active, .action-btn:active {
+      transform: scale(0.96);
+    }
+
+    /* --- TAB NAVIGATION BAR --- */
+    .tab-bar-container {
+      padding: 12px 18px 4px 18px;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+
+    .tab-bar-container::-webkit-scrollbar {
+      display: none;
+    }
+
+    .tab-bar {
+      display: flex;
+      gap: 8px;
+      min-width: max-content;
+    }
+
+    .tab-pill {
+      background-color: #22262B;
+      border: 1px solid var(--border-color);
+      color: var(--text-muted);
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+    }
+
+    .tab-pill.active {
+      background-color: var(--accent);
+      color: #FFFFFF;
+      border-color: var(--accent-hover);
+      box-shadow: 0 2px 8px rgba(142, 45, 226, 0.35);
+    }
+
+    .tab-hotkey-badge {
+      background-color: rgba(0, 0, 0, 0.25);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-family: monospace;
+    }
+
+    /* --- SOUND TILE GRID --- */
+    main {
+      padding: 14px 18px;
+      flex: 1;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 12px;
+    }
+
+    @media (min-width: 768px) {
+      .grid {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 14px;
+      }
+    }
+
+    .tile-btn {
+      position: relative;
+      height: 120px;
+      border-radius: 10px;
+      border: 2px solid #3A4048;
+      background-color: var(--tile-bg, #22262B);
+      color: var(--tile-text, #FFFFFF);
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      cursor: pointer;
+      overflow: hidden;
+      transition: transform 0.1s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+      text-align: left;
+    }
+
+    .tile-btn:active {
+      transform: scale(0.96);
+    }
+
+    .tile-btn.empty {
+      opacity: 0.35;
+      cursor: default;
+      border-style: dashed;
+    }
+
+    .tile-btn.playing {
+      border-color: var(--playing-color) !important;
+      box-shadow: 0 0 14px rgba(16, 185, 129, 0.55), inset 0 0 10px rgba(16, 185, 129, 0.25);
+      animation: glowPulse 1.8s infinite alternate;
+    }
+
+    .tile-btn.paused {
+      border-color: var(--paused-color) !important;
+      box-shadow: 0 0 12px rgba(245, 158, 11, 0.45);
+    }
+
+    .tile-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 6px;
+    }
+
+    .tile-hotkey {
+      background-color: rgba(0, 0, 0, 0.4);
+      color: #FFFFFF;
+      padding: 3px 7px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 700;
+      font-family: monospace;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .tile-state-tag {
+      font-size: 9px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+
+    .tile-state-tag.playing {
+      background-color: var(--playing-color);
+      color: #000;
+    }
+
+    .tile-state-tag.paused {
+      background-color: var(--paused-color);
+      color: #000;
+    }
+
+    .tile-title {
+      font-size: 13px;
+      font-weight: 700;
+      line-height: 1.3;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .tile-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 10px;
+      opacity: 0.85;
+      font-weight: 600;
+    }
+
+    /* --- FOOTER INFO --- */
+    .keyboard-hint {
+      text-align: center;
+      padding: 10px;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .keyboard-hint kbd {
+      background-color: #22262B;
+      border: 1px solid #3E454E;
+      border-radius: 4px;
+      padding: 2px 6px;
+      font-family: monospace;
+      color: #D1D5DB;
+    }
+
+    @keyframes glowPulse {
+      from { box-shadow: 0 0 8px rgba(16, 185, 129, 0.4); }
+      to { box-shadow: 0 0 18px rgba(16, 185, 129, 0.85); }
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- TOP HEADER -->
+  <header>
+    <div class="brand">
+      <div class="brand-icon">⚡</div>
+      <div class="brand-title">Caster Remote</div>
+      <div class="status-badge">
+        <span id="statusDot" class="status-dot"></span>
+        <span id="statusText">Connecting…</span>
+      </div>
+    </div>
+
+    <div class="global-actions">
+      <button id="duckBtn" class="action-btn btn-duck" title="Toggle Audio Ducking (D)">
+        🦆 Ducking
+      </button>
+      <button id="stopAllBtn" class="action-btn btn-stop-all" title="Panic: Stop All Sounds (Space)">
+        ⏹ Stop All
+      </button>
+    </div>
+  </header>
+
+  <!-- TAB SELECTION -->
+  <div class="tab-bar-container">
+    <div id="tabBar" class="tab-bar"></div>
+  </div>
+
+  <!-- SOUND TILE GRID -->
+  <main>
+    <div id="tileGrid" class="grid"></div>
+  </main>
+
+  <div class="keyboard-hint">
+    Tip: Press <kbd>Space</kbd> for Stop All &bull; <kbd>D</kbd> for Ducking &bull; Physical keys trigger assigned sound tiles
+  </div>
+
+  <script>
+    let appState = null;
+    let selectedTabIndex = 0;
+    let eventSource = null;
+
+    const statusDot = document.getElementById('statusDot');
+    const statusText = document.getElementById('statusText');
+    const tabBar = document.getElementById('tabBar');
+    const tileGrid = document.getElementById('tileGrid');
+    const duckBtn = document.getElementById('duckBtn');
+    const stopAllBtn = document.getElementById('stopAllBtn');
+
+    // Dynamic black/white text contrast calculation
+    function getContrastTextColor(hex) {
+      if (!hex || !/^#[0-9A-Fa-f]{6}$/.test(hex)) return '#FFFFFF';
+      const r = parseInt(hex.substr(1, 2), 16) / 255;
+      const g = parseInt(hex.substr(3, 2), 16) / 255;
+      const b = parseInt(hex.substr(5, 2), 16) / 255;
+      const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+      return luminance > 0.45 ? '#0A0A0A' : '#FFFFFF';
+    }
+
+    // API Post Request Helper with X-Caster-Remote Header
+    async function apiPost(endpoint) {
+      try {
+        const resp = await fetch(endpoint, {
+          method: 'POST',
+          headers: {
+            'X-Caster-Remote': '1'
+          }
+        });
+        if (!resp.ok && resp.status !== 204) {
+          console.warn('API call error:', resp.status);
+        }
+      } catch (err) {
+        console.error('Network request failed:', err);
+      }
+    }
+
+    // Connect to Server-Sent Events
+    function initEvents() {
+      if (eventSource) {
+        eventSource.close();
+      }
+
+      eventSource = new EventSource('/events');
+
+      eventSource.onopen = () => {
+        statusDot.className = 'status-dot connected';
+        statusText.textContent = 'Connected';
+      };
+
+      eventSource.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          appState = data;
+          render();
+        } catch (e) {
+          console.error('Failed to parse SSE payload:', e);
+        }
+      };
+
+      eventSource.onerror = () => {
+        statusDot.className = 'status-dot reconnecting';
+        statusText.textContent = 'Reconnecting…';
+      };
+    }
+
+    // Render Full UI
+    function render() {
+      if (!appState || !appState.tabs) return;
+
+      // 1. Ducking State
+      if (appState.isDuckingActive) {
+        duckBtn.classList.add('active');
+        duckBtn.textContent = '🦆 Ducked';
+      } else {
+        duckBtn.classList.remove('active');
+        duckBtn.textContent = '🦆 Ducking';
+      }
+
+      // 2. Render Tabs
+      tabBar.innerHTML = '';
+      appState.tabs.forEach((tab, idx) => {
+        const pill = document.createElement('button');
+        pill.className = 'tab-pill' + (idx === selectedTabIndex ? ' active' : '');
+        pill.innerHTML = `<span>${tab.name || ('Tab ' + (idx + 1))}</span>` +
+                         (tab.hotkey ? `<span class="tab-hotkey-badge">${tab.hotkey}</span>` : '');
+        pill.onclick = () => {
+          selectedTabIndex = idx;
+          apiPost('/api/tab/' + idx);
+          render();
+        };
+        tabBar.appendChild(pill);
+      });
+
+      // 3. Render Tiles for Current Tab
+      tileGrid.innerHTML = '';
+      const currentTab = appState.tabs[selectedTabIndex] || appState.tabs[0];
+      if (!currentTab || !currentTab.tiles) return;
+
+      currentTab.tiles.forEach((tile) => {
+        const btn = document.createElement('button');
+        const hasFile = tile.hasFile;
+        const state = (tile.state || 'Stopped').toLowerCase();
+
+        btn.className = 'tile-btn ' + state + (hasFile ? '' : ' empty');
+
+        const tileColor = (hasFile && tile.color && tile.color !== '#000000') ? tile.color : '#25292E';
+        btn.style.setProperty('--tile-bg', tileColor);
+        btn.style.setProperty('--tile-text', getContrastTextColor(tileColor));
+
+        let stateBadgeHtml = '';
+        if (state === 'playing') {
+          stateBadgeHtml = '<span class="tile-state-tag playing">PLAYING</span>';
+        } else if (state === 'paused') {
+          stateBadgeHtml = '<span class="tile-state-tag paused">PAUSED</span>';
+        }
+
+        btn.innerHTML = `
+          <div class="tile-header">
+            ${tile.hotkey ? `<span class="tile-hotkey">${tile.hotkey}</span>` : '<span></span>'}
+            ${stateBadgeHtml}
+          </div>
+          <div class="tile-title">${tile.name || (hasFile ? 'Untitled Sound' : 'Empty Slot')}</div>
+          <div class="tile-footer">
+            <span>${tile.isLooped ? '🔁 Loop' : ''}</span>
+            <span>${hasFile ? (state === 'playing' ? '▶' : (state === 'paused' ? '⏸' : '')) : ''}</span>
+          </div>
+        `;
+
+        if (hasFile) {
+          btn.onclick = () => {
+            apiPost(`/api/toggle/${selectedTabIndex}/${tile.index}`);
+          };
+        }
+
+        tileGrid.appendChild(btn);
+      });
+    }
+
+    // Global Action Button Handlers
+    stopAllBtn.onclick = () => apiPost('/api/stopAll');
+    duckBtn.onclick = () => apiPost('/api/duck');
+
+    // Keyboard Shortcuts inside Browser
+    window.addEventListener('keydown', (e) => {
+      // Ignore if typing inside input
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+      const key = e.key;
+
+      if (key === ' ' || e.code === 'Space') {
+        e.preventDefault();
+        apiPost('/api/stopAll');
+        return;
+      }
+
+      if (key === 'd' || key === 'D') {
+        e.preventDefault();
+        apiPost('/api/duck');
+        return;
+      }
+
+      // Check number keys 1-9 for tabs or tiles
+      if (!isNaN(parseInt(key)) && parseInt(key) >= 1 && parseInt(key) <= 9) {
+        const num = parseInt(key);
+        // If matches a tab index + 1
+        if (e.altKey && num <= appState.tabs.length) {
+          selectedTabIndex = num - 1;
+          apiPost('/api/tab/' + (num - 1));
+          render();
+          return;
+        }
+      }
+
+      // Check tile hotkeys on active tab
+      if (appState && appState.tabs && appState.tabs[selectedTabIndex]) {
+        const tiles = appState.tabs[selectedTabIndex].tiles;
+        for (const tile of tiles) {
+          if (tile.hasFile && tile.hotkey && tile.hotkey.toLowerCase() === key.toLowerCase()) {
+            e.preventDefault();
+            apiPost(`/api/toggle/${selectedTabIndex}/${tile.index}`);
+            return;
+          }
+        }
+      }
+    });
+
+    // Start event stream on load
+    initEvents();
+  </script>
+</body>
+</html>

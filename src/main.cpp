@@ -8,6 +8,7 @@
 #include <QQuickWindow>
 #include <QTimer>
 #include <QDebug>
+#include <csignal>
 
 #include "SoundboardProjectController.h"
 #include "HotkeyManager.h"
@@ -16,6 +17,13 @@
 #include "SoundTileController.h"
 #include "OscServerController.h"
 #include "AudioRoutingController.h"
+#include "WebRemoteController.h"
+
+static void handleSigInt(int)
+{
+    qInfo() << "\n[CasterSoundboard] Termination signal received. Exiting...";
+    QCoreApplication::quit();
+}
 
 class GlobalHotkeyFilter : public QObject
 {
@@ -43,6 +51,23 @@ private:
 
 int main(int argc, char *argv[])
 {
+    // Check for headless mode or absent display environment before initializing QGuiApplication
+    bool headless = false;
+    for (int i = 1; i < argc; ++i) {
+        if (strcmp(argv[i], "--headless") == 0) {
+            headless = true;
+            break;
+        }
+    }
+    const bool noDisplay = qEnvironmentVariableIsEmpty("DISPLAY") && qEnvironmentVariableIsEmpty("WAYLAND_DISPLAY");
+    if ((headless || noDisplay) && qEnvironmentVariableIsEmpty("QT_QPA_PLATFORM")) {
+        qputenv("QT_QPA_PLATFORM", "offscreen");
+        headless = true;
+    }
+
+    signal(SIGINT, handleSigInt);
+    signal(SIGTERM, handleSigInt);
+
     QGuiApplication app(argc, argv);
     app.setApplicationName("CasterSoundboard");
     app.setApplicationDisplayName("Caster Soundboard");
@@ -55,6 +80,11 @@ int main(int argc, char *argv[])
     parser.setApplicationDescription("Caster Soundboard - Touch-Friendly Soundboard for Broadcasters and Podcasters");
     parser.addHelpOption();
     parser.addVersionOption();
+    QCommandLineOption headlessOption("headless", "Run in headless mode without showing the GUI window.");
+    QCommandLineOption autoStartWebOption("auto-start-web", "Automatically start Web Remote control server on startup.");
+    QCommandLineOption webPortOption("web-port", "Inbound TCP port for Web Remote server (defaults to 5052).", "port", "5052");
+    QCommandLineOption webUserOption("web-user", "Username for Web Remote authentication (defaults to 'caster').", "user", "caster");
+    QCommandLineOption webPassOption("web-pass", "Password for Web Remote authentication (defaults to 'caster').", "password", "caster");
     QCommandLineOption screenshotOption(QStringList() << "s" << "screenshot", "Capture window screenshot to path and exit.", "path");
     QCommandLineOption drawerOption("open-drawer", "Open tile settings drawer on startup for testing.");
     QCommandLineOption drawerIndexOption("drawer-index", "Tile index to open in drawer on startup.", "index", "0");
@@ -68,6 +98,11 @@ int main(int argc, char *argv[])
     QCommandLineOption deleteTabPromptOption("open-delete-tab-prompt", "Open delete tab confirmation dialog on startup for testing.");
     QCommandLineOption tabHotkeyPromptOption("open-tab-hotkey-prompt", "Open tab hotkey prompt dialog on startup for testing.");
     QCommandLineOption actionHotkeyPromptOption("open-action-hotkey-prompt", "Open action hotkey prompt dialog on startup for testing.", "action");
+    parser.addOption(headlessOption);
+    parser.addOption(autoStartWebOption);
+    parser.addOption(webPortOption);
+    parser.addOption(webUserOption);
+    parser.addOption(webPassOption);
     parser.addOption(screenshotOption);
     parser.addOption(drawerOption);
     parser.addOption(drawerIndexOption);
@@ -84,6 +119,10 @@ int main(int argc, char *argv[])
     parser.addPositionalArgument("project", "Project file (.caster) to open on launch.", "[project]");
     parser.process(app);
 
+    if (parser.isSet(headlessOption)) {
+        headless = true;
+    }
+
     // Register CasterCore C++ models & controllers with QML engine
     qmlRegisterType<SoundboardProjectController>("CasterCore", 1, 0, "SoundboardProjectController");
     qmlRegisterType<HotkeyManager>("CasterCore", 1, 0, "HotkeyManager");
@@ -92,6 +131,7 @@ int main(int argc, char *argv[])
     qmlRegisterType<SoundTileController>("CasterCore", 1, 0, "SoundTileController");
     qmlRegisterType<OscServerController>("CasterCore", 1, 0, "OscServerController");
     qmlRegisterType<AudioRoutingController>("CasterCore", 1, 0, "AudioRoutingController");
+    qmlRegisterType<WebRemoteController>("CasterCore", 1, 0, "WebRemoteController");
 
     SoundboardProjectController projectController;
     HotkeyManager hotkeyManager;
@@ -105,6 +145,21 @@ int main(int argc, char *argv[])
 
     AudioRoutingController audioRoutingController;
     audioRoutingController.setProjectController(&projectController);
+
+    WebRemoteController webRemoteController;
+    webRemoteController.setProjectController(&projectController);
+    if (parser.isSet(webPortOption)) {
+        webRemoteController.setPort(parser.value(webPortOption).toInt());
+    }
+    if (parser.isSet(webUserOption)) {
+        webRemoteController.setUsername(parser.value(webUserOption));
+    }
+    if (parser.isSet(webPassOption)) {
+        webRemoteController.setPassword(parser.value(webPassOption));
+    }
+    if (parser.isSet(autoStartWebOption) || webRemoteController.autoStart()) {
+        webRemoteController.startServer();
+    }
 
     // Load initial project from CLI or create a fresh default project
     const QStringList posArgs = parser.positionalArguments();
@@ -121,11 +176,38 @@ int main(int argc, char *argv[])
         projectController.setWindowHeight(parser.value(heightOption).toInt());
     }
 
+    // Headless mode execution branch: runs without loading QML GUI window
+    if (headless) {
+        app.setQuitOnLastWindowClosed(false);
+
+        if (!oscController.isRunning() && parser.isSet(autoStartOscOption)) {
+            oscController.startServer();
+        }
+        if (!webRemoteController.isRunning()) {
+            webRemoteController.startServer();
+        }
+
+        qInfo().noquote() << "=========================================================";
+        qInfo().noquote() << "Caster Soundboard v2.0.0 (Headless Mode Active)";
+        qInfo().noquote() << "---------------------------------------------------------";
+        qInfo().noquote() << "• Project:    " << (projectController.filePath().isEmpty() ? "New Default Project" : projectController.filePath());
+        qInfo().noquote() << "• OSC Server: " << (oscController.isRunning() ? QString("Running on UDP port %1").arg(oscController.inboundPort()) : "Disabled");
+        qInfo().noquote() << "• Web Remote: " << (webRemoteController.isRunning() ? QString("Running on %1 (User: %2)").arg(webRemoteController.localUrl()).arg(webRemoteController.username()) : "Disabled");
+        for (const QString &url : webRemoteController.availableUrls()) {
+            qInfo().noquote() << "              " << url;
+        }
+        qInfo().noquote() << "Press Ctrl+C to terminate.";
+        qInfo().noquote() << "=========================================================";
+
+        return app.exec();
+    }
+
     QQmlApplicationEngine engine;
     engine.rootContext()->setContextProperty("projectController", &projectController);
     engine.rootContext()->setContextProperty("hotkeyManager", &hotkeyManager);
     engine.rootContext()->setContextProperty("oscController", &oscController);
     engine.rootContext()->setContextProperty("audioRoutingController", &audioRoutingController);
+    engine.rootContext()->setContextProperty("webRemoteController", &webRemoteController);
     engine.rootContext()->setContextProperty("openDrawerOnStart", parser.isSet(drawerOption) || parser.isSet(hotkeyPromptOption) || parser.isSet(scrollCueOption));
     engine.rootContext()->setContextProperty("drawerTileIndex", parser.value(drawerIndexOption).toInt());
     engine.rootContext()->setContextProperty("initialViewIndex", parser.value(viewOption).toInt());
