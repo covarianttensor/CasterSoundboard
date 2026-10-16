@@ -6,17 +6,30 @@ BUILD_DIR="${REPO_ROOT}/build-appimage"
 APPDIR="${BUILD_DIR}/AppDir"
 TOOLS_DIR="${BUILD_DIR}/tools"
 
-QMAKE_BIN="${QMAKE:-$(command -v qmake6 || command -v qmake)}"
-export QMAKE="${QMAKE_BIN}"
+# Extract version from CASTER_VERSION, git tag, or fallback to 2.0.0
+VERSION="${CASTER_VERSION:-}"
+if [ -z "${VERSION}" ]; then
+    if [ -n "${GITHUB_REF_NAME:-}" ]; then
+        VERSION="${GITHUB_REF_NAME#v}"
+    else
+        VERSION="$(git describe --tags --always 2>/dev/null | sed 's/^v//' || echo "2.0.0")"
+    fi
+fi
+export VERSION
+
+echo "Building CasterSoundboard AppImage version: ${VERSION}"
 
 rm -rf "${APPDIR}" "${BUILD_DIR}/build"
 mkdir -p "${BUILD_DIR}/build" "${APPDIR}" "${TOOLS_DIR}"
 
-# 1. Configure, compile, and install into AppDir
+# 1. Configure, compile, and install into AppDir using CMake
 pushd "${BUILD_DIR}/build" >/dev/null
-"${QMAKE_BIN}" "${REPO_ROOT}/CasterSoundboard/CasterSoundboard.pro" CONFIG+=release PREFIX=/usr
-make -j"$(nproc)"
-make INSTALL_ROOT="${APPDIR}" install
+cmake -B . -S "${REPO_ROOT}" \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_INSTALL_PREFIX=/usr \
+    -DCASTER_VERSION="${VERSION}"
+cmake --build . -j"$(nproc)"
+DESTDIR="${APPDIR}" cmake --install .
 strip "${APPDIR}/usr/bin/CasterSoundboard" || true
 popd >/dev/null
 
@@ -36,24 +49,21 @@ if [ ! -x "${LINUXDEPLOY_QT}" ]; then
     chmod +x "${LINUXDEPLOY_QT}"
 fi
 
-# 3. Copy Wayland platform plugins into AppDir if available
-QT_PLUGINS_DIR="$(${QMAKE_BIN} -query QT_INSTALL_PLUGINS 2>/dev/null || echo /usr/lib/x86_64-linux-gnu/qt6/plugins)"
-if [ -d "${QT_PLUGINS_DIR}/platforms" ]; then
-    mkdir -p "${APPDIR}/usr/plugins/platforms"
-    for wp in "${QT_PLUGINS_DIR}/platforms"/*wayland*.so; do
-        if [ -f "$wp" ]; then
-            cp -n "$wp" "${APPDIR}/usr/plugins/platforms/" || true
-        fi
-    done
+# 3. Optional: Bundle host ffmpeg CLI binary into AppDir for self-contained waveform extraction
+if command -v ffmpeg >/dev/null 2>&1; then
+    mkdir -p "${APPDIR}/usr/bin"
+    cp -L "$(command -v ffmpeg)" "${APPDIR}/usr/bin/ffmpeg" 2>/dev/null || true
 fi
 
+# 4. Environment setup for linuxdeploy
 export PATH="${TOOLS_DIR}:${PATH}"
 export APPIMAGE_EXTRACT_AND_RUN=1
 export NO_STRIP=1
+export QML_SOURCES_PATHS="${REPO_ROOT}/src/qml"
 export EXTRA_QT_PLUGINS="multimedia;wayland-decoration-client;wayland-graphics-integration-client;wayland-shell-integration"
 
 pushd "${REPO_ROOT}" >/dev/null
-# Deploy Qt plugins and libraries
+# Deploy Qt plugins, QML imports, and shared libraries
 "${LINUXDEPLOY}" \
     --appdir "${APPDIR}" \
     --desktop-file "${APPDIR}/usr/share/applications/io.github.covarianttensor.CasterSoundboard.desktop" \
@@ -68,4 +78,15 @@ rm -f "${APPDIR}/usr/lib/libgst"*
 "${LINUXDEPLOY}" \
     --appdir "${APPDIR}" \
     --output appimage
+
+# Normalize output filename
+GENERATED_APPIMAGE=$(ls -t CasterSoundboard*.AppImage 2>/dev/null | head -n 1)
+if [ -n "${GENERATED_APPIMAGE}" ]; then
+    TARGET_APPIMAGE="CasterSoundboard-${VERSION}-x86_64.AppImage"
+    if [ "${GENERATED_APPIMAGE}" != "${TARGET_APPIMAGE}" ]; then
+        cp -f "${GENERATED_APPIMAGE}" "${TARGET_APPIMAGE}"
+    fi
+    ln -sf "${TARGET_APPIMAGE}" "CasterSoundboard-x86_64.AppImage"
+    echo "AppImage created: ${TARGET_APPIMAGE}"
+fi
 popd >/dev/null

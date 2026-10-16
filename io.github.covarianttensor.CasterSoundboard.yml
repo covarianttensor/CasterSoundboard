@@ -12,13 +12,14 @@ finish-args:
   - --share=network
   - --device=dri
   - --filesystem=host
+  - --filesystem=home
+  - --talk-name=org.freedesktop.Flatpak
 
 modules:
   - name: castersoundboard
-    buildsystem: qmake
-    subdir: CasterSoundboard
+    buildsystem: cmake-ninja
     config-opts:
-      - PREFIX=/app
+      - -DCMAKE_BUILD_TYPE=Release
     sources:
       - type: dir
         path: .

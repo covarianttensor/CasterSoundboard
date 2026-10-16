@@ -1,5 +1,6 @@
 #include "CasterPlaybackRouter.h"
 #include <QStandardPaths>
+#include <QFile>
 namespace Audio {
 CasterPlaybackRouter::CasterPlaybackRouter(QObject *parent) : QObject(parent) {
     debounce.setSingleShot(true); debounce.setInterval(30);
@@ -19,7 +20,16 @@ void CasterPlaybackRouter::setEnabled(bool value) {
         fallback.start();
         if (events.state() == QProcess::NotRunning) {
             auto path = QStandardPaths::findExecutable("pactl");
-            if (!path.isEmpty()) events.start(path, {"subscribe"});
+            QStringList args = {"subscribe"};
+            if (QFile::exists("/.flatpak-info")) {
+                const auto flatpakSpawn = QStandardPaths::findExecutable("flatpak-spawn");
+                if (!flatpakSpawn.isEmpty()) {
+                    path = flatpakSpawn;
+                    args.prepend("pactl");
+                    args.prepend("--host");
+                }
+            }
+            if (!path.isEmpty()) events.start(path, args);
         }
         emit streamsChanged();
     } else {

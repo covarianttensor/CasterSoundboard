@@ -1,4 +1,5 @@
 #include "PulseCompatBackend.h"
+#include <QFile>
 #include <QProcess>
 #include <QProcessEnvironment>
 #include <QStandardPaths>
@@ -39,10 +40,19 @@ PulseCompatBackend::PulseCompatBackend(CommandRunner r, std::function<void(unsig
     if (!recoveryWait) recoveryWait = [](unsigned long ms) { QThread::msleep(ms); };
     if (!serviceRunner) serviceRunner = [](const QStringList &args) {
 #ifdef Q_OS_LINUX
-        const auto executable = QStandardPaths::findExecutable("systemctl");
+        QString executable = QStandardPaths::findExecutable("systemctl");
+        QStringList cmdArgs = args;
+        if (QFile::exists("/.flatpak-info")) {
+            const auto flatpakSpawn = QStandardPaths::findExecutable("flatpak-spawn");
+            if (!flatpakSpawn.isEmpty()) {
+                executable = flatpakSpawn;
+                cmdArgs.prepend("systemctl");
+                cmdArgs.prepend("--host");
+            }
+        }
         if (executable.isEmpty()) return CommandResult{false, {}, "systemctl is missing; user audio services cannot be restarted here."};
         QProcess p; auto env = QProcessEnvironment::systemEnvironment(); env.insert("LC_ALL", "C"); p.setProcessEnvironment(env);
-        p.start(executable, args);
+        p.start(executable, cmdArgs);
         if (!p.waitForStarted(2000)) return CommandResult{false, {}, p.errorString()};
         if (!p.waitForFinished(15000)) { p.kill(); p.waitForFinished(1000); return CommandResult{false, {}, "Service command timed out; services may still be restarting."}; }
         return CommandResult{p.exitStatus() == QProcess::NormalExit && p.exitCode() == 0,
@@ -54,10 +64,19 @@ PulseCompatBackend::PulseCompatBackend(CommandRunner r, std::function<void(unsig
     if (!runner) runner = [](const QStringList &args) {
 #ifdef Q_OS_LINUX
         QString executable = QStandardPaths::findExecutable("pactl");
+        QStringList cmdArgs = args;
+        if (QFile::exists("/.flatpak-info")) {
+            const auto flatpakSpawn = QStandardPaths::findExecutable("flatpak-spawn");
+            if (!flatpakSpawn.isEmpty()) {
+                executable = flatpakSpawn;
+                cmdArgs.prepend("pactl");
+                cmdArgs.prepend("--host");
+            }
+        }
         if (executable.isEmpty()) return CommandResult{false, {}, "pactl is missing. Install pulseaudio-utils."};
         QProcess p;
         auto env = QProcessEnvironment::systemEnvironment(); env.insert("LC_ALL", "C"); p.setProcessEnvironment(env);
-        p.start(executable, args);
+        p.start(executable, cmdArgs);
         if (!p.waitForStarted(2000)) return CommandResult{false, {}, p.errorString()};
         if (!p.waitForFinished(4000)) { p.kill(); p.waitForFinished(1000); return CommandResult{false, {}, "Audio server command timed out."}; }
         return CommandResult{p.exitStatus() == QProcess::NormalExit && p.exitCode() == 0,
@@ -206,7 +225,8 @@ Discovery PulseCompatBackend::enumerateDevices() {
         const auto active = serviceRunner({"--user", "is-active", "pipewire.service"});
         pipeWireKnown = active.ok && active.output.trimmed() == "active";
     }
-    const bool hasSystemctl = !QStandardPaths::findExecutable("systemctl").isEmpty();
+    const bool hasSystemctl = !QStandardPaths::findExecutable("systemctl").isEmpty() ||
+                              (QFile::exists("/.flatpak-info") && !QStandardPaths::findExecutable("flatpak-spawn").isEmpty());
     discovery.capabilities.serviceRestart = pipeWireKnown && hasSystemctl;
     return discovery;
 }
@@ -323,7 +343,8 @@ Plan PulseCompatBackend::validateServiceRestart() {
         try { pipeWireKnown = info().value("server_name").toString().contains("PipeWire", Qt::CaseInsensitive); }
         catch (const std::exception &) { /* Allow recovery of a previously detected PipeWire server. */ }
         if (!pipeWireKnown) fail("A PipeWire audio server has not been detected. This restart is not supported for native PulseAudio.");
-        const bool hasSystemctl = !QStandardPaths::findExecutable("systemctl").isEmpty();
+        const bool hasSystemctl = !QStandardPaths::findExecutable("systemctl").isEmpty() ||
+                                  (QFile::exists("/.flatpak-info") && !QStandardPaths::findExecutable("flatpak-spawn").isEmpty());
         if (!hasSystemctl) fail("systemctl is not available in this environment; desktop audio services cannot be restarted.");
         const QStringList units = {"wireplumber.service", "pipewire.service", "pipewire-pulse.service"};
         QStringList args = {"--user", "show", "--property=LoadState", "--value"}; args += units;

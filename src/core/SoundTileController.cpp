@@ -3,6 +3,7 @@
 #include <QUuid>
 #include <QMediaMetaData>
 #include <QFile>
+#include <QStandardPaths>
 #include <QProcess>
 #include <QVector>
 #include <QtMath>
@@ -174,9 +175,21 @@ void SoundTileController::updateWaveform()
     // Fallback: If not PCM WAV (e.g. MP3, OGG, FLAC, M4A, video files with audio tracks, etc.), decode downsampled PCM via ffmpeg
     if (!parsedDirect) {
         QProcess proc;
-        proc.start("ffmpeg", QStringList() << "-v" << "error" << "-threads" << "4" << "-i" << localPath
-                                           << "-vn" << "-ac" << "1" << "-ar" << "2000"
-                                           << "-f" << "s16le" << "-");
+        QString ffmpegBin = "ffmpeg";
+        QStringList ffmpegArgs;
+        ffmpegArgs << "-v" << "error" << "-threads" << "4" << "-i" << localPath
+                   << "-vn" << "-ac" << "1" << "-ar" << "2000"
+                   << "-f" << "s16le" << "-";
+
+        if (QFile::exists("/.flatpak-info") && QStandardPaths::findExecutable("ffmpeg").isEmpty()) {
+            const auto flatpakSpawn = QStandardPaths::findExecutable("flatpak-spawn");
+            if (!flatpakSpawn.isEmpty()) {
+                ffmpegBin = flatpakSpawn;
+                ffmpegArgs.prepend("ffmpeg");
+                ffmpegArgs.prepend("--host");
+            }
+        }
+        proc.start(ffmpegBin, ffmpegArgs);
         if (proc.waitForFinished(5000)) {
             QByteArray pcmData = proc.readAllStandardOutput();
             int totalSamples = pcmData.size() / 2;

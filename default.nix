@@ -1,29 +1,50 @@
-{ pkgs ? import <nixpkgs> {} }:
+{ lib
+, stdenv
+, cmake
+, ninja
+, pkg-config
+, qt6
+, ffmpeg
+, pulseaudio
+, systemd
+, version ? "2.0.0"
+}:
 
-pkgs.stdenv.mkDerivation {
-  pname = "CasterSoundboard";
-  version = "1.0";
+stdenv.mkDerivation rec {
+  pname = "caster-soundboard";
+  inherit version;
 
   src = ./.;
-  preConfigure = ''
-    cd CasterSoundboard
-  '';
 
   nativeBuildInputs = [
-    pkgs.qt6.qmake
-    pkgs.qt6.wrapQtAppsHook
+    cmake
+    ninja
+    pkg-config
+    qt6.wrapQtAppsHook
   ];
 
   buildInputs = [
-    pkgs.qt6.qtbase
-    pkgs.qt6.qtmultimedia
-    pkgs.qt6.qtwayland
-    pkgs.ffmpeg
+    qt6.qtbase
+    qt6.qtdeclarative
+    qt6.qtquickcontrols2
+    qt6.qtmultimedia
   ];
 
-  qmakeFlags = [
-    "PREFIX=${placeholder "out"}"
+  cmakeFlags = [
+    "-DCMAKE_BUILD_TYPE=Release"
+    "-DCASTER_VERSION=${version}"
   ];
 
-  enableParallelBuilding = true;
+  # Wrap binary so runtime dependencies are automatically available on PATH
+  qtWrapperArgs = [
+    "--prefix PATH : ${lib.makeBinPath [ ffmpeg pulseaudio systemd ]}"
+  ];
+
+  meta = with lib; {
+    description = "A touch-first soundboard for hot-keying and playing audio sound effects and music tracks";
+    homepage = "https://github.com/covarianttensor/CasterSoundboard";
+    license = licenses.lgpl3Plus;
+    platforms = platforms.linux;
+    mainProgram = "CasterSoundboard";
+  };
 }

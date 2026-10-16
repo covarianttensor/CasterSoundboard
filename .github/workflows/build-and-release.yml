@@ -14,24 +14,32 @@ jobs:
   appimage:
     name: Build AppImage
     runs-on: ubuntu-24.04
-    permissions:
-      contents: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - name: Install Qt 6 and multimedia dependencies
+      - name: Install build dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y \
             build-essential \
+            cmake \
+            ninja-build \
             curl \
             file \
             ffmpeg \
             libfuse2t64 \
             libgl1-mesa-dev \
-            qmake6 \
             qt6-base-dev \
+            qt6-declarative-dev \
+            qml6-module-qtquick \
+            qml6-module-qtquick-controls \
+            qml6-module-qtquick-layouts \
+            qml6-module-qtquick-dialogs \
+            qml6-module-qtquick-templates \
+            qml6-module-qtmultimedia \
             qt6-multimedia-dev \
             qt6-wayland \
             qt6-wayland-dev
@@ -41,29 +49,23 @@ jobs:
           chmod +x scripts/build-appimage.sh
           ./scripts/build-appimage.sh
 
-      - name: Upload AppImage artifact
+      - name: Upload AppImage artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: CasterSoundboard-x86_64.AppImage
+          name: appimage-bundle
           path: CasterSoundboard*.AppImage
-
-      - name: Attach AppImage to GitHub Release
-        if: startsWith(github.ref, 'refs/tags/v')
-        uses: softprops/action-gh-release@v2
-        with:
-          files: CasterSoundboard*.AppImage
 
   flatpak:
     name: Build Flatpak Bundle
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     container:
       image: ghcr.io/flathub-infra/flatpak-github-actions:kde-6.8
       options: --privileged
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Build Flatpak Bundle
         uses: flatpak/flatpak-github-actions/flatpak-builder@v6
@@ -72,14 +74,44 @@ jobs:
           manifest-path: io.github.covarianttensor.CasterSoundboard.yml
           cache: false
 
-      - name: Upload Flatpak bundle artifact
+      - name: Create Versioned Flatpak Bundle
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          if [ -n "${VERSION}" ] && [ "${VERSION}" != "${GITHUB_REF_NAME}" ]; then
+            cp CasterSoundboard.flatpak "CasterSoundboard-${VERSION}-x86_64.flatpak"
+          fi
+
+      - name: Upload Flatpak artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: CasterSoundboard.flatpak
-          path: CasterSoundboard.flatpak
+          name: flatpak-bundle
+          path: CasterSoundboard*.flatpak
 
-      - name: Attach Flatpak bundle to GitHub Release
-        if: startsWith(github.ref, 'refs/tags/v')
+  release:
+    name: Publish GitHub Release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [appimage, flatpak]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download AppImage artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: appimage-bundle
+          path: release-assets
+
+      - name: Download Flatpak artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: flatpak-bundle
+          path: release-assets
+
+      - name: List Release Assets
+        run: ls -la release-assets
+
+      - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: CasterSoundboard.flatpak
+          files: release-assets/*
+          generate_release_notes: true

@@ -1,6 +1,14 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(CasterSoundboard VERSION 2.0.0 LANGUAGES CXX)
+if(DEFINED CASTER_VERSION AND NOT CASTER_VERSION STREQUAL "")
+    set(PROJECT_VERSION_STRING "${CASTER_VERSION}")
+else()
+    set(PROJECT_VERSION_STRING "2.0.0")
+endif()
+
+project(CasterSoundboard VERSION ${PROJECT_VERSION_STRING} LANGUAGES CXX)
+
+include(GNUInstallDirs)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -154,3 +162,23 @@ add_caster_test(test_hotkey_manager tests/core/test_hotkey_manager.cpp)
 add_caster_test(test_osc_server tests/core/test_osc_server.cpp)
 add_caster_test(test_audio_routing tests/core/test_audio_routing.cpp)
 add_caster_test(test_web_remote tests/core/test_web_remote.cpp)
+
+# -------------------------------------------------------------
+# Installation
+# -------------------------------------------------------------
+install(TARGETS CasterSoundboard
+    BUNDLE DESTINATION .
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+)
+
+install(FILES dist/linux/io.github.covarianttensor.CasterSoundboard.desktop
+    DESTINATION ${CMAKE_INSTALL_DATADIR}/applications
+)
+
+install(FILES dist/linux/io.github.covarianttensor.CasterSoundboard.metainfo.xml
+    DESTINATION ${CMAKE_INSTALL_DATADIR}/metainfo
+)
+
+install(FILES dist/linux/io.github.covarianttensor.CasterSoundboard.png
+    DESTINATION ${CMAKE_INSTALL_DATADIR}/icons/hicolor/256x256/apps
+)
