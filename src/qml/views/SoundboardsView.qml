@@ -34,6 +34,9 @@ Item {
                 }
                 renameDialog.open();
             }
+            onSetTabHotkeyRequested: (index) => {
+                root.requestSetTabHotkey(index);
+            }
         }
 
         // Soundboard Grid Area
@@ -435,6 +438,17 @@ Item {
         }
     }
 
+    function requestSetTabHotkey(index) {
+        if (!projectController || !projectController.tabModel) return;
+        if (index < 0 || index >= projectController.tabModel.count) return;
+
+        tabHotkeyPromptDialog.targetIndex = index;
+        tabHotkeyPromptDialog.tabName = projectController.tabModel.tabNameAt(index);
+        tabHotkeyPromptDialog.pendingSequence = projectController.tabModel.tabHotkeyAt(index);
+        tabHotkeyPromptDialog.pendingModifiers = "";
+        tabHotkeyPromptDialog.open();
+    }
+
     // Rename Tab Dialog
     Dialog {
         id: renameDialog
@@ -673,9 +687,277 @@ Item {
         }
     }
 
+    // Tab Hotkey Capture Prompt Dialog
+    Dialog {
+        id: tabHotkeyPromptDialog
+        parent: Overlay.overlay
+        anchors.centerIn: parent
+        modal: true
+        closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
+        implicitWidth: 460
+        topPadding: 16
+        bottomPadding: 16
+        leftPadding: 20
+        rightPadding: 20
+
+        property int targetIndex: -1
+        property string tabName: ""
+        property string pendingSequence: ""
+        property string pendingModifiers: ""
+
+        onOpened: {
+            if (typeof hotkeyManager !== "undefined") {
+                hotkeyManager.isMuted = true;
+            }
+            tabCaptureArea.forceActiveFocus();
+        }
+
+        onClosed: {
+            if (typeof hotkeyManager !== "undefined") {
+                hotkeyManager.isMuted = false;
+            }
+        }
+
+        background: Rectangle {
+            color: "#202327"
+            radius: 10
+            border.color: "#343940"
+            border.width: 1
+        }
+
+        header: Rectangle {
+            implicitHeight: 46
+            height: 46
+            color: "#181A1D"
+            radius: 10
+
+            RowLayout {
+                anchors.fill: parent
+                anchors.leftMargin: 16
+                anchors.rightMargin: 16
+                spacing: 8
+
+                Text {
+                    text: "⌨"
+                    font.pointSize: 13
+                    color: "#8E2DE2"
+                }
+
+                Text {
+                    text: qsTr("Register Shortcut for Tab \"%1\"").arg(tabHotkeyPromptDialog.tabName)
+                    color: "#FFFFFF"
+                    font.bold: true
+                    font.pointSize: 11
+                    Layout.fillWidth: true
+                    elide: Text.ElideRight
+                }
+            }
+        }
+
+        contentItem: Item {
+            id: tabCaptureArea
+            implicitWidth: 420
+            implicitHeight: 145
+            focus: true
+
+            Keys.priority: Keys.BeforeItem
+            Keys.enabled: true
+            Keys.onPressed: (event) => {
+                event.accepted = true;
+
+                // Escape cancels dialog
+                if (event.key === Qt.Key_Escape && event.modifiers === Qt.NoModifier) {
+                    tabHotkeyPromptDialog.close();
+                    return;
+                }
+
+                // Enter applies sequence
+                if ((event.key === Qt.Key_Return || event.key === Qt.Key_Enter) && event.modifiers === Qt.NoModifier) {
+                    tabHotkeyPromptDialog.applyHotkey();
+                    return;
+                }
+
+                // Modifier only
+                if (event.key === Qt.Key_Control || event.key === Qt.Key_Shift || event.key === Qt.Key_Alt || event.key === Qt.Key_Meta) {
+                    if (typeof hotkeyManager !== "undefined") {
+                        tabHotkeyPromptDialog.pendingModifiers = hotkeyManager.modifiersToString(event.modifiers);
+                    }
+                    return;
+                }
+
+                // Complete combination
+                if (typeof hotkeyManager !== "undefined") {
+                    var seq = hotkeyManager.keySequenceToString(event.key, event.modifiers);
+                    if (seq && seq.length > 0) {
+                        tabHotkeyPromptDialog.pendingSequence = seq;
+                        tabHotkeyPromptDialog.pendingModifiers = "";
+                    }
+                }
+            }
+
+            Keys.onReleased: (event) => {
+                if (event.key === Qt.Key_Control || event.key === Qt.Key_Shift || event.key === Qt.Key_Alt || event.key === Qt.Key_Meta) {
+                    if (tabHotkeyPromptDialog.pendingSequence.length === 0) {
+                        tabHotkeyPromptDialog.pendingModifiers = "";
+                    }
+                }
+            }
+
+            MouseArea {
+                anchors.fill: parent
+                onClicked: tabCaptureArea.forceActiveFocus()
+            }
+
+            ColumnLayout {
+                anchors.fill: parent
+                spacing: 10
+
+                Text {
+                    text: qsTr("Press the key combination you wish to use to switch to this soundboard tab:")
+                    color: "#AAAAAA"
+                    font.pointSize: 9.5
+                    wrapMode: Text.WordWrap
+                    Layout.fillWidth: true
+                }
+
+                // Key Combination Display Badge
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 56
+                    radius: 8
+                    color: "#16181B"
+                    border.color: tabHotkeyPromptDialog.pendingSequence.length > 0 ? "#8E2DE2" : (tabHotkeyPromptDialog.pendingModifiers.length > 0 ? "#A855F7" : "#2C3036")
+                    border.width: tabHotkeyPromptDialog.pendingSequence.length > 0 ? 2 : 1
+
+                    RowLayout {
+                        anchors.centerIn: parent
+                        spacing: 8
+
+                        Text {
+                            text: {
+                                if (tabHotkeyPromptDialog.pendingSequence.length > 0) {
+                                    return tabHotkeyPromptDialog.pendingSequence;
+                                }
+                                if (tabHotkeyPromptDialog.pendingModifiers.length > 0) {
+                                    return tabHotkeyPromptDialog.pendingModifiers;
+                                }
+                                return qsTr("Listening... Press any key or combination");
+                            }
+                            color: tabHotkeyPromptDialog.pendingSequence.length > 0 ? "#FFFFFF" : (tabHotkeyPromptDialog.pendingModifiers.length > 0 ? "#D19CF7" : "#7E8590")
+                            font.bold: tabHotkeyPromptDialog.pendingSequence.length > 0
+                            font.pointSize: 13
+                        }
+                    }
+                }
+
+                RowLayout {
+                    Layout.fillWidth: true
+                    Text {
+                        text: {
+                            var defKey = (tabHotkeyPromptDialog.targetIndex >= 0 && tabHotkeyPromptDialog.targetIndex < 9)
+                                ? qsTr("Default shortcut: Alt+%1").arg(tabHotkeyPromptDialog.targetIndex + 1)
+                                : "";
+                            return defKey;
+                        }
+                        color: "#7E8590"
+                        font.pointSize: 8.5
+                    }
+                    Item { Layout.fillWidth: true }
+                    Text {
+                        text: qsTr("e.g. F1, F2, Alt+1, Ctrl+1")
+                        color: "#606670"
+                        font.pointSize: 8.5
+                    }
+                }
+            }
+        }
+
+        footer: Rectangle {
+            implicitHeight: 52
+            height: 52
+            color: "#181A1D"
+            radius: 10
+
+            RowLayout {
+                anchors.fill: parent
+                anchors.leftMargin: 14
+                anchors.rightMargin: 14
+                spacing: 10
+
+                Button {
+                    text: qsTr("Clear")
+                    Layout.preferredWidth: 80
+                    Layout.preferredHeight: 34
+                    onClicked: {
+                        tabHotkeyPromptDialog.pendingSequence = "";
+                        tabHotkeyPromptDialog.pendingModifiers = "";
+                        tabHotkeyPromptDialog.applyHotkey();
+                    }
+                    contentItem: Text {
+                        text: parent.text
+                        color: "#E74C3C"
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                    }
+                    background: Rectangle {
+                        color: parent.hovered ? "#3A2828" : "#282224"
+                        radius: 6
+                    }
+                }
+
+                Item { Layout.fillWidth: true }
+
+                Button {
+                    text: qsTr("Cancel")
+                    Layout.preferredWidth: 80
+                    Layout.preferredHeight: 34
+                    onClicked: tabHotkeyPromptDialog.close()
+                    contentItem: Text {
+                        text: parent.text
+                        color: "#FFFFFF"
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                    }
+                    background: Rectangle {
+                        color: parent.hovered ? "#3A3F47" : "#282C32"
+                        radius: 6
+                    }
+                }
+
+                Button {
+                    text: qsTr("Save")
+                    Layout.preferredWidth: 80
+                    Layout.preferredHeight: 34
+                    onClicked: tabHotkeyPromptDialog.applyHotkey()
+                    contentItem: Text {
+                        text: parent.text
+                        color: "#FFFFFF"
+                        font.bold: true
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                    }
+                    background: Rectangle {
+                        color: parent.hovered ? "#9D3BF0" : "#8E2DE2"
+                        radius: 6
+                    }
+                }
+            }
+        }
+
+        function applyHotkey() {
+            if (targetIndex >= 0 && projectController && projectController.tabModel) {
+                projectController.tabModel.setTabHotkey(targetIndex, pendingSequence);
+            }
+            close();
+        }
+    }
+
     Component.onCompleted: {
         if (typeof openDeleteTabPromptOnStart !== "undefined" && openDeleteTabPromptOnStart) {
             root.requestCloseTab(1);
+        }
+        if (typeof openTabHotkeyPromptOnStart !== "undefined" && openTabHotkeyPromptOnStart) {
+            root.requestSetTabHotkey(0);
         }
         if (typeof openDrawerOnStart !== "undefined" && openDrawerOnStart) {
             if (root.currentGrid && root.currentGrid.count > 0) {

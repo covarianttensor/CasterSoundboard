@@ -98,6 +98,166 @@ Item {
                     }
                 }
 
+                // Hotkey Scope Setting (Mode B Tab-Scoped vs Mode A Global)
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 165
+                    color: "#222528"
+                    radius: 8
+                    border.color: "#33373B"
+                    border.width: 1
+
+                    ColumnLayout {
+                        anchors.fill: parent
+                        anchors.margins: 16
+                        spacing: 10
+
+                        Text {
+                            text: qsTr("Sound Tile Hotkey Scope")
+                            color: "#FFFFFF"
+                            font.bold: true
+                            font.pointSize: 12
+                        }
+
+                        Text {
+                            text: qsTr("Control whether sound tile hotkeys trigger only on the currently active tab (Bank Mode) or trigger sounds globally across all tabs.")
+                            color: "#AAAAAA"
+                            font.pointSize: 9.5
+                            wrapMode: Text.WordWrap
+                            Layout.fillWidth: true
+                        }
+
+                        RowLayout {
+                            spacing: 16
+                            Layout.fillWidth: true
+
+                            // Mode B (Default, TabScoped / Sound Banks)
+                            Rectangle {
+                                Layout.fillWidth: true
+                                Layout.preferredHeight: 64
+                                radius: 6
+                                color: (typeof projectController !== "undefined" && projectController.hotkeyScope === 0) ? "#2F2344" : "#1A1C1F"
+                                border.color: (typeof projectController !== "undefined" && projectController.hotkeyScope === 0) ? "#8E2DE2" : (modeBMouse.containsMouse ? "#4D535D" : "#33373B")
+                                border.width: (typeof projectController !== "undefined" && projectController.hotkeyScope === 0) ? 2 : 1
+
+                                MouseArea {
+                                    id: modeBMouse
+                                    anchors.fill: parent
+                                    hoverEnabled: true
+                                    cursorShape: Qt.PointingHandCursor
+                                    onClicked: {
+                                        if (typeof projectController !== "undefined") {
+                                            projectController.hotkeyScope = 0;
+                                        }
+                                    }
+                                }
+
+                                RowLayout {
+                                    anchors.fill: parent
+                                    anchors.margins: 12
+                                    spacing: 10
+
+                                    Rectangle {
+                                        width: 18
+                                        height: 18
+                                        radius: 9
+                                        color: "transparent"
+                                        border.color: (typeof projectController !== "undefined" && projectController.hotkeyScope === 0) ? "#8E2DE2" : "#555A62"
+                                        border.width: 2
+
+                                        Rectangle {
+                                            anchors.centerIn: parent
+                                            width: 10
+                                            height: 10
+                                            radius: 5
+                                            color: "#8E2DE2"
+                                            visible: typeof projectController !== "undefined" && projectController.hotkeyScope === 0
+                                        }
+                                    }
+
+                                    ColumnLayout {
+                                        Layout.fillWidth: true
+                                        spacing: 2
+                                        Text {
+                                            text: qsTr("Sound Banks (Tab-Scoped) — Default")
+                                            color: (typeof projectController !== "undefined" && projectController.hotkeyScope === 0) ? "#FFFFFF" : "#CCCCCC"
+                                            font.bold: true
+                                            font.pointSize: 9.5
+                                        }
+                                        Text {
+                                            text: qsTr("Only active tab tiles respond. Allows reusing keys on each tab.")
+                                            color: "#888888"
+                                            font.pointSize: 8.5
+                                        }
+                                    }
+                                }
+                            }
+
+                            // Mode A (Global)
+                            Rectangle {
+                                Layout.fillWidth: true
+                                Layout.preferredHeight: 64
+                                radius: 6
+                                color: (typeof projectController !== "undefined" && projectController.hotkeyScope === 1) ? "#2F2344" : "#1A1C1F"
+                                border.color: (typeof projectController !== "undefined" && projectController.hotkeyScope === 1) ? "#8E2DE2" : (modeAMouse.containsMouse ? "#4D535D" : "#33373B")
+                                border.width: (typeof projectController !== "undefined" && projectController.hotkeyScope === 1) ? 2 : 1
+
+                                MouseArea {
+                                    id: modeAMouse
+                                    anchors.fill: parent
+                                    hoverEnabled: true
+                                    cursorShape: Qt.PointingHandCursor
+                                    onClicked: {
+                                        if (typeof projectController !== "undefined") {
+                                            projectController.hotkeyScope = 1;
+                                        }
+                                    }
+                                }
+
+                                RowLayout {
+                                    anchors.fill: parent
+                                    anchors.margins: 12
+                                    spacing: 10
+
+                                    Rectangle {
+                                        width: 18
+                                        height: 18
+                                        radius: 9
+                                        color: "transparent"
+                                        border.color: (typeof projectController !== "undefined" && projectController.hotkeyScope === 1) ? "#8E2DE2" : "#555A62"
+                                        border.width: 2
+
+                                        Rectangle {
+                                            anchors.centerIn: parent
+                                            width: 10
+                                            height: 10
+                                            radius: 5
+                                            color: "#8E2DE2"
+                                            visible: typeof projectController !== "undefined" && projectController.hotkeyScope === 1
+                                        }
+                                    }
+
+                                    ColumnLayout {
+                                        Layout.fillWidth: true
+                                        spacing: 2
+                                        Text {
+                                            text: qsTr("Global (All Tabs)")
+                                            color: (typeof projectController !== "undefined" && projectController.hotkeyScope === 1) ? "#FFFFFF" : "#CCCCCC"
+                                            font.bold: true
+                                            font.pointSize: 9.5
+                                        }
+                                        Text {
+                                            text: qsTr("Tile hotkeys trigger regardless of which tab is currently active.")
+                                            color: "#888888"
+                                            font.pointSize: 8.5
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
                 // About card
                 Rectangle {
                     Layout.fillWidth: true

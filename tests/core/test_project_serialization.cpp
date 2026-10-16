@@ -20,6 +20,7 @@ private slots:
         QCOMPARE(project.masterVolume(), 1.0);
         QCOMPARE(project.isDuckingActive(), false);
         QCOMPARE(project.duckingVolumeRatio(), 0.25);
+        QCOMPARE(project.hotkeyScope(), static_cast<int>(SoundboardProjectController::TabScoped));
         QCOMPARE(project.tabModel()->count(), 1);
     }
 
@@ -38,9 +39,11 @@ private slots:
         p1.setMasterVolume(0.9);
         p1.setDuckingVolumeRatio(0.20);
         p1.setOutputDeviceName("Virtual Sink Output");
+        p1.setHotkeyScope(SoundboardProjectController::Global);
 
         // Tab 1: Jingles
         p1.tabModel()->renameTab(0, "Jingles");
+        p1.tabModel()->setTabHotkey(0, "Alt+J");
         SoundboardGridModel *g1 = p1.tabModel()->gridModelAt(0);
         SoundTileController *t1 = g1->appendTile();
         t1->setFilePath("/sounds/jingle1.mp3");
@@ -55,6 +58,7 @@ private slots:
 
         // Tab 2: SFX
         SoundboardGridModel *g2 = p1.tabModel()->addTab("SFX");
+        p1.tabModel()->setTabHotkey(1, "Alt+S");
         SoundTileController *t2 = g2->appendTile();
         t2->setFilePath("/sounds/applause.wav");
         t2->setDisplayName("Crowd Applause");
@@ -81,12 +85,15 @@ private slots:
         QCOMPARE(p2.masterVolume(), 0.9);
         QCOMPARE(p2.duckingVolumeRatio(), 0.20);
         QCOMPARE(p2.outputDeviceName(), QString("Virtual Sink Output"));
+        QCOMPARE(p2.hotkeyScope(), static_cast<int>(SoundboardProjectController::Global));
 
         // Verify tabs
         QCOMPARE(p2.tabModel()->count(), 2);
         QCOMPARE(p2.tabModel()->currentIndex(), 1);
         QCOMPARE(p2.tabModel()->tabNameAt(0), QString("Jingles"));
+        QCOMPARE(p2.tabModel()->tabHotkeyAt(0), QString("Alt+J"));
         QCOMPARE(p2.tabModel()->tabNameAt(1), QString("SFX"));
+        QCOMPARE(p2.tabModel()->tabHotkeyAt(1), QString("Alt+S"));
 
         // Verify Tab 1 tiles
         SoundboardGridModel *p2_g1 = p2.tabModel()->gridModelAt(0);

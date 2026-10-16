@@ -10,6 +10,7 @@ Rectangle {
     signal addTabRequested()
     signal closeTabRequested(int index)
     signal renameTabRequested(int index)
+    signal setTabHotkeyRequested(int index)
 
     height: 48
     color: "#181A1B"
@@ -36,10 +37,12 @@ Rectangle {
                     id: tabItem
                     required property int index
                     required property string name
+                    required property string hotkey
 
                     property bool isActive: root.currentIndex === index
+                    property string effectiveHotkey: (hotkey && hotkey.length > 0) ? hotkey : (index < 9 ? ("Alt+" + (index + 1)) : "")
 
-                    implicitWidth: Math.max(140, tabLabel.implicitWidth + (showCloseBtn ? 48 : 24))
+                    implicitWidth: Math.max(140, tabLabel.implicitWidth + (effectiveHotkey.length > 0 ? (hotkeyBadge.implicitWidth + 10) : 0) + (showCloseBtn ? 48 : 24))
                     implicitHeight: 38
                     radius: 6
                     color: isActive ? "#2D3035" : (tabMouse.containsMouse ? "#24272B" : "#1E2023")
@@ -49,11 +52,11 @@ Rectangle {
                     property bool showCloseBtn: root.tabModel ? root.tabModel.count > 1 : false
 
                     // Main Tab Click & Right-click MouseArea
-                    // Restricted to not overlap the close button on the right
+                    // Restricted to not overlap the hotkey badge or close button
                     MouseArea {
                         id: tabMouse
                         anchors.fill: parent
-                        anchors.rightMargin: tabItem.showCloseBtn ? 32 : 0
+                        anchors.rightMargin: (tabItem.showCloseBtn ? 32 : 0) + (tabItem.effectiveHotkey.length > 0 ? (hotkeyBadge.width + 8) : 0)
                         hoverEnabled: true
                         cursorShape: Qt.PointingHandCursor
                         acceptedButtons: Qt.LeftButton | Qt.RightButton
@@ -85,6 +88,43 @@ Rectangle {
                             elide: Text.ElideRight
                             Layout.fillWidth: true
                             verticalAlignment: Text.AlignVCenter
+                        }
+
+                        // Hotkey Indicator Badge
+                        Rectangle {
+                            id: hotkeyBadge
+                            visible: tabItem.effectiveHotkey.length > 0
+                            implicitWidth: tabHotkeyText.implicitWidth + 10
+                            implicitHeight: 20
+                            Layout.preferredWidth: implicitWidth
+                            Layout.preferredHeight: 20
+                            Layout.alignment: Qt.AlignVCenter
+                            radius: 4
+                            z: 2
+                            color: tabItem.isActive ? "#3D275A" : (badgeMouse.containsMouse ? "#2F343B" : "#22252A")
+                            border.color: tabItem.isActive ? "#A855F7" : (badgeMouse.containsMouse ? "#6E7684" : "#3E434D")
+                            border.width: 1
+
+                            Text {
+                                id: tabHotkeyText
+                                anchors.centerIn: parent
+                                text: tabItem.effectiveHotkey
+                                color: tabItem.isActive ? "#E0C3FC" : "#9AA0A6"
+                                font.pointSize: 8
+                                font.bold: true
+                            }
+
+                            MouseArea {
+                                id: badgeMouse
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: root.setTabHotkeyRequested(tabItem.index)
+                                ToolTip.visible: containsMouse
+                                ToolTip.text: (tabItem.hotkey && tabItem.hotkey.length > 0)
+                                    ? qsTr("Custom hotkey: %1 (Click to change)").arg(tabItem.hotkey)
+                                    : qsTr("Default shortcut: %1 (Click to customize)").arg(tabItem.effectiveHotkey)
+                            }
                         }
 
                         // Close Tab Button (X)
@@ -120,6 +160,23 @@ Rectangle {
                     // Tab Context Menu (Right Click)
                     Menu {
                         id: tabContextMenu
+
+                        MenuItem {
+                            text: qsTr("Set Hotkey...")
+                            onTriggered: root.setTabHotkeyRequested(tabItem.index)
+                        }
+
+                        MenuItem {
+                            text: qsTr("Clear Hotkey")
+                            enabled: tabItem.hotkey && tabItem.hotkey.length > 0
+                            onTriggered: {
+                                if (root.tabModel) {
+                                    root.tabModel.setTabHotkey(tabItem.index, "");
+                                }
+                            }
+                        }
+
+                        MenuSeparator {}
 
                         MenuItem {
                             text: qsTr("Rename Tab...")

@@ -15,6 +15,10 @@ SoundboardProjectController::SoundboardProjectController(QObject *parent)
     m_tabModel = new SoundboardTabModel(this);
     m_mediaDevices = new QMediaDevices(this);
     connect(m_mediaDevices, &QMediaDevices::audioOutputsChanged, this, &SoundboardProjectController::availableAudioOutputsChanged);
+    connect(m_tabModel, &QAbstractItemModel::dataChanged, this, [this]() { setDirty(true); });
+    connect(m_tabModel, &QAbstractItemModel::rowsInserted, this, [this]() { setDirty(true); });
+    connect(m_tabModel, &QAbstractItemModel::rowsRemoved, this, [this]() { setDirty(true); });
+    connect(m_tabModel, &QAbstractItemModel::rowsMoved, this, [this]() { setDirty(true); });
     newProject();
 }
 
@@ -122,6 +126,16 @@ void SoundboardProjectController::refreshAudioDevices()
     emit availableAudioOutputsChanged();
 }
 
+void SoundboardProjectController::setHotkeyScope(int scope)
+{
+    scope = qBound(0, scope, 1);
+    if (m_hotkeyScope == scope)
+        return;
+    m_hotkeyScope = scope;
+    setDirty(true);
+    emit hotkeyScopeChanged();
+}
+
 void SoundboardProjectController::setDirty(bool dirty)
 {
     if (m_isDirty == dirty)
@@ -140,10 +154,12 @@ bool SoundboardProjectController::newProject()
     m_filePath.clear();
     m_isDirty = false;
     m_isDuckingActive = false;
+    m_hotkeyScope = TabScoped;
 
     emit filePathChanged();
     emit isDirtyChanged();
     emit isDuckingActiveChanged();
+    emit hotkeyScopeChanged();
     return true;
 }
 
@@ -303,6 +319,9 @@ QJsonObject SoundboardProjectController::toJson() const
     // Active tab
     root["activeTabIndex"] = m_tabModel->currentIndex();
 
+    // Hotkey settings
+    root["hotkeyScope"] = m_hotkeyScope;
+
     // Tabs & sounds
     root["tabs"] = m_tabModel->toJson();
 
@@ -329,6 +348,12 @@ bool SoundboardProjectController::fromJson(const QJsonObject &json)
         setMasterVolume(audio["masterVolume"].toDouble(1.0));
         setDuckingVolumeRatio(audio["duckingRatio"].toDouble(0.25));
         setOutputDeviceName(audio["outputDevice"].toString());
+    }
+
+    if (json.contains("hotkeyScope")) {
+        setHotkeyScope(json["hotkeyScope"].toInt(TabScoped));
+    } else {
+        setHotkeyScope(TabScoped);
     }
 
     if (json.contains("tabs") && json["tabs"].isArray()) {

@@ -27,8 +27,15 @@ class SoundboardProjectController : public QObject
     Q_PROPERTY(qreal duckingVolumeRatio READ duckingVolumeRatio WRITE setDuckingVolumeRatio NOTIFY duckingVolumeRatioChanged)
     Q_PROPERTY(QString outputDeviceName READ outputDeviceName WRITE setOutputDeviceName NOTIFY outputDeviceNameChanged)
     Q_PROPERTY(QStringList availableAudioOutputs READ availableAudioOutputs NOTIFY availableAudioOutputsChanged)
+    Q_PROPERTY(int hotkeyScope READ hotkeyScope WRITE setHotkeyScope NOTIFY hotkeyScopeChanged)
 
 public:
+    enum HotkeyScope {
+        TabScoped = 0, // Mode B: Sound Banks (Tab-Scoped Tiles) - default
+        Global = 1     // Mode A: Global across all tabs
+    };
+    Q_ENUM(HotkeyScope)
+
     explicit SoundboardProjectController(QObject *parent = nullptr);
     ~SoundboardProjectController() override;
 
@@ -61,6 +68,9 @@ public:
     QString outputDeviceName() const { return m_outputDeviceName; }
     void setOutputDeviceName(const QString &deviceName);
 
+    int hotkeyScope() const { return m_hotkeyScope; }
+    void setHotkeyScope(int scope);
+
     QStringList availableAudioOutputs() const;
     Q_INVOKABLE void refreshAudioDevices();
 
@@ -88,6 +98,7 @@ signals:
     void duckingVolumeRatioChanged();
     void outputDeviceNameChanged();
     void availableAudioOutputsChanged();
+    void hotkeyScopeChanged();
     void projectLoaded();
     void projectSaved();
     void errorOccurred(const QString &errorMessage);
@@ -111,6 +122,7 @@ private:
     bool m_isDuckingActive{false};
     qreal m_duckingVolumeRatio{0.25};
     QString m_outputDeviceName;
+    int m_hotkeyScope{TabScoped};
 };
 
 #endif // SOUNDBOARDPROJECTCONTROLLER_H

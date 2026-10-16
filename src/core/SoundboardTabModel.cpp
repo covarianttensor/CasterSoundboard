@@ -32,6 +32,8 @@ QVariant SoundboardTabModel::data(const QModelIndex &index, int role) const
         return tab.name;
     case GridModelRole:
         return QVariant::fromValue(tab.gridModel);
+    case HotkeyRole:
+        return tab.hotkey;
     default:
         break;
     }
@@ -47,6 +49,9 @@ bool SoundboardTabModel::setData(const QModelIndex &index, const QVariant &value
     if (role == NameRole) {
         return renameTab(index.row(), value.toString());
     }
+    if (role == HotkeyRole) {
+        return setTabHotkey(index.row(), value.toString());
+    }
 
     return false;
 }
@@ -57,6 +62,7 @@ QHash<int, QByteArray> SoundboardTabModel::roleNames() const
     roles[IdRole] = "id";
     roles[NameRole] = "name";
     roles[GridModelRole] = "gridModel";
+    roles[HotkeyRole] = "hotkey";
     return roles;
 }
 
@@ -146,6 +152,36 @@ bool SoundboardTabModel::renameTab(int index, const QString &name)
     return true;
 }
 
+QString SoundboardTabModel::tabHotkeyAt(int index) const
+{
+    if (index < 0 || index >= m_tabs.size())
+        return QString();
+    return m_tabs.at(index).hotkey;
+}
+
+bool SoundboardTabModel::setTabHotkey(int index, const QString &hotkey)
+{
+    if (index < 0 || index >= m_tabs.size())
+        return false;
+
+    QString clean = hotkey.trimmed();
+    if (m_tabs[index].hotkey == clean)
+        return true;
+
+    m_tabs[index].hotkey = clean;
+    QModelIndex idx = this->index(index, 0);
+    emit dataChanged(idx, idx, {HotkeyRole});
+    return true;
+}
+
+QString SoundboardTabModel::defaultHotkeyForIndex(int index) const
+{
+    if (index >= 0 && index < 9) {
+        return QString("Alt+%1").arg(index + 1);
+    }
+    return QString();
+}
+
 bool SoundboardTabModel::moveTab(int fromIndex, int toIndex)
 {
     if (fromIndex < 0 || fromIndex >= m_tabs.size() || toIndex < 0 || toIndex >= m_tabs.size() || fromIndex == toIndex)
@@ -233,6 +269,7 @@ QJsonArray SoundboardTabModel::toJson() const
         QJsonObject obj;
         obj["id"] = tab.id;
         obj["name"] = tab.name;
+        obj["hotkey"] = tab.hotkey;
         if (tab.gridModel) {
             obj["sounds"] = tab.gridModel->toJson();
         }
@@ -257,6 +294,7 @@ bool SoundboardTabModel::fromJson(const QJsonArray &array)
             SoundboardTabItem item;
             item.id = obj["id"].toString(QUuid::createUuid().toString(QUuid::WithoutBraces));
             item.name = obj["name"].toString("Sound Set");
+            item.hotkey = obj.value("hotkey").toString();
             item.gridModel = new SoundboardGridModel(this);
             if (obj.contains("sounds") && obj["sounds"].isArray()) {
                 item.gridModel->fromJson(obj["sounds"].toArray());

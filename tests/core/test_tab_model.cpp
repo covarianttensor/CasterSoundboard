@@ -89,9 +89,11 @@ private slots:
     {
         SoundboardTabModel tabs1;
         SoundboardGridModel *g1 = tabs1.addTab("Music");
+        tabs1.setTabHotkey(0, "F1");
         g1->appendTile()->setDisplayName("Theme Song");
 
         SoundboardGridModel *g2 = tabs1.addTab("Memes");
+        tabs1.setTabHotkey(1, "Ctrl+Alt+M");
         g2->appendTile()->setDisplayName("Rimshot");
 
         QJsonArray arr = tabs1.toJson();
@@ -101,12 +103,38 @@ private slots:
         QVERIFY(tabs2.fromJson(arr));
         QCOMPARE(tabs2.count(), 2);
         QCOMPARE(tabs2.tabNameAt(0), QString("Music"));
+        QCOMPARE(tabs2.tabHotkeyAt(0), QString("F1"));
         QCOMPARE(tabs2.gridModelAt(0)->count(), 1);
         QCOMPARE(tabs2.gridModelAt(0)->tileAt(0)->displayName(), QString("Theme Song"));
 
         QCOMPARE(tabs2.tabNameAt(1), QString("Memes"));
+        QCOMPARE(tabs2.tabHotkeyAt(1), QString("Ctrl+Alt+M"));
         QCOMPARE(tabs2.gridModelAt(1)->count(), 1);
         QCOMPARE(tabs2.gridModelAt(1)->tileAt(0)->displayName(), QString("Rimshot"));
+    }
+
+    void testTabHotkeys()
+    {
+        SoundboardTabModel tabs;
+        tabs.addTab("Tab A");
+        tabs.addTab("Tab B");
+
+        QCOMPARE(tabs.tabHotkeyAt(0), QString());
+        QCOMPARE(tabs.defaultHotkeyForIndex(0), QString("Alt+1"));
+        QCOMPARE(tabs.defaultHotkeyForIndex(1), QString("Alt+2"));
+
+        QSignalSpy dataSpy(&tabs, &QAbstractItemModel::dataChanged);
+        QVERIFY(tabs.setTabHotkey(0, "F1"));
+        QCOMPARE(tabs.tabHotkeyAt(0), QString("F1"));
+        QCOMPARE(dataSpy.count(), 1);
+
+        // Verify model data via HotkeyRole
+        QModelIndex idx = tabs.index(0, 0);
+        QCOMPARE(tabs.data(idx, SoundboardTabModel::HotkeyRole).toString(), QString("F1"));
+
+        // Clear hotkey
+        QVERIFY(tabs.setTabHotkey(0, ""));
+        QCOMPARE(tabs.tabHotkeyAt(0), QString());
     }
 };
 

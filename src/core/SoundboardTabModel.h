@@ -10,6 +10,7 @@
 struct SoundboardTabItem {
     QString id;
     QString name;
+    QString hotkey;
     SoundboardGridModel *gridModel{nullptr};
 };
 
@@ -25,7 +26,8 @@ public:
     enum TabRoles {
         IdRole = Qt::UserRole + 1,
         NameRole,
-        GridModelRole
+        GridModelRole,
+        HotkeyRole
     };
     Q_ENUM(TabRoles)
 
@@ -44,10 +46,13 @@ public:
     Q_INVOKABLE SoundboardGridModel* addTab(const QString &name = QString());
     Q_INVOKABLE bool removeTab(int index);
     Q_INVOKABLE bool renameTab(int index, const QString &name);
+    Q_INVOKABLE bool setTabHotkey(int index, const QString &hotkey);
     Q_INVOKABLE bool moveTab(int fromIndex, int toIndex);
     Q_INVOKABLE SoundboardGridModel* gridModelAt(int index) const;
     Q_INVOKABLE QString tabNameAt(int index) const;
     Q_INVOKABLE QString tabIdAt(int index) const;
+    Q_INVOKABLE QString tabHotkeyAt(int index) const;
+    Q_INVOKABLE QString defaultHotkeyForIndex(int index) const;
 
     // Issue #67 tab cycling navigation
     Q_INVOKABLE void nextTab();

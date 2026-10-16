@@ -41,10 +41,12 @@ public slots:
 signals:
     void isMutedChanged();
     void hotkeyTriggered(SoundTileController *tile);
+    void tabHotkeyTriggered(int tabIndex);
 
 private slots:
     void onTileHotkeyChanged();
     void onTileDestroyed(QObject *obj);
+    void onTabModelDataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight, const QList<int> &roles);
 
 private:
     void rebuildMap();
@@ -53,6 +55,8 @@ private:
     SoundboardProjectController *m_monitoredProject{nullptr};
     QList<SoundTileController*> m_registeredTiles;
     QMap<QKeySequence, SoundTileController*> m_keyMap;
+    QMap<QKeySequence, int> m_customTabKeyMap;
+    QMap<QKeySequence, int> m_defaultTabKeyMap;
 };
 
 #endif // HOTKEYMANAGER_H
