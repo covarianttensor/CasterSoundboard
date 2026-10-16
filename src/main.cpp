@@ -25,6 +25,35 @@ static void handleSigInt(int)
     QCoreApplication::quit();
 }
 
+static bool isTextInputObject(QObject *obj)
+{
+    while (obj) {
+        if (obj->inherits("QQuickTextInput") ||
+            obj->inherits("QQuickTextEdit") ||
+            obj->inherits("QLineEdit") ||
+            obj->inherits("QTextEdit") ||
+            obj->inherits("QPlainTextEdit") ||
+            obj->inherits("QAbstractSpinBox")) {
+            return true;
+        }
+
+        const QVariant cursorPosition = obj->property("cursorPosition");
+        if (cursorPosition.isValid() && obj->property("selectedText").isValid()) {
+            return true;
+        }
+
+        const QString className = QString::fromLatin1(obj->metaObject()->className());
+        if (className.contains("TextField") || className.contains("TextArea") ||
+            className.contains("TextInput") || className.contains("TextEdit")) {
+            return true;
+        }
+
+        obj = obj->parent();
+    }
+
+    return false;
+}
+
 class GlobalHotkeyFilter : public QObject
 {
 public:
@@ -38,6 +67,13 @@ protected:
     {
         if (event->type() == QEvent::KeyPress) {
             auto *keyEvent = static_cast<QKeyEvent *>(event);
+
+            // Never intercept typing when a text field or editor has active keyboard focus
+            QObject *focusObj = QGuiApplication::focusObject();
+            if (isTextInputObject(focusObj) || isTextInputObject(watched)) {
+                return QObject::eventFilter(watched, event);
+            }
+
             if (m_manager && m_manager->handleKeyEvent(keyEvent)) {
                 return true; // Hotkey consumed
             }
