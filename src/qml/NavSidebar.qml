@@ -6,21 +6,17 @@ Rectangle {
     id: root
 
     property int currentIndex: 0
-    property bool isCollapsed: false
     signal fullscreenToggled()
 
-    width: isCollapsed ? 56 : 75
-    implicitWidth: isCollapsed ? 56 : 75
-    Layout.preferredWidth: isCollapsed ? 56 : 75
+    width: 68
+    implicitWidth: 68
+    Layout.preferredWidth: 68
     Layout.fillHeight: true
     color: "#1E2022"
 
-    Behavior on width {
-        NumberAnimation { duration: 150; easing.type: Easing.OutQuad }
-    }
-
     ColumnLayout {
         anchors.fill: parent
+        anchors.bottomMargin: 4
         spacing: 4
 
         // Soundboard Tab
@@ -28,7 +24,6 @@ Rectangle {
             iconSource: "icons/soundboard_tab.png"
             tooltipText: qsTr("Soundboards")
             isActive: root.currentIndex === 0
-            isCollapsed: root.isCollapsed
             onClicked: root.currentIndex = 0
         }
 
@@ -37,7 +32,6 @@ Rectangle {
             iconSource: "icons/audio_devices.png"
             tooltipText: qsTr("Audio Devices & Virtual Mic")
             isActive: root.currentIndex === 1
-            isCollapsed: root.isCollapsed
             onClicked: root.currentIndex = 1
         }
 
@@ -46,7 +40,6 @@ Rectangle {
             iconSource: "icons/open_sound_control.png"
             tooltipText: qsTr("Open Sound Control (OSC)")
             isActive: root.currentIndex === 2
-            isCollapsed: root.isCollapsed
             onClicked: root.currentIndex = 2
         }
 
@@ -55,7 +48,6 @@ Rectangle {
             iconSource: "icons/cog.png"
             tooltipText: qsTr("Preferences")
             isActive: root.currentIndex === 3
-            isCollapsed: root.isCollapsed
             onClicked: root.currentIndex = 3
         }
 
@@ -67,27 +59,7 @@ Rectangle {
         NavButton {
             iconSource: "icons/fullscreen.png"
             tooltipText: qsTr("Toggle Fullscreen (F11)")
-            isCollapsed: root.isCollapsed
             onClicked: root.fullscreenToggled()
-        }
-
-        // Collapse / Expand Sidebar Toggle
-        Button {
-            Layout.fillWidth: true
-            Layout.preferredHeight: 36
-            flat: true
-            onClicked: root.isCollapsed = !root.isCollapsed
-            background: Rectangle {
-                color: parent.hovered ? "#33373B" : "transparent"
-            }
-            contentItem: Text {
-                text: root.isCollapsed ? "»" : "«"
-                color: "#AAAAAA"
-                font.bold: true
-                font.pointSize: 14
-                horizontalAlignment: Text.AlignHCenter
-                verticalAlignment: Text.AlignVCenter
-            }
         }
     }
 
@@ -96,11 +68,10 @@ Rectangle {
         property string iconSource
         property string tooltipText
         property bool isActive: false
-        property bool isCollapsed: false
         signal clicked()
 
         Layout.fillWidth: true
-        Layout.preferredHeight: root.isCollapsed ? 56 : 70
+        Layout.preferredHeight: 64
 
         Rectangle {
             anchors.fill: parent
