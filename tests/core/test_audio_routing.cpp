@@ -86,11 +86,10 @@ private slots:
         AudioRoutingController audio;
         audio.setProjectController(&project);
 
-        // Call apply, stopSharing, refresh - these should not crash and should update status
-        audio.refresh();
+        audio.setSelectedSystemOutput(tr("Default System Output"));
         audio.apply();
+        QVERIFY(!audio.statusMessage().isEmpty());
         audio.stopSharing();
-
         QVERIFY(!audio.statusMessage().isEmpty());
     }
 };

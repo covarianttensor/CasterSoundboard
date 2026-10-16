@@ -214,6 +214,69 @@ Item {
                     }
                 }
 
+                // Error Alert Banner (if routing failed or device missing)
+                Rectangle {
+                    Layout.fillWidth: true
+                    implicitHeight: errCol.implicitHeight + 16
+                    radius: 8
+                    color: "#3B1818"
+                    border.color: "#E74C3C"
+                    border.width: 1
+                    visible: typeof audioRoutingController !== "undefined" && audioRoutingController.hasError
+
+                    RowLayout {
+                        id: errCol
+                        anchors.fill: parent
+                        anchors.margins: 10
+                        anchors.leftMargin: 16
+                        anchors.rightMargin: 16
+                        spacing: 10
+
+                        Text {
+                            text: "⚠️"
+                            font.pointSize: 13
+                        }
+
+                        ColumnLayout {
+                            Layout.fillWidth: true
+                            spacing: 2
+                            Text {
+                                text: qsTr("<b>Routing Validation Failed:</b>")
+                                color: "#FF8585"
+                                font.bold: true
+                                font.pointSize: 9.5
+                            }
+                            Text {
+                                Layout.fillWidth: true
+                                text: typeof audioRoutingController !== "undefined" ? audioRoutingController.lastErrorMessage : ""
+                                color: "#FFCDD2"
+                                font.pointSize: 9.0
+                                wrapMode: Text.WordWrap
+                            }
+                        }
+
+                        Button {
+                            text: qsTr("Dismiss")
+                            Layout.preferredHeight: 32
+                            onClicked: audioRoutingController.clearError()
+                            contentItem: Text {
+                                text: parent.text
+                                color: "#FFFFFF"
+                                font.bold: true
+                                font.pointSize: 8.5
+                                horizontalAlignment: Text.AlignHCenter
+                                verticalAlignment: Text.AlignVCenter
+                            }
+                            background: Rectangle {
+                                color: parent.down ? "#5C1D1D" : (parent.hovered ? "#782828" : "#612020")
+                                radius: 4
+                                border.color: "#E74C3C"
+                                border.width: 1
+                            }
+                        }
+                    }
+                }
+
                 // 2.5 Active Routing Mode Pill Banner
                 Rectangle {
                     Layout.fillWidth: true

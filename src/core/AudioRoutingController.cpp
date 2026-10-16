@@ -139,11 +139,25 @@ void AudioRoutingController::apply()
     if (!m_audioController)
         return;
 
+    m_lastErrorMessage.clear();
+    emit errorChanged();
+
     Audio::Configuration config;
     config.microphone = endpointIdForLabel(m_selectedMicrophone, true);
     config.systemOutput = endpointIdForLabel(m_selectedSystemOutput, false);
     config.monitorOutput = endpointIdForLabel(m_selectedMonitorOutput, false);
-    config.mix = m_mixMicrophone;
+
+    // If no microphone is selected, automatically disable mixing so validation succeeds
+    if (config.microphone.isEmpty()) {
+        config.mix = false;
+    } else {
+        config.mix = m_mixMicrophone;
+    }
+
+    // If monitor output is empty, fallback to system output
+    if (config.monitorOutput.isEmpty()) {
+        config.monitorOutput = config.systemOutput;
+    }
     config.monitor = m_monitorSoundboard;
     config.defaultInput = m_useAsDefaultInput;
 
@@ -212,13 +226,17 @@ void AudioRoutingController::onPreviewReady(const Audio::Plan &plan)
 {
     if (!plan.error.isEmpty()) {
         m_statusMessage = tr("Validation error: %1").arg(plan.error);
+        m_lastErrorMessage = plan.error;
         m_diagnosticsLog.prepend(tr("[%1] Validation error: %2\n")
                                      .arg(QDateTime::currentDateTime().toString("hh:mm:ss"), plan.error));
         emit statusMessageChanged();
         emit diagnosticsLogChanged();
+        emit errorChanged();
         return;
     }
 
+    m_lastErrorMessage.clear();
+    emit errorChanged();
     m_statusMessage = tr("Applying virtual audio routing...");
     emit statusMessageChanged();
 
@@ -272,6 +290,13 @@ void AudioRoutingController::onResultReady(const Audio::Result &result)
                                  .arg(QDateTime::currentDateTime().toString("hh:mm:ss"))
                                  .arg(result.ok ? "OK" : "ERROR")
                                  .arg(result.message));
+    if (!result.ok) {
+        m_lastErrorMessage = result.message;
+        emit errorChanged();
+    } else {
+        m_lastErrorMessage.clear();
+        emit errorChanged();
+    }
     emit statusMessageChanged();
     emit diagnosticsLogChanged();
     emit routingChanged();
@@ -301,11 +326,32 @@ void AudioRoutingController::updateEndpointLists(const QVector<Audio::Endpoint> 
     m_outputIdToLabel.clear();
     m_recoveryLabelToId.clear();
 
+    m_defaultOutputId.clear();
+    m_defaultInputId.clear();
+
+    // Identify active and available default endpoints
+    for (const auto &ep : endpoints) {
+        if (!ep.input && ep.available) {
+            if (ep.active && m_defaultOutputId.isEmpty()) {
+                m_defaultOutputId = ep.id;
+            } else if (m_defaultOutputId.isEmpty()) {
+                m_defaultOutputId = ep.id;
+            }
+        }
+        if (ep.input && ep.available) {
+            if (ep.active && m_defaultInputId.isEmpty()) {
+                m_defaultInputId = ep.id;
+            } else if (m_defaultInputId.isEmpty()) {
+                m_defaultInputId = ep.id;
+            }
+        }
+    }
+
     m_inputDeviceNames.append(tr("None / Disconnected"));
     m_inputLabelToId.insert(tr("None / Disconnected"), QString());
 
     m_outputDeviceNames.append(tr("Default System Output"));
-    m_outputLabelToId.insert(tr("Default System Output"), QString());
+    m_outputLabelToId.insert(tr("Default System Output"), m_defaultOutputId);
 
     m_recoveryDeviceNames.append(tr("Choose a device to enable or reset..."));
     m_recoveryLabelToId.insert(tr("Choose a device to enable or reset..."), QString());
@@ -362,11 +408,36 @@ void AudioRoutingController::updateEndpointLists(const QVector<Audio::Endpoint> 
 
 QString AudioRoutingController::endpointIdForLabel(const QString &label, bool isInput) const
 {
-    if (isInput) {
-        return m_inputLabelToId.value(label);
-    } else {
-        return m_outputLabelToId.value(label);
+    if (label.isEmpty() || label == tr("Default System Output") || label == "Default System Output") {
+        return isInput ? QString() : m_defaultOutputId;
     }
+    if (label == tr("None / Disconnected") || label == "None / Disconnected") {
+        return QString();
+    }
+
+    const auto &map = isInput ? m_inputLabelToId : m_outputLabelToId;
+    if (map.contains(label) && !map.value(label).isEmpty()) {
+        return map.value(label);
+    }
+
+    // Fuzzy matching against Qt Multimedia descriptions or device names
+    const QString cleanLabel = label.toLower();
+    for (auto it = map.constBegin(); it != map.constEnd(); ++it) {
+        if (it.value().isEmpty())
+            continue;
+        const QString keyLower = it.key().toLower();
+        if (keyLower.contains(cleanLabel) || cleanLabel.contains(keyLower)) {
+            return it.value();
+        }
+        const QStringList words = cleanLabel.split(QRegularExpression("[^a-z0-9]+"), Qt::SkipEmptyParts);
+        for (const QString &w : words) {
+            if (w.length() >= 4 && (keyLower.contains(w) || it.value().toLower().contains(w))) {
+                return it.value();
+            }
+        }
+    }
+
+    return isInput ? QString() : m_defaultOutputId;
 }
 
 QString AudioRoutingController::labelForEndpointId(const QString &id, bool isInput) const

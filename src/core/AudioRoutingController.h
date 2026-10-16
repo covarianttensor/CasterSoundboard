@@ -34,6 +34,9 @@ class AudioRoutingController : public QObject
     Q_PROPERTY(bool useAsDefaultInput READ useAsDefaultInput WRITE setUseAsDefaultInput NOTIFY configurationChanged)
     Q_PROPERTY(QString virtualMicName READ virtualMicName WRITE setVirtualMicName NOTIFY configurationChanged)
 
+    Q_PROPERTY(bool hasError READ hasError NOTIFY errorChanged)
+    Q_PROPERTY(QString lastErrorMessage READ lastErrorMessage NOTIFY errorChanged)
+
 public:
     explicit AudioRoutingController(QObject *parent = nullptr);
     ~AudioRoutingController() override;
@@ -75,6 +78,10 @@ public:
     QString virtualMicName() const { return m_virtualMicName; }
     void setVirtualMicName(const QString &name);
 
+    bool hasError() const { return !m_lastErrorMessage.isEmpty(); }
+    QString lastErrorMessage() const { return m_lastErrorMessage; }
+    Q_INVOKABLE void clearError() { m_lastErrorMessage.clear(); emit errorChanged(); }
+
 public slots:
     void refresh();
     void apply();
@@ -90,6 +97,7 @@ signals:
     void devicesChanged();
     void configurationChanged();
     void selectedRecoveryDeviceChanged();
+    void errorChanged();
 
 private slots:
     void onDevicesChanged(const Audio::Discovery &discovery);
@@ -110,6 +118,9 @@ private:
     bool m_isBusy{false};
     QString m_statusMessage{"Ready"};
     QString m_diagnosticsLog;
+    QString m_lastErrorMessage;
+    QString m_defaultOutputId;
+    QString m_defaultInputId;
 
     QStringList m_inputDeviceNames;
     QStringList m_outputDeviceNames;

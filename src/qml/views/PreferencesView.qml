@@ -6,6 +6,7 @@ Item {
     id: root
 
     signal actionHotkeyPromptRequested(string action)
+    signal navigateToAudioRoutingRequested()
 
     component DarkTextField : TextField {
         id: dtf
@@ -171,6 +172,9 @@ Item {
                                     if (typeof projectController !== "undefined") {
                                         projectController.outputDeviceName = currentText;
                                     }
+                                    if (typeof audioRoutingController !== "undefined") {
+                                        audioRoutingController.selectedSystemOutput = currentText;
+                                    }
                                 }
                             }
 
@@ -196,6 +200,163 @@ Item {
                                     color: parent.down ? "#4E545F" : (parent.hovered ? "#3E434D" : "#2E333B")
                                     radius: 6
                                     border.color: "#454B54"
+                                    border.width: 1
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Virtual Audio Routing & Microphone Streaming Card
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: prefRoutingCol.implicitHeight + 36
+                    color: "#222528"
+                    radius: 8
+                    border.color: (typeof audioRoutingController !== "undefined" && audioRoutingController.isRouting)
+                                  ? "#1E7E4E" : "#33373B"
+                    border.width: 1
+
+                    ColumnLayout {
+                        id: prefRoutingCol
+                        anchors.fill: parent
+                        anchors.margins: 16
+                        spacing: 12
+
+                        RowLayout {
+                            Layout.fillWidth: true
+                            Text {
+                                text: qsTr("Virtual Audio Routing & Voice Chat")
+                                color: "#FFFFFF"
+                                font.bold: true
+                                font.pointSize: 12
+                            }
+                            Item { Layout.fillWidth: true }
+
+                            Rectangle {
+                                width: prefStatusTxt.implicitWidth + 18
+                                height: 26
+                                radius: 13
+                                color: (typeof audioRoutingController !== "undefined" && audioRoutingController.isRouting)
+                                       ? "#142B20" : "#281A35"
+                                border.color: (typeof audioRoutingController !== "undefined" && audioRoutingController.isRouting)
+                                              ? "#2ECC71" : "#A855F7"
+                                border.width: 1
+                                Text {
+                                    id: prefStatusTxt
+                                    anchors.centerIn: parent
+                                    text: (typeof audioRoutingController !== "undefined" && audioRoutingController.isRouting)
+                                          ? qsTr("● Routing Active")
+                                          : qsTr("● Direct Mode")
+                                    color: (typeof audioRoutingController !== "undefined" && audioRoutingController.isRouting)
+                                           ? "#2ECC71" : "#D8B4FE"
+                                    font.bold: true
+                                    font.pointSize: 8.5
+                                }
+                            }
+                        }
+
+                        Text {
+                            text: (typeof audioRoutingController !== "undefined" && audioRoutingController.isRouting)
+                                  ? qsTr("Virtual audio routing is active. Your microphone and soundboard clips are merged into a virtual microphone for Discord, OBS, or Zoom.")
+                                  : qsTr("Virtual audio routing is inactive (Direct Playback Mode). Soundboard playback goes directly to your selected speakers without virtual mic streaming.")
+                            color: "#AAAAAA"
+                            font.pointSize: 9.5
+                            wrapMode: Text.WordWrap
+                            Layout.fillWidth: true
+                        }
+
+                        // Error Banner if error occurred
+                        Rectangle {
+                            Layout.fillWidth: true
+                            implicitHeight: prefErrCol.implicitHeight + 16
+                            radius: 6
+                            color: "#3B1818"
+                            border.color: "#E74C3C"
+                            border.width: 1
+                            visible: typeof audioRoutingController !== "undefined" && audioRoutingController.hasError
+
+                            RowLayout {
+                                id: prefErrCol
+                                anchors.fill: parent
+                                anchors.margins: 10
+                                spacing: 8
+
+                                Text {
+                                    text: "⚠️"
+                                    font.pointSize: 12
+                                }
+                                Text {
+                                    Layout.fillWidth: true
+                                    text: typeof audioRoutingController !== "undefined" ? audioRoutingController.lastErrorMessage : ""
+                                    color: "#FFCDD2"
+                                    font.pointSize: 9
+                                    wrapMode: Text.WordWrap
+                                }
+                                Button {
+                                    text: qsTr("Dismiss")
+                                    Layout.preferredHeight: 30
+                                    onClicked: audioRoutingController.clearError()
+                                }
+                            }
+                        }
+
+                        RowLayout {
+                            spacing: 12
+                            Layout.fillWidth: true
+
+                            Button {
+                                id: prefApplyBtn
+                                text: (typeof audioRoutingController !== "undefined" && audioRoutingController.isRouting)
+                                      ? qsTr("Stop Virtual Routing")
+                                      : qsTr("Apply Routing")
+                                Layout.preferredHeight: 44
+                                Layout.preferredWidth: 170
+                                enabled: typeof audioRoutingController !== "undefined" && !audioRoutingController.isBusy
+                                onClicked: {
+                                    if (typeof audioRoutingController !== "undefined") {
+                                        if (audioRoutingController.isRouting) {
+                                            audioRoutingController.stopSharing();
+                                        } else {
+                                            audioRoutingController.apply();
+                                        }
+                                    }
+                                }
+                                contentItem: Text {
+                                    text: parent.text
+                                    color: "#FFFFFF"
+                                    font.bold: true
+                                    horizontalAlignment: Text.AlignHCenter
+                                    verticalAlignment: Text.AlignVCenter
+                                }
+                                background: Rectangle {
+                                    color: {
+                                        if (typeof audioRoutingController !== "undefined" && audioRoutingController.isRouting) {
+                                            return parent.down ? "#922B21" : (parent.hovered ? "#C0392B" : "#A93226");
+                                        }
+                                        return parent.down ? "#5B18A7" : (parent.hovered ? "#A044FF" : "#8E2DE2");
+                                    }
+                                    radius: 6
+                                }
+                            }
+
+                            Button {
+                                text: qsTr("Configure Audio Flow & Endpoints...")
+                                Layout.preferredHeight: 44
+                                onClicked: {
+                                    root.navigateToAudioRoutingRequested();
+                                }
+                                contentItem: Text {
+                                    text: parent.text
+                                    color: "#FFFFFF"
+                                    font.bold: true
+                                    horizontalAlignment: Text.AlignHCenter
+                                    verticalAlignment: Text.AlignVCenter
+                                }
+                                background: Rectangle {
+                                    color: parent.down ? "#1E2022" : (parent.hovered ? "#3A3E42" : "#2E3236")
+                                    radius: 6
+                                    border.color: "#4A4E52"
                                     border.width: 1
                                 }
                             }
