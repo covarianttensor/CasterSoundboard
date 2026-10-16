@@ -55,6 +55,15 @@ void SoundboardProjectController::setIsFullScreen(bool fs)
     emit isFullScreenChanged();
 }
 
+void SoundboardProjectController::setIsMaximized(bool max)
+{
+    if (m_isMaximized == max)
+        return;
+    m_isMaximized = max;
+    setDirty(true);
+    emit isMaximizedChanged();
+}
+
 void SoundboardProjectController::setTileScale(qreal scale)
 {
     scale = qBound(0.5, scale, 2.5);
@@ -173,6 +182,7 @@ bool SoundboardProjectController::newProject()
     m_isDirty = false;
     m_isDuckingActive = false;
     m_hotkeyScope = TabScoped;
+    m_isMaximized = false;
     m_stopAllHotkey = "Space";
     m_duckingHotkey = "Ctrl+D";
 
@@ -180,6 +190,7 @@ bool SoundboardProjectController::newProject()
     emit isDirtyChanged();
     emit isDuckingActiveChanged();
     emit hotkeyScopeChanged();
+    emit isMaximizedChanged();
     emit stopAllHotkeyChanged();
     emit duckingHotkeyChanged();
     return true;
@@ -328,6 +339,7 @@ QJsonObject SoundboardProjectController::toJson() const
     windowObj["width"] = m_windowWidth;
     windowObj["height"] = m_windowHeight;
     windowObj["fullScreen"] = m_isFullScreen;
+    windowObj["maximized"] = m_isMaximized;
     windowObj["tileScale"] = m_tileScale;
     root["window"] = windowObj;
 
@@ -368,6 +380,7 @@ bool SoundboardProjectController::fromJson(const QJsonObject &json)
         setWindowWidth(win.contains("width") ? win["width"].toInt(1024) : win["windowWidth"].toInt(1024));
         setWindowHeight(win.contains("height") ? win["height"].toInt(720) : win["windowHeight"].toInt(720));
         setIsFullScreen(win.contains("fullScreen") ? win["fullScreen"].toBool(false) : win["isFullScreen"].toBool(false));
+        setIsMaximized(win.contains("maximized") ? win["maximized"].toBool(false) : win.contains("isMaximized") ? win["isMaximized"].toBool(false) : false);
         setTileScale(win["tileScale"].toDouble(1.0));
     }
 

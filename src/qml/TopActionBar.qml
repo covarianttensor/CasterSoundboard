@@ -19,6 +19,9 @@ Rectangle {
     signal changeDuckingShortcutRequested()
 
     height: 60
+    implicitHeight: 60
+    Layout.preferredHeight: 60
+    Layout.fillWidth: true
     color: "#25282B"
 
     RowLayout {

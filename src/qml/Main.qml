@@ -8,8 +8,8 @@ ApplicationWindow {
     id: window
     visible: true
 
-    width: typeof projectController !== "undefined" ? projectController.windowWidth : 1024
-    height: typeof projectController !== "undefined" ? projectController.windowHeight : 720
+    width: 1024
+    height: 720
     minimumWidth: 640
     minimumHeight: 480
 
@@ -23,13 +23,27 @@ ApplicationWindow {
     color: "#181A1B"
 
     onWidthChanged: {
-        if (typeof projectController !== "undefined") {
+        if (typeof projectController !== "undefined" && window.visibility === Window.Windowed) {
             projectController.windowWidth = width;
         }
     }
     onHeightChanged: {
-        if (typeof projectController !== "undefined") {
+        if (typeof projectController !== "undefined" && window.visibility === Window.Windowed) {
             projectController.windowHeight = height;
+        }
+    }
+    onVisibilityChanged: {
+        if (typeof projectController !== "undefined") {
+            if (window.visibility === Window.Maximized) {
+                projectController.isMaximized = true;
+                projectController.isFullScreen = false;
+            } else if (window.visibility === Window.FullScreen) {
+                projectController.isFullScreen = true;
+                projectController.isMaximized = false;
+            } else if (window.visibility === Window.Windowed) {
+                projectController.isMaximized = false;
+                projectController.isFullScreen = false;
+            }
         }
     }
 
@@ -108,7 +122,11 @@ ApplicationWindow {
 
     function toggleFullscreen() {
         if (window.visibility === Window.FullScreen) {
-            window.showNormal();
+            if (projectController && projectController.isMaximized) {
+                window.showMaximized();
+            } else {
+                window.showNormal();
+            }
             if (projectController) projectController.isFullScreen = false;
         } else {
             window.showFullScreen();
@@ -540,25 +558,75 @@ ApplicationWindow {
 
                 Views.SoundboardsView {
                     id: soundboardsView
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
                 }
 
                 Views.AudioRoutingView {
                     id: audioRoutingView
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
                 }
 
                 Views.OscView {
                     id: oscView
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
                 }
 
                 Views.PreferencesView {
                     id: preferencesView
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
                     onActionHotkeyPromptRequested: (action) => openActionHotkeyPrompt(action)
                 }
             }
         }
     }
 
+    Connections {
+        target: (typeof projectController !== "undefined") ? projectController : null
+        function onProjectLoaded() {
+            if (!projectController) return;
+            if (projectController.isFullScreen) {
+                window.showFullScreen();
+            } else if (projectController.isMaximized) {
+                window.showMaximized();
+            } else {
+                window.showNormal();
+                if (projectController.windowWidth >= window.minimumWidth) {
+                    window.width = projectController.windowWidth;
+                }
+                if (projectController.windowHeight >= window.minimumHeight) {
+                    window.height = projectController.windowHeight;
+                }
+            }
+        }
+        function onWindowGeometryChanged() {
+            if (!projectController || window.visibility !== Window.Windowed) return;
+            if (Math.abs(window.width - projectController.windowWidth) > 2) {
+                window.width = projectController.windowWidth;
+            }
+            if (Math.abs(window.height - projectController.windowHeight) > 2) {
+                window.height = projectController.windowHeight;
+            }
+        }
+    }
+
     Component.onCompleted: {
+        if (typeof projectController !== "undefined") {
+            if (projectController.windowWidth >= window.minimumWidth) {
+                window.width = projectController.windowWidth;
+            }
+            if (projectController.windowHeight >= window.minimumHeight) {
+                window.height = projectController.windowHeight;
+            }
+            if (projectController.isFullScreen) {
+                window.showFullScreen();
+            } else if (projectController.isMaximized) {
+                window.showMaximized();
+            }
+        }
         if (typeof initialViewIndex !== "undefined" && initialViewIndex > 0) {
             sidebar.currentIndex = initialViewIndex;
         }

@@ -10,6 +10,9 @@ Rectangle {
     signal fullscreenToggled()
 
     width: isCollapsed ? 56 : 75
+    implicitWidth: isCollapsed ? 56 : 75
+    Layout.preferredWidth: isCollapsed ? 56 : 75
+    Layout.fillHeight: true
     color: "#1E2022"
 
     Behavior on width {

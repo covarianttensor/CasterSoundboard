@@ -16,6 +16,7 @@ private slots:
         QCOMPARE(project.windowWidth(), 1024);
         QCOMPARE(project.windowHeight(), 720);
         QCOMPARE(project.isFullScreen(), false);
+        QCOMPARE(project.isMaximized(), false);
         QCOMPARE(project.tileScale(), 1.0);
         QCOMPARE(project.masterVolume(), 1.0);
         QCOMPARE(project.isDuckingActive(), false);
@@ -36,7 +37,8 @@ private slots:
         SoundboardProjectController p1;
         p1.setWindowWidth(1920);
         p1.setWindowHeight(1080);
-        p1.setIsFullScreen(true);
+        p1.setIsFullScreen(false);
+        p1.setIsMaximized(true);
         p1.setTileScale(1.35);
         p1.setMasterVolume(0.9);
         p1.setDuckingVolumeRatio(0.20);
@@ -84,7 +86,8 @@ private slots:
         // Verify window settings
         QCOMPARE(p2.windowWidth(), 1920);
         QCOMPARE(p2.windowHeight(), 1080);
-        QCOMPARE(p2.isFullScreen(), true);
+        QCOMPARE(p2.isFullScreen(), false);
+        QCOMPARE(p2.isMaximized(), true);
         QCOMPARE(p2.tileScale(), 1.35);
         QCOMPARE(p2.masterVolume(), 0.9);
         QCOMPARE(p2.duckingVolumeRatio(), 0.20);

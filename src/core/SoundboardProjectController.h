@@ -21,6 +21,7 @@ class SoundboardProjectController : public QObject
     Q_PROPERTY(int windowWidth READ windowWidth WRITE setWindowWidth NOTIFY windowGeometryChanged)
     Q_PROPERTY(int windowHeight READ windowHeight WRITE setWindowHeight NOTIFY windowGeometryChanged)
     Q_PROPERTY(bool isFullScreen READ isFullScreen WRITE setIsFullScreen NOTIFY isFullScreenChanged)
+    Q_PROPERTY(bool isMaximized READ isMaximized WRITE setIsMaximized NOTIFY isMaximizedChanged)
     Q_PROPERTY(qreal tileScale READ tileScale WRITE setTileScale NOTIFY tileScaleChanged)
     Q_PROPERTY(qreal masterVolume READ masterVolume WRITE setMasterVolume NOTIFY masterVolumeChanged)
     Q_PROPERTY(bool isDuckingActive READ isDuckingActive WRITE setIsDuckingActive NOTIFY isDuckingActiveChanged)
@@ -54,6 +55,9 @@ public:
 
     bool isFullScreen() const { return m_isFullScreen; }
     void setIsFullScreen(bool fs);
+
+    bool isMaximized() const { return m_isMaximized; }
+    void setIsMaximized(bool max);
 
     qreal tileScale() const { return m_tileScale; }
     void setTileScale(qreal scale);
@@ -100,6 +104,7 @@ signals:
     void isDirtyChanged();
     void windowGeometryChanged();
     void isFullScreenChanged();
+    void isMaximizedChanged();
     void tileScaleChanged();
     void masterVolumeChanged();
     void isDuckingActiveChanged();
@@ -127,6 +132,7 @@ private:
     int m_windowWidth{1024};
     int m_windowHeight{720};
     bool m_isFullScreen{false};
+    bool m_isMaximized{false};
     qreal m_tileScale{1.0};
     qreal m_masterVolume{1.0};
     bool m_isDuckingActive{false};

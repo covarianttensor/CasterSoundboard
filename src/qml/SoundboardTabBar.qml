@@ -13,6 +13,8 @@ Rectangle {
     signal setTabHotkeyRequested(int index)
 
     height: 48
+    implicitHeight: 48
+    Layout.preferredHeight: 48
     color: "#181A1B"
 
     Flickable {
