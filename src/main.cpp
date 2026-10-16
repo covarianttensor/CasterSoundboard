@@ -278,7 +278,12 @@ int main(int argc, char *argv[])
                      &app, []() { QCoreApplication::exit(-1); },
                      Qt::QueuedConnection);
 
+#if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
     engine.loadFromModule("CasterSoundboard", "Main");
+#else
+    const QUrl url(QStringLiteral("qrc:/qt/qml/CasterSoundboard/src/qml/Main.qml"));
+    engine.load(url);
+#endif
 
     if (parser.isSet(testSeekMsOption)) {
         int seekMs = parser.value(testSeekMsOption).toInt();
