@@ -1324,124 +1324,7 @@ Item {
                     }
                 }
 
-                // 4. Routing Bus Options Card
-                Rectangle {
-                    Layout.fillWidth: true
-                    implicitHeight: optCol.implicitHeight + 32
-                    color: "#222528"
-                    radius: 8
-                    border.color: "#33373B"
-                    border.width: 1
-
-                    ColumnLayout {
-                        id: optCol
-                        anchors.fill: parent
-                        anchors.margins: 16
-                        spacing: 12
-
-                        Text {
-                            text: qsTr("Application Routing & Mixing Options")
-                            color: "#FFFFFF"
-                            font.bold: true
-                            font.pointSize: 12
-                        }
-
-                        // Checkbox 1: Mix physical mic with soundboard
-                        RowLayout {
-                            spacing: 12
-                            CheckBox {
-                                id: mixCheck
-                                checked: typeof audioRoutingController !== "undefined" ? audioRoutingController.mixMicrophone : true
-                                onToggled: {
-                                    if (typeof audioRoutingController !== "undefined") {
-                                        audioRoutingController.mixMicrophone = checked;
-                                    }
-                                }
-                            }
-                            ColumnLayout {
-                                spacing: 2
-                                Layout.fillWidth: true
-                                Text {
-                                    text: qsTr("Send microphone + soundboard to virtual microphone (Summing Mixer ⊕)")
-                                    color: "#FFFFFF"
-                                    font.bold: true
-                                    font.pointSize: 10.5
-                                }
-                                Text {
-                                    text: qsTr("Combines your physical voice microphone and soundboard audio clips into one virtual input for voice chat or recording.")
-                                    color: "#AAAAAA"
-                                    font.pointSize: 9
-                                    wrapMode: Text.WordWrap
-                                    Layout.fillWidth: true
-                                }
-                            }
-                        }
-
-                        // Checkbox 2: Monitor soundboard through chosen output
-                        RowLayout {
-                            spacing: 12
-                            CheckBox {
-                                id: monCheck
-                                checked: typeof audioRoutingController !== "undefined" ? audioRoutingController.monitorSoundboard : true
-                                onToggled: {
-                                    if (typeof audioRoutingController !== "undefined") {
-                                        audioRoutingController.monitorSoundboard = checked;
-                                    }
-                                }
-                            }
-                            ColumnLayout {
-                                spacing: 2
-                                Layout.fillWidth: true
-                                Text {
-                                    text: qsTr("Monitor soundboard through headphones (never plays your live microphone back)")
-                                    color: "#FFFFFF"
-                                    font.bold: true
-                                    font.pointSize: 10.5
-                                }
-                                Text {
-                                    text: qsTr("Plays soundboard audio through your monitor output without echoing your live voice back into your ears.")
-                                    color: "#AAAAAA"
-                                    font.pointSize: 9
-                                    wrapMode: Text.WordWrap
-                                    Layout.fillWidth: true
-                                }
-                            }
-                        }
-
-                        // Checkbox 3: Set as system default input
-                        RowLayout {
-                            spacing: 12
-                            CheckBox {
-                                id: defInputCheck
-                                checked: typeof audioRoutingController !== "undefined" ? audioRoutingController.useAsDefaultInput : false
-                                onToggled: {
-                                    if (typeof audioRoutingController !== "undefined") {
-                                        audioRoutingController.useAsDefaultInput = checked;
-                                    }
-                                }
-                            }
-                            ColumnLayout {
-                                spacing: 2
-                                Layout.fillWidth: true
-                                Text {
-                                    text: qsTr("Use mixed virtual microphone as system default input (global)")
-                                    color: "#FFFFFF"
-                                    font.bold: true
-                                    font.pointSize: 10.5
-                                }
-                                Text {
-                                    text: qsTr("Sets the virtual microphone as the system-wide default input for applications that use 'System Default'.")
-                                    color: "#AAAAAA"
-                                    font.pointSize: 9
-                                    wrapMode: Text.WordWrap
-                                    Layout.fillWidth: true
-                                }
-                            }
-                        }
-                    }
-                }
-
-                // 5. Discord & Voice Chat Configuration Guide Card
+                // 4. Discord & Voice Chat Configuration Guide Card
                 Rectangle {
                     Layout.fillWidth: true
                     Layout.preferredHeight: discordGuideCol.implicitHeight + 36
@@ -1580,152 +1463,360 @@ Item {
                     }
                 }
 
-                // 6. Device Recovery & Troubleshooting Card
+                // 5. Advanced & Troubleshooting Accordion (Collapsed by Default)
                 Rectangle {
+                    id: advancedAccordion
                     Layout.fillWidth: true
-                    Layout.preferredHeight: recoveryCol.implicitHeight + 36
+                    property bool isExpanded: false
+                    implicitHeight: isExpanded ? advInnerCol.implicitHeight : 52
+                    Layout.preferredHeight: implicitHeight
                     color: "#222528"
                     radius: 8
-                    border.color: "#33373B"
+                    border.color: isExpanded ? "#4E545F" : "#33373B"
                     border.width: 1
+                    clip: true
 
-                    ColumnLayout {
-                        id: recoveryCol
-                        anchors.fill: parent
-                        anchors.margins: 18
-                        spacing: 14
-
-                        Text {
-                            text: qsTr("Device Recovery & Troubleshooting")
-                            color: "#FFFFFF"
-                            font.bold: true
-                            font.pointSize: 13
-                        }
-
-                        Text {
-                            text: qsTr("Recovery can enable disabled devices or recreate missing endpoints. An idle or suspended device is not necessarily broken.")
-                            color: "#888888"
-                            font.pointSize: 9
-                            wrapMode: Text.WordWrap
-                            Layout.fillWidth: true
-                        }
-
-                        RowLayout {
-                            Layout.fillWidth: true
-                            spacing: 12
-
-                            DarkComboBox {
-                                id: recCombo
-                                Layout.fillWidth: true
-                                model: (typeof audioRoutingController !== "undefined" && audioRoutingController.recoveryDevices.length > 0)
-                                       ? audioRoutingController.recoveryDevices
-                                       : [qsTr("Choose a device to enable or reset...")]
-                                currentIndex: {
-                                    if (typeof audioRoutingController === "undefined" || !audioRoutingController.selectedRecoveryDevice)
-                                        return 0;
-                                    var idx = recCombo.model.indexOf(audioRoutingController.selectedRecoveryDevice);
-                                    return idx >= 0 ? idx : 0;
-                                }
-                                onActivated: (index) => {
-                                    if (typeof audioRoutingController !== "undefined") {
-                                        audioRoutingController.selectedRecoveryDevice = currentText;
-                                    }
-                                }
-                            }
-
-                            Button {
-                                text: qsTr("Recover Device…")
-                                Layout.preferredHeight: 44
-                                onClicked: {
-                                    if (typeof audioRoutingController !== "undefined") {
-                                        audioRoutingController.recoverSelectedDevice();
-                                    }
-                                }
-                                contentItem: Text {
-                                    text: parent.text
-                                    color: "#FFFFFF"
-                                    font.bold: true
-                                    horizontalAlignment: Text.AlignHCenter
-                                    verticalAlignment: Text.AlignVCenter
-                                }
-                                background: Rectangle {
-                                    color: parent.down ? "#4E545F" : (parent.hovered ? "#3E434D" : "#2E333B")
-                                    radius: 6
-                                    border.color: "#454B54"
-                                    border.width: 1
-                                }
-                            }
-
-                            Button {
-                                text: qsTr("Restart Desktop Audio…")
-                                Layout.preferredHeight: 44
-                                onClicked: {
-                                    if (typeof audioRoutingController !== "undefined") {
-                                        audioRoutingController.restartDesktopAudio();
-                                    }
-                                }
-                                contentItem: Text {
-                                    text: parent.text
-                                    color: "#FFFFFF"
-                                    font.bold: true
-                                    horizontalAlignment: Text.AlignHCenter
-                                    verticalAlignment: Text.AlignVCenter
-                                }
-                                background: Rectangle {
-                                    color: parent.down ? "#4E545F" : (parent.hovered ? "#3E434D" : "#2E333B")
-                                    radius: 6
-                                    border.color: "#454B54"
-                                    border.width: 1
-                                }
-                            }
-                        }
+                    Behavior on implicitHeight {
+                        NumberAnimation { duration: 220; easing.type: Easing.OutCubic }
                     }
-                }
-
-                // 7. Diagnostics Log Card
-                Rectangle {
-                    Layout.fillWidth: true
-                    Layout.preferredHeight: diagCol.implicitHeight + 36
-                    color: "#222528"
-                    radius: 8
-                    border.color: "#33373B"
-                    border.width: 1
 
                     ColumnLayout {
-                        id: diagCol
-                        anchors.fill: parent
-                        anchors.margins: 18
-                        spacing: 10
+                        id: advInnerCol
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.top: parent.top
+                        spacing: 0
 
-                        Text {
-                            text: qsTr("Diagnostics Log")
-                            color: "#FFFFFF"
-                            font.bold: true
-                            font.pointSize: 13
+                        // Clickable Accordion Header
+                        MouseArea {
+                            id: advHeaderMouse
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: 52
+                            cursorShape: Qt.PointingHandCursor
+                            hoverEnabled: true
+                            onClicked: advancedAccordion.isExpanded = !advancedAccordion.isExpanded
+
+                            Rectangle {
+                                anchors.fill: parent
+                                color: advHeaderMouse.containsMouse ? "#2A2E33" : "transparent"
+                                radius: 8
+                            }
+
+                            RowLayout {
+                                anchors.fill: parent
+                                anchors.leftMargin: 18
+                                anchors.rightMargin: 18
+                                spacing: 12
+
+                                Text {
+                                    text: advancedAccordion.isExpanded ? "▼" : "▶"
+                                    color: "#A855F7"
+                                    font.pixelSize: 13
+                                    font.bold: true
+                                }
+
+                                Text {
+                                    text: qsTr("Advanced & Troubleshooting")
+                                    color: "#FFFFFF"
+                                    font.bold: true
+                                    font.pointSize: 12
+                                }
+
+                                Text {
+                                    text: qsTr("Mixing options, device recovery & diagnostics")
+                                    color: "#888888"
+                                    font.pointSize: 9
+                                    Layout.fillWidth: true
+                                    elide: Text.ElideRight
+                                }
+
+                                Rectangle {
+                                    width: expandBadgeText.implicitWidth + 18
+                                    height: 26
+                                    radius: 13
+                                    color: advHeaderMouse.containsMouse ? "#3E434D" : "#2E333B"
+                                    border.color: "#454B54"
+                                    border.width: 1
+
+                                    Text {
+                                        id: expandBadgeText
+                                        anchors.centerIn: parent
+                                        text: advancedAccordion.isExpanded ? qsTr("Hide") : qsTr("Show")
+                                        color: "#D8B4FE"
+                                        font.bold: true
+                                        font.pointSize: 8.5
+                                    }
+                                }
+                            }
                         }
 
-                        Rectangle {
+                        // Collapsible Body
+                        ColumnLayout {
+                            id: advContentCol
                             Layout.fillWidth: true
-                            Layout.preferredHeight: 140
-                            color: "#181A1B"
-                            radius: 6
-                            border.color: "#33373B"
-                            border.width: 1
+                            Layout.leftMargin: 18
+                            Layout.rightMargin: 18
+                            Layout.bottomMargin: 18
+                            Layout.topMargin: 4
+                            spacing: 18
+                            opacity: advancedAccordion.isExpanded ? 1.0 : 0.0
+                            Behavior on opacity {
+                                NumberAnimation { duration: 180 }
+                            }
 
-                            ScrollView {
-                                anchors.fill: parent
-                                anchors.margins: 8
-                                clip: true
+                            Rectangle {
+                                Layout.fillWidth: true
+                                height: 1
+                                color: "#33373B"
+                            }
 
-                                TextArea {
-                                    id: diagText
-                                    readOnly: true
-                                    color: "#74B9FF"
-                                    font.family: "Monospace"
-                                    font.pointSize: 9
-                                    wrapMode: Text.WrapAnywhere
-                                    text: typeof audioRoutingController !== "undefined" ? audioRoutingController.diagnosticsLog : qsTr("Diagnostics ready.")
-                                    background: null
+                            // --- SUBSECTION 1: Application Routing & Mixing Options ---
+                            ColumnLayout {
+                                Layout.fillWidth: true
+                                spacing: 12
+
+                                Text {
+                                    text: qsTr("Application Routing & Mixing Overrides")
+                                    color: "#FFFFFF"
+                                    font.bold: true
+                                    font.pointSize: 11
+                                }
+
+                                // Checkbox 1: Mix physical mic with soundboard
+                                RowLayout {
+                                    spacing: 12
+                                    CheckBox {
+                                        id: mixCheck
+                                        checked: typeof audioRoutingController !== "undefined" ? audioRoutingController.mixMicrophone : true
+                                        onToggled: {
+                                            if (typeof audioRoutingController !== "undefined") {
+                                                audioRoutingController.mixMicrophone = checked;
+                                            }
+                                        }
+                                    }
+                                    ColumnLayout {
+                                        spacing: 2
+                                        Layout.fillWidth: true
+                                        Text {
+                                            text: qsTr("Send microphone + soundboard to virtual microphone (Summing Mixer ⊕)")
+                                            color: "#FFFFFF"
+                                            font.bold: true
+                                            font.pointSize: 9.5
+                                        }
+                                        Text {
+                                            text: qsTr("Combines your physical voice microphone and soundboard audio clips into one virtual input for voice chat or recording.")
+                                            color: "#888888"
+                                            font.pointSize: 8.5
+                                            wrapMode: Text.WordWrap
+                                            Layout.fillWidth: true
+                                        }
+                                    }
+                                }
+
+                                // Checkbox 2: Monitor soundboard through chosen output
+                                RowLayout {
+                                    spacing: 12
+                                    CheckBox {
+                                        id: monCheck
+                                        checked: typeof audioRoutingController !== "undefined" ? audioRoutingController.monitorSoundboard : true
+                                        onToggled: {
+                                            if (typeof audioRoutingController !== "undefined") {
+                                                audioRoutingController.monitorSoundboard = checked;
+                                            }
+                                        }
+                                    }
+                                    ColumnLayout {
+                                        spacing: 2
+                                        Layout.fillWidth: true
+                                        Text {
+                                            text: qsTr("Monitor soundboard through headphones (never plays your live microphone back)")
+                                            color: "#FFFFFF"
+                                            font.bold: true
+                                            font.pointSize: 9.5
+                                        }
+                                        Text {
+                                            text: qsTr("Plays soundboard audio through your monitor output without echoing your live voice back into your ears.")
+                                            color: "#888888"
+                                            font.pointSize: 8.5
+                                            wrapMode: Text.WordWrap
+                                            Layout.fillWidth: true
+                                        }
+                                    }
+                                }
+
+                                // Checkbox 3: Set as system default input
+                                RowLayout {
+                                    spacing: 12
+                                    CheckBox {
+                                        id: defInputCheck
+                                        checked: typeof audioRoutingController !== "undefined" ? audioRoutingController.useAsDefaultInput : false
+                                        onToggled: {
+                                            if (typeof audioRoutingController !== "undefined") {
+                                                audioRoutingController.useAsDefaultInput = checked;
+                                            }
+                                        }
+                                    }
+                                    ColumnLayout {
+                                        spacing: 2
+                                        Layout.fillWidth: true
+                                        Text {
+                                            text: qsTr("Use mixed virtual microphone as system default input (global)")
+                                            color: "#FFFFFF"
+                                            font.bold: true
+                                            font.pointSize: 9.5
+                                        }
+                                        Text {
+                                            text: qsTr("Sets the virtual microphone as the system-wide default input for applications that use 'System Default'.")
+                                            color: "#888888"
+                                            font.pointSize: 8.5
+                                            wrapMode: Text.WordWrap
+                                            Layout.fillWidth: true
+                                        }
+                                    }
+                                }
+                            }
+
+                            Rectangle {
+                                Layout.fillWidth: true
+                                height: 1
+                                color: "#33373B"
+                            }
+
+                            // --- SUBSECTION 2: Device Recovery & Troubleshooting ---
+                            ColumnLayout {
+                                Layout.fillWidth: true
+                                spacing: 12
+
+                                Text {
+                                    text: qsTr("Device Recovery & Service Restart")
+                                    color: "#FFFFFF"
+                                    font.bold: true
+                                    font.pointSize: 11
+                                }
+
+                                Text {
+                                    text: qsTr("Cycle hardware profiles if a USB audio interface falls asleep, or restart Linux user audio services if PipeWire hangs.")
+                                    color: "#888888"
+                                    font.pointSize: 8.5
+                                    wrapMode: Text.WordWrap
+                                    Layout.fillWidth: true
+                                }
+
+                                RowLayout {
+                                    Layout.fillWidth: true
+                                    spacing: 12
+
+                                    DarkComboBox {
+                                        id: recCombo
+                                        Layout.fillWidth: true
+                                        model: (typeof audioRoutingController !== "undefined" && audioRoutingController.recoveryDevices.length > 0)
+                                               ? audioRoutingController.recoveryDevices
+                                               : [qsTr("Choose a device to enable or reset...")]
+                                        currentIndex: {
+                                            if (typeof audioRoutingController === "undefined" || !audioRoutingController.selectedRecoveryDevice)
+                                                return 0;
+                                            var idx = recCombo.model.indexOf(audioRoutingController.selectedRecoveryDevice);
+                                            return idx >= 0 ? idx : 0;
+                                        }
+                                        onActivated: (index) => {
+                                            if (typeof audioRoutingController !== "undefined") {
+                                                audioRoutingController.selectedRecoveryDevice = currentText;
+                                            }
+                                        }
+                                    }
+
+                                    Button {
+                                        text: qsTr("Recover Device…")
+                                        Layout.preferredHeight: 40
+                                        onClicked: {
+                                            if (typeof audioRoutingController !== "undefined") {
+                                                audioRoutingController.recoverSelectedDevice();
+                                            }
+                                        }
+                                        contentItem: Text {
+                                            text: parent.text
+                                            color: "#FFFFFF"
+                                            font.bold: true
+                                            font.pointSize: 9
+                                            horizontalAlignment: Text.AlignHCenter
+                                            verticalAlignment: Text.AlignVCenter
+                                        }
+                                        background: Rectangle {
+                                            color: parent.down ? "#4E545F" : (parent.hovered ? "#3E434D" : "#2E333B")
+                                            radius: 6
+                                            border.color: "#454B54"
+                                            border.width: 1
+                                        }
+                                    }
+
+                                    Button {
+                                        text: qsTr("Restart Desktop Audio…")
+                                        Layout.preferredHeight: 40
+                                        onClicked: {
+                                            if (typeof audioRoutingController !== "undefined") {
+                                                audioRoutingController.restartDesktopAudio();
+                                            }
+                                        }
+                                        contentItem: Text {
+                                            text: parent.text
+                                            color: "#FFFFFF"
+                                            font.bold: true
+                                            font.pointSize: 9
+                                            horizontalAlignment: Text.AlignHCenter
+                                            verticalAlignment: Text.AlignVCenter
+                                        }
+                                        background: Rectangle {
+                                            color: parent.down ? "#4E545F" : (parent.hovered ? "#3E434D" : "#2E333B")
+                                            radius: 6
+                                            border.color: "#454B54"
+                                            border.width: 1
+                                        }
+                                    }
+                                }
+                            }
+
+                            Rectangle {
+                                Layout.fillWidth: true
+                                height: 1
+                                color: "#33373B"
+                            }
+
+                            // --- SUBSECTION 3: Diagnostics Log ---
+                            ColumnLayout {
+                                Layout.fillWidth: true
+                                spacing: 8
+
+                                Text {
+                                    text: qsTr("Diagnostics Log")
+                                    color: "#FFFFFF"
+                                    font.bold: true
+                                    font.pointSize: 11
+                                }
+
+                                Rectangle {
+                                    Layout.fillWidth: true
+                                    Layout.preferredHeight: 120
+                                    color: "#181A1B"
+                                    radius: 6
+                                    border.color: "#33373B"
+                                    border.width: 1
+
+                                    ScrollView {
+                                        anchors.fill: parent
+                                        anchors.margins: 8
+                                        clip: true
+
+                                        TextArea {
+                                            id: diagText
+                                            readOnly: true
+                                            color: "#74B9FF"
+                                            font.family: "Monospace"
+                                            font.pointSize: 8.5
+                                            wrapMode: Text.WrapAnywhere
+                                            text: typeof audioRoutingController !== "undefined" ? audioRoutingController.diagnosticsLog : qsTr("Diagnostics ready.")
+                                            background: null
+                                        }
+                                    }
                                 }
                             }
                         }
