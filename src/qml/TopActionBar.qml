@@ -27,13 +27,7 @@ Rectangle {
         anchors.rightMargin: 12
         spacing: 8
 
-        // --- File & Project Controls ---
-        ActionIconButton {
-            iconSource: "icons/newTab.png"
-            tooltipText: qsTr("Add Soundboard Tab (Ctrl+N)")
-            onClicked: root.newTabRequested()
-        }
-
+        // --- Project / Profile File Controls ---
         ActionIconButton {
             iconSource: "icons/open.png"
             tooltipText: qsTr("Open .caster Project (Ctrl+O)")
@@ -50,6 +44,21 @@ Rectangle {
             iconSource: "icons/save_as.png"
             tooltipText: qsTr("Save Project As... (Ctrl+Shift+S)")
             onClicked: root.saveAsProjectRequested()
+        }
+
+        Rectangle {
+            width: 1
+            height: 32
+            color: "#3A3E42"
+            Layout.leftMargin: 4
+            Layout.rightMargin: 4
+        }
+
+        // --- Soundboard Tab Controls ---
+        ActionIconButton {
+            iconSource: "icons/newTab.png"
+            tooltipText: qsTr("Add Soundboard Tab (Ctrl+N)")
+            onClicked: root.newTabRequested()
         }
 
         ActionIconButton {
