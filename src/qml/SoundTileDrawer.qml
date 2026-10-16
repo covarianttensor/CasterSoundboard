@@ -28,6 +28,51 @@ Dialog {
                (hundredths < 10 ? "0" + hundredths : hundredths);
     }
 
+    function parsePreciseTime(str, durationMs) {
+        if (!str) return null;
+        var s = str.toString().trim().replace(',', '.');
+        if (!s) return null;
+
+        // If user is currently typing a trailing delimiter (e.g. "01:" or "01:23."), do not trigger incomplete jump
+        if (s.endsWith(':') || s.endsWith('.')) {
+            return null;
+        }
+
+        if (s.indexOf(':') !== -1) {
+            var parts = s.split(':');
+            var h = 0, m = 0, sec = 0;
+            if (parts.length === 3) {
+                if (parts[0] === "" || parts[1] === "" || parts[2] === "") return null;
+                h = parseFloat(parts[0]);
+                m = parseFloat(parts[1]);
+                sec = parseFloat(parts[2]);
+            } else if (parts.length === 2) {
+                if (parts[0] === "" || parts[1] === "") return null;
+                m = parseFloat(parts[0]);
+                sec = parseFloat(parts[1]);
+            } else {
+                return null;
+            }
+            if (isNaN(h) || isNaN(m) || isNaN(sec)) return null;
+            var totalSec = h * 3600 + m * 60 + sec;
+            return Math.max(0, Math.round(totalSec * 1000));
+        }
+
+        var val = parseFloat(s);
+        if (isNaN(val) || val < 0) return null;
+
+        // If integer > 1000 without decimal and within durationMs, treat as raw ms (e.g. user typed/pasted ms)
+        if (s.indexOf('.') === -1 && durationMs && durationMs > 1000 && val > (durationMs / 1000) && val <= durationMs) {
+            return Math.round(val);
+        }
+        return Math.round(val * 1000);
+    }
+
+    onTileChanged: {
+        if (cueInField) cueInField.text = tile ? root.formatPreciseTime(tile.cueBeginMs) : "00:00.00";
+        if (cueOutField) cueOutField.text = tile ? root.formatPreciseTime(tile.cueEndMs > 0 ? tile.cueEndMs : tile.durationMs) : "00:00.00";
+    }
+
     title: qsTr("Sound Tile Properties")
     modal: true
     anchors.centerIn: parent
@@ -41,6 +86,8 @@ Dialog {
     }
 
     onOpened: {
+        if (cueInField && tile) cueInField.text = root.formatPreciseTime(tile.cueBeginMs);
+        if (cueOutField && tile) cueOutField.text = root.formatPreciseTime(tile.cueEndMs > 0 ? tile.cueEndMs : tile.durationMs);
         if (typeof scrollToCueOnStart !== "undefined" && scrollToCueOnStart) {
             flickable.contentY = 320;
         }
@@ -1240,7 +1287,7 @@ Dialog {
                         }
                     }
 
-                    // Numeric Fine-Tuning Controls Row
+                    // Formatted Timecode Controls Row
                     RowLayout {
                         Layout.fillWidth: true
                         spacing: 12
@@ -1260,58 +1307,52 @@ Dialog {
 
                             RowLayout {
                                 Layout.fillWidth: true
-                                spacing: 4
-
-                                DarkButton {
-                                    text: "-100"
-                                    Layout.preferredWidth: 46
-                                    Layout.preferredHeight: 34
-                                    ToolTip.visible: hovered
-                                    ToolTip.text: qsTr("Nudge -100ms")
-                                    onClicked: {
-                                        if (tile) tile.cueBeginMs = Math.max(0, tile.cueBeginMs - 100);
-                                    }
-                                }
+                                spacing: 6
 
                                 DarkTextField {
                                     id: cueInField
-                                    text: tile ? tile.cueBeginMs.toString() : "0"
+                                    text: tile ? root.formatPreciseTime(tile.cueBeginMs) : "00:00.00"
+                                    font.family: "Monospace"
+                                    font.pointSize: 10
+                                    placeholderText: "00:00.00"
                                     Layout.fillWidth: true
-                                    Layout.preferredWidth: 60
-                                    Layout.minimumWidth: 40
-                                    onTextChanged: {
+                                    Layout.preferredHeight: 36
+                                    ToolTip.visible: hovered
+                                    ToolTip.text: qsTr("Cue In timecode (mm:ss.hh or seconds). Press Enter to apply.")
+
+                                    onTextEdited: {
                                         if (tile && activeFocus) {
-                                            var val = parseInt(text) || 0;
-                                            var maxIn = (tile.cueEndMs > 50) ? tile.cueEndMs - 50 : 0;
-                                            tile.cueBeginMs = Math.max(0, Math.min(maxIn, val));
+                                            var ms = root.parsePreciseTime(text, tile.durationMs);
+                                            if (ms !== null && !isNaN(ms)) {
+                                                var maxIn = (tile.cueEndMs > 50) ? tile.cueEndMs - 50 : (tile.durationMs > 50 ? tile.durationMs - 50 : 0);
+                                                tile.cueBeginMs = Math.max(0, Math.min(maxIn, ms));
+                                            }
                                         }
                                     }
-                                }
 
-                                DarkButton {
-                                    text: "+100"
-                                    Layout.preferredWidth: 46
-                                    Layout.preferredHeight: 34
-                                    ToolTip.visible: hovered
-                                    ToolTip.text: qsTr("Nudge +100ms")
-                                    onClicked: {
+                                    onEditingFinished: {
                                         if (tile) {
-                                            var maxIn = (tile.cueEndMs > 50) ? tile.cueEndMs - 50 : 0;
-                                            tile.cueBeginMs = Math.min(maxIn, tile.cueBeginMs + 100);
+                                            var ms = root.parsePreciseTime(text, tile.durationMs);
+                                            if (ms !== null && !isNaN(ms)) {
+                                                var maxIn = (tile.cueEndMs > 50) ? tile.cueEndMs - 50 : (tile.durationMs > 50 ? tile.durationMs - 50 : 0);
+                                                tile.cueBeginMs = Math.max(0, Math.min(maxIn, ms));
+                                            }
+                                            text = root.formatPreciseTime(tile.cueBeginMs);
                                         }
                                     }
                                 }
 
                                 DarkButton {
                                     text: qsTr("Here")
-                                    Layout.preferredWidth: 50
-                                    Layout.preferredHeight: 34
+                                    Layout.preferredWidth: 54
+                                    Layout.preferredHeight: 36
                                     ToolTip.visible: hovered
                                     ToolTip.text: qsTr("Set Cue In to current playhead position")
                                     onClicked: {
                                         if (tile) {
                                             var maxIn = (tile.cueEndMs > 50) ? tile.cueEndMs - 50 : 0;
                                             tile.cueBeginMs = Math.min(maxIn, tile.positionMs);
+                                            cueInField.text = root.formatPreciseTime(tile.cueBeginMs);
                                         }
                                     }
                                 }
@@ -1332,57 +1373,53 @@ Dialog {
 
                             RowLayout {
                                 Layout.fillWidth: true
-                                spacing: 4
-
-                                DarkButton {
-                                    text: "-100"
-                                    Layout.preferredWidth: 46
-                                    Layout.preferredHeight: 34
-                                    ToolTip.visible: hovered
-                                    ToolTip.text: qsTr("Nudge -100ms")
-                                    onClicked: {
-                                        if (tile) {
-                                            tile.cueEndMs = Math.max(tile.cueBeginMs + 50, (tile.cueEndMs > 0 ? tile.cueEndMs : tile.durationMs) - 100);
-                                        }
-                                    }
-                                }
+                                spacing: 6
 
                                 DarkTextField {
                                     id: cueOutField
-                                    text: tile ? (tile.cueEndMs > 0 ? tile.cueEndMs.toString() : (tile.durationMs > 0 ? tile.durationMs.toString() : "0")) : "0"
+                                    text: tile ? root.formatPreciseTime(tile.cueEndMs > 0 ? tile.cueEndMs : tile.durationMs) : "00:00.00"
+                                    font.family: "Monospace"
+                                    font.pointSize: 10
+                                    placeholderText: "00:00.00"
                                     Layout.fillWidth: true
-                                    Layout.preferredWidth: 60
-                                    Layout.minimumWidth: 40
-                                    onTextChanged: {
+                                    Layout.preferredHeight: 36
+                                    ToolTip.visible: hovered
+                                    ToolTip.text: qsTr("Cue Out timecode (mm:ss.hh or seconds). Press Enter to apply.")
+
+                                    onTextEdited: {
                                         if (tile && activeFocus) {
-                                            var val = parseInt(text) || 0;
-                                            tile.cueEndMs = Math.max(tile.cueBeginMs + 50, Math.min(tile.durationMs, val));
+                                            var ms = root.parsePreciseTime(text, tile.durationMs);
+                                            if (ms !== null && !isNaN(ms)) {
+                                                var minOut = tile.cueBeginMs + 50;
+                                                var maxOut = (tile.durationMs > 0) ? tile.durationMs : Math.max(minOut, ms);
+                                                tile.cueEndMs = Math.max(minOut, Math.min(maxOut, ms));
+                                            }
                                         }
                                     }
-                                }
 
-                                DarkButton {
-                                    text: "+100"
-                                    Layout.preferredWidth: 46
-                                    Layout.preferredHeight: 34
-                                    ToolTip.visible: hovered
-                                    ToolTip.text: qsTr("Nudge +100ms")
-                                    onClicked: {
+                                    onEditingFinished: {
                                         if (tile) {
-                                            tile.cueEndMs = Math.min(tile.durationMs, (tile.cueEndMs > 0 ? tile.cueEndMs : tile.durationMs) + 100);
+                                            var ms = root.parsePreciseTime(text, tile.durationMs);
+                                            if (ms !== null && !isNaN(ms)) {
+                                                var minOut = tile.cueBeginMs + 50;
+                                                var maxOut = (tile.durationMs > 0) ? tile.durationMs : Math.max(minOut, ms);
+                                                tile.cueEndMs = Math.max(minOut, Math.min(maxOut, ms));
+                                            }
+                                            text = root.formatPreciseTime(tile.cueEndMs > 0 ? tile.cueEndMs : tile.durationMs);
                                         }
                                     }
                                 }
 
                                 DarkButton {
                                     text: qsTr("Here")
-                                    Layout.preferredWidth: 50
-                                    Layout.preferredHeight: 34
+                                    Layout.preferredWidth: 54
+                                    Layout.preferredHeight: 36
                                     ToolTip.visible: hovered
                                     ToolTip.text: qsTr("Set Cue Out to current playhead position")
                                     onClicked: {
                                         if (tile) {
                                             tile.cueEndMs = Math.max(tile.cueBeginMs + 50, tile.positionMs);
+                                            cueOutField.text = root.formatPreciseTime(tile.cueEndMs > 0 ? tile.cueEndMs : tile.durationMs);
                                         }
                                     }
                                 }
@@ -1396,12 +1433,12 @@ Dialog {
                 target: tile
                 function onCueBeginMsChanged() {
                     if (cueInField && !cueInField.activeFocus && tile) {
-                        cueInField.text = tile.cueBeginMs.toString();
+                        cueInField.text = root.formatPreciseTime(tile.cueBeginMs);
                     }
                 }
                 function onCueEndMsChanged() {
                     if (cueOutField && !cueOutField.activeFocus && tile) {
-                        cueOutField.text = (tile.cueEndMs > 0 ? tile.cueEndMs.toString() : (tile.durationMs > 0 ? tile.durationMs.toString() : "0"));
+                        cueOutField.text = root.formatPreciseTime(tile.cueEndMs > 0 ? tile.cueEndMs : tile.durationMs);
                     }
                 }
                 function onWaveformChanged() {
@@ -1411,6 +1448,9 @@ Dialog {
                 function onDurationMsChanged() {
                     if (cueWaveformBase) cueWaveformBase.requestPaint();
                     if (cueWaveformActive) cueWaveformActive.requestPaint();
+                    if (cueOutField && !cueOutField.activeFocus && tile && tile.cueEndMs === 0) {
+                        cueOutField.text = root.formatPreciseTime(tile.durationMs);
+                    }
                 }
             }
 

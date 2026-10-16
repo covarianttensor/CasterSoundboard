@@ -1,110 +1,125 @@
 {
-    "version": "2.0.0",
-    "generator": "CasterSoundboard",
-    "workspace": {
-        "windowWidth": 1200,
-        "windowHeight": 800,
-        "isFullScreen": false,
-        "tileScale": 1.0,
-        "masterVolume": 1.0,
-        "isDuckingActive": false,
-        "duckingVolumeRatio": 0.25,
-        "outputDeviceName": "Default System Audio Output"
+    "activeTabIndex": 0,
+    "audio": {
+        "duckingRatio": 0.25,
+        "masterVolume": 1,
+        "outputDevice": ""
     },
+    "formatVersion": 2,
     "tabs": [
         {
             "id": "tab-main-show",
             "name": "Main Show",
             "sounds": [
                 {
-                    "id": "tile-1",
+                    "color": "#2ECC71",
+                    "cue": {
+                        "beginMs": 0,
+                        "enabled": false,
+                        "endMs": 0
+                    },
                     "displayName": "Chime SFX",
                     "filePath": "/home/oscarc/Documents/CasterSoundboard/tests/cues/test_loop_chime.wav",
                     "hotkey": "P",
-                    "volume": 0.9,
+                    "id": "tile-1",
                     "isLooped": true,
                     "triggerStyle": 0,
-                    "hasCueRegion": false,
-                    "cueBeginMs": 0,
-                    "cueEndMs": 0,
-                    "color": "#2ECC71"
+                    "volume": 0.9
                 },
                 {
-                    "id": "tile-2",
+                    "color": "#8E2DE2",
+                    "cue": {
+                        "beginMs": 100,
+                        "enabled": true,
+                        "endMs": 2500
+                    },
                     "displayName": "Intro Theme",
                     "filePath": "/home/oscarc/Documents/CasterSoundboard/tests/cues/test_loop_chime.wav",
                     "hotkey": "Ctrl+Alt+1",
-                    "volume": 0.85,
+                    "id": "tile-2",
                     "isLooped": false,
                     "triggerStyle": 1,
-                    "hasCueRegion": true,
-                    "cueBeginMs": 100,
-                    "cueEndMs": 2500,
-                    "color": "#8E2DE2"
+                    "volume": 0.85
                 },
                 {
-                    "id": "tile-3",
+                    "color": "#E74C3C",
+                    "cue": {
+                        "beginMs": 0,
+                        "enabled": false,
+                        "endMs": 0
+                    },
                     "displayName": "Crowd Applause",
                     "filePath": "",
                     "hotkey": "Ctrl+Alt+2",
-                    "volume": 1.0,
+                    "id": "tile-3",
                     "isLooped": false,
                     "triggerStyle": 0,
-                    "hasCueRegion": false,
-                    "cueBeginMs": 0,
-                    "cueEndMs": 0,
-                    "color": "#E74C3C"
+                    "volume": 1
                 },
                 {
-                    "id": "tile-4",
+                    "color": "#E67E22",
+                    "cue": {
+                        "beginMs": 0,
+                        "enabled": false,
+                        "endMs": 0
+                    },
                     "displayName": "Rimshot Drum",
-                    "filePath": "",
+                    "filePath": "/home/oscarc/Documents/Test Media/Test Video.webm",
                     "hotkey": "R",
-                    "volume": 0.95,
+                    "id": "tile-4",
                     "isLooped": false,
                     "triggerStyle": 0,
-                    "hasCueRegion": false,
-                    "cueBeginMs": 0,
-                    "cueEndMs": 0,
-                    "color": "#E67E22"
+                    "volume": 0.95
                 },
                 {
-                    "id": "tile-5",
+                    "color": "#3498DB",
+                    "cue": {
+                        "beginMs": 0,
+                        "enabled": false,
+                        "endMs": 0
+                    },
                     "displayName": "Dramatic Hollywood Orchestral Stinger & Impact Hit",
-                    "filePath": "",
+                    "filePath": "/home/oscarc/Music/YouTube/YouTube/%5BMusic%5D Octopath Traveler ► Decisive Battle ║Extended║-D2rlF98Jes8.mp3",
                     "hotkey": "Ctrl+Alt+3",
-                    "volume": 0.75,
+                    "id": "tile-5",
                     "isLooped": false,
                     "triggerStyle": 0,
-                    "hasCueRegion": false,
-                    "cueBeginMs": 0,
-                    "cueEndMs": 0,
-                    "color": "#3498DB"
+                    "volume": 0.75
                 },
                 {
-                    "id": "tile-6",
+                    "color": "#E91E63",
+                    "cue": {
+                        "beginMs": 0,
+                        "enabled": false,
+                        "endMs": 0
+                    },
                     "displayName": "Outro Theme",
                     "filePath": "",
                     "hotkey": "",
-                    "volume": 0.8,
+                    "id": "tile-6",
                     "isLooped": false,
                     "triggerStyle": 2,
-                    "hasCueRegion": false,
-                    "cueBeginMs": 0,
-                    "cueEndMs": 0,
-                    "color": "#E91E63"
+                    "volume": 0.8
                 }
             ]
         },
         {
             "id": "tab-stingers",
             "name": "Commercials & Stingers",
-            "sounds": []
+            "sounds": [
+            ]
         },
         {
             "id": "tab-loops",
             "name": "Background Loops",
-            "sounds": []
+            "sounds": [
+            ]
         }
-    ]
+    ],
+    "window": {
+        "fullScreen": false,
+        "height": 800,
+        "tileScale": 1,
+        "width": 1200
+    }
 }
