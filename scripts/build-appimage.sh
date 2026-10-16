@@ -9,10 +9,15 @@ TOOLS_DIR="${BUILD_DIR}/tools"
 # Extract version from CASTER_VERSION, git tag, or fallback to 2.0.0
 VERSION="${CASTER_VERSION:-}"
 if [ -z "${VERSION}" ]; then
-    if [ -n "${GITHUB_REF_NAME:-}" ]; then
+    if [ "${GITHUB_REF_TYPE:-}" = "tag" ] && [ -n "${GITHUB_REF_NAME:-}" ]; then
         VERSION="${GITHUB_REF_NAME#v}"
     else
-        VERSION="$(git describe --tags --always 2>/dev/null | sed 's/^v//' || echo "2.0.0")"
+        TAG_DESC="$(git describe --tags --always 2>/dev/null || echo "")"
+        if [[ "${TAG_DESC}" =~ ^v?([0-9]+(\.[0-9]+)*) ]]; then
+            VERSION="${BASH_REMATCH[1]}"
+        else
+            VERSION="2.0.0"
+        fi
     fi
 fi
 export VERSION
@@ -86,7 +91,7 @@ if [ -n "${GENERATED_APPIMAGE}" ]; then
     if [ "${GENERATED_APPIMAGE}" != "${TARGET_APPIMAGE}" ]; then
         cp -f "${GENERATED_APPIMAGE}" "${TARGET_APPIMAGE}"
     fi
-    ln -sf "${TARGET_APPIMAGE}" "CasterSoundboard-x86_64.AppImage"
+    cp -f "${TARGET_APPIMAGE}" "CasterSoundboard-x86_64.AppImage"
     echo "AppImage created: ${TARGET_APPIMAGE}"
 fi
 popd >/dev/null

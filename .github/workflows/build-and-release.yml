@@ -77,9 +77,10 @@ jobs:
       - name: Create Versioned Flatpak Bundle
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
-          if [ -n "${VERSION}" ] && [ "${VERSION}" != "${GITHUB_REF_NAME}" ]; then
-            cp CasterSoundboard.flatpak "CasterSoundboard-${VERSION}-x86_64.flatpak"
+          if [ "${GITHUB_REF_TYPE:-}" = "tag" ] && [ -n "${VERSION}" ]; then
+            cp -f CasterSoundboard.flatpak "CasterSoundboard-${VERSION}-x86_64.flatpak"
           fi
+          cp -f CasterSoundboard.flatpak CasterSoundboard-x86_64.flatpak
 
       - name: Upload Flatpak artifacts
         uses: actions/upload-artifact@v4
