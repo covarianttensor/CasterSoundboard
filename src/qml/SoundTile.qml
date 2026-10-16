@@ -637,7 +637,8 @@ Rectangle {
                     sourceSize.width: 14
                     sourceSize.height: 14
                     anchors.centerIn: parent
-                    opacity: (tile && tile.isLooped) ? 1.0 : 0.5
+                    opacity: (tile && tile.isLooped) ? 1.0 : (parent.hovered ? 0.95 : 0.5)
+                    Behavior on opacity { NumberAnimation { duration: 150 } }
                 }
 
                 ToolTip.visible: hovered
@@ -687,7 +688,8 @@ Rectangle {
                     sourceSize.width: 14
                     sourceSize.height: 14
                     anchors.centerIn: parent
-                    opacity: (tile && tile.playbackState !== 0) ? 0.9 : 0.4
+                    opacity: (tile && tile.playbackState !== 0) ? 0.9 : (parent.hovered ? 0.9 : 0.4)
+                    Behavior on opacity { NumberAnimation { duration: 150 } }
                 }
 
                 ToolTip.visible: hovered

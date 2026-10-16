@@ -137,6 +137,8 @@ int main(int argc, char *argv[])
     QCommandLineOption testRoutingActiveOption("test-routing-active", "Simulate active virtual audio routing for visual testing.");
     QCommandLineOption scrollBottomOption("scroll-bottom", "Scroll active view to bottom for testing.");
     QCommandLineOption openAccordionOption("open-accordion", "Expand advanced accordion on startup.");
+    QCommandLineOption testFocusMicOption("test-focus-mic", "Focus microphone selector on startup for visual verification.");
+    QCommandLineOption testFocusVirtOption("test-focus-virt", "Focus virtual mic text field on startup for visual verification.");
     parser.addOption(headlessOption);
     parser.addOption(autoStartWebOption);
     parser.addOption(webPortOption);
@@ -158,6 +160,8 @@ int main(int argc, char *argv[])
     parser.addOption(testRoutingActiveOption);
     parser.addOption(scrollBottomOption);
     parser.addOption(openAccordionOption);
+    parser.addOption(testFocusMicOption);
+    parser.addOption(testFocusVirtOption);
     parser.addPositionalArgument("project", "Project file (.caster) to open on launch.", "[project]");
     parser.process(app);
 
@@ -263,6 +267,8 @@ int main(int argc, char *argv[])
     engine.rootContext()->setContextProperty("openActionHotkeyPromptOnStart", parser.isSet(actionHotkeyPromptOption) ? (parser.value(actionHotkeyPromptOption).isEmpty() ? QString("stopAll") : parser.value(actionHotkeyPromptOption)) : QString());
     engine.rootContext()->setContextProperty("scrollBottomOnStart", parser.isSet(scrollBottomOption));
     engine.rootContext()->setContextProperty("openAccordionOnStart", parser.isSet(openAccordionOption));
+    engine.rootContext()->setContextProperty("focusMicOnStart", parser.isSet(testFocusMicOption));
+    engine.rootContext()->setContextProperty("focusVirtOnStart", parser.isSet(testFocusVirtOption));
 
     // Install application-wide hotkey event filter
     GlobalHotkeyFilter hotkeyFilter(&hotkeyManager, &app);

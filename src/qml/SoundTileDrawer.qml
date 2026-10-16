@@ -1187,8 +1187,14 @@ Dialog {
                         Layout.fillWidth: true
                         Layout.preferredHeight: 140
                         visible: (tile && tile.filePath && tile.filePath.length > 0)
-                        opacity: cueCheck.checked ? 1.0 : 0.45
+                        opacity: cueCheck.checked ? 1.0 : (cueWaveHover.hovered ? 0.8 : 0.45)
                         enabled: cueCheck.checked
+
+                        Behavior on opacity { NumberAnimation { duration: 150 } }
+
+                        HoverHandler {
+                            id: cueWaveHover
+                        }
 
                         readonly property real trackWidth: cueTrack.width > 0 ? cueTrack.width : 1
                         readonly property real duration: (tile && tile.durationMs > 0) ? tile.durationMs : 1000

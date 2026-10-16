@@ -11,10 +11,12 @@ Item {
         placeholderTextColor: "#7E8590"
         implicitHeight: 40
         background: Rectangle {
-            color: "#16191D"
+            color: dtf.activeFocus ? "#1E2228" : (dtf.hovered ? "#1B1E22" : "#16191D")
             radius: 6
-            border.color: dtf.activeFocus ? "#8E2DE2" : "#3B424D"
+            border.color: dtf.activeFocus ? "#8E2DE2" : (dtf.hovered ? "#6B7280" : "#3B424D")
             border.width: dtf.activeFocus ? 2 : 1
+            Behavior on color { ColorAnimation { duration: 150 } }
+            Behavior on border.color { ColorAnimation { duration: 150 } }
         }
     }
 
@@ -26,15 +28,17 @@ Item {
             rightPadding: dcb.indicator.width + 8
             text: dcb.displayText
             font.pointSize: 9.5
-            color: "#FFFFFF"
+            color: dcb.enabled ? "#FFFFFF" : "#888888"
             verticalAlignment: Text.AlignVCenter
             elide: Text.ElideRight
         }
         background: Rectangle {
-            color: "#16191D"
+            color: (dcb.activeFocus || dcb.popup.visible) ? "#1E2228" : (dcb.hovered ? "#1B1E22" : "#16191D")
             radius: 6
-            border.color: dcb.activeFocus ? "#8E2DE2" : "#3B424D"
-            border.width: 1
+            border.color: (dcb.activeFocus || dcb.popup.visible) ? "#8E2DE2" : (dcb.hovered ? "#6B7280" : "#3B424D")
+            border.width: (dcb.activeFocus || dcb.popup.visible) ? 2 : 1
+            Behavior on color { ColorAnimation { duration: 150 } }
+            Behavior on border.color { ColorAnimation { duration: 150 } }
         }
         popup: Popup {
             y: dcb.height + 2
@@ -458,12 +462,22 @@ Item {
                                     Layout.fillWidth: true
                                     Layout.topMargin: 15
                                     implicitHeight: micCol.implicitHeight + 24
-                                    color: "#1C2025"
+                                    color: isHoveredOrFocused ? "#22272E" : "#1C2025"
                                     radius: 10
-                                    border.color: (typeof audioRoutingController !== "undefined" && audioRoutingController.isRouting)
-                                                  ? "#3B82F6" : "#2E3642"
-                                    border.width: 1.5
-                                    opacity: (typeof audioRoutingController !== "undefined" && audioRoutingController.isRouting) ? 1.0 : 0.45
+                                    border.color: (isRouting || isHoveredOrFocused) ? "#3B82F6" : "#2E3642"
+                                    border.width: isHoveredOrFocused ? 2 : 1.5
+                                    opacity: isRouting ? 1.0 : (isHoveredOrFocused ? 1.0 : 0.45)
+
+                                    readonly property bool isRouting: typeof audioRoutingController !== "undefined" && audioRoutingController.isRouting
+                                    readonly property bool isHoveredOrFocused: cardMicHover.hovered || micCombo.activeFocus || micCombo.popup.visible
+
+                                    Behavior on opacity { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
+                                    Behavior on border.color { ColorAnimation { duration: 180 } }
+                                    Behavior on color { ColorAnimation { duration: 180 } }
+
+                                    HoverHandler {
+                                        id: cardMicHover
+                                    }
 
                                     ColumnLayout {
                                         id: micCol
@@ -475,25 +489,29 @@ Item {
                                             Layout.fillWidth: true
                                             Text {
                                                 text: "🎤 " + qsTr("Physical Microphone")
-                                                color: "#93C5FD"
+                                                color: (cardMic.isRouting || cardMic.isHoveredOrFocused) ? "#93C5FD" : "#6B7280"
                                                 font.bold: true
                                                 font.pointSize: 10.5
+                                                Behavior on color { ColorAnimation { duration: 180 } }
                                             }
                                             Item { Layout.fillWidth: true }
                                             Rectangle {
                                                 width: micBadgeTxt.implicitWidth + 10
                                                 height: 18
                                                 radius: 4
-                                                color: "#17253D"
-                                                border.color: "#2563EB"
+                                                color: (cardMic.isRouting || cardMic.isHoveredOrFocused) ? "#17253D" : "#161B22"
+                                                border.color: (cardMic.isRouting || cardMic.isHoveredOrFocused) ? "#2563EB" : "#2E3642"
                                                 border.width: 1
+                                                Behavior on color { ColorAnimation { duration: 180 } }
+                                                Behavior on border.color { ColorAnimation { duration: 180 } }
                                                 Text {
                                                     id: micBadgeTxt
                                                     anchors.centerIn: parent
                                                     text: qsTr("Voice In")
-                                                    color: "#93C5FD"
+                                                    color: (cardMic.isRouting || cardMic.isHoveredOrFocused) ? "#93C5FD" : "#6B7280"
                                                     font.pointSize: 8
                                                     font.bold: true
+                                                    Behavior on color { ColorAnimation { duration: 180 } }
                                                 }
                                             }
                                         }
@@ -507,6 +525,11 @@ Item {
                                         DarkComboBox {
                                             id: micCombo
                                             Layout.fillWidth: true
+                                            Component.onCompleted: {
+                                                if (typeof focusMicOnStart !== "undefined" && focusMicOnStart) {
+                                                    forceActiveFocus();
+                                                }
+                                            }
                                             model: (typeof audioRoutingController !== "undefined" && audioRoutingController.inputDevices.length > 0)
                                                    ? audioRoutingController.inputDevices
                                                    : [qsTr("None / Disconnected")]
@@ -533,10 +556,11 @@ Item {
                                         width: 10
                                         height: 10
                                         radius: 5
-                                        color: "#3B82F6"
+                                        color: (cardMic.isRouting || cardMic.isHoveredOrFocused) ? "#3B82F6" : "#2E3642"
                                         border.color: "#131518"
                                         border.width: 2
                                         z: 10
+                                        Behavior on color { ColorAnimation { duration: 180 } }
                                     }
                                 }
 
@@ -550,10 +574,16 @@ Item {
                                     id: cardSb
                                     Layout.fillWidth: true
                                     implicitHeight: sbCol.implicitHeight + 24
-                                    color: "#1C2025"
+                                    color: cardSbHover.hovered ? "#221E2A" : "#1C2025"
                                     radius: 10
                                     border.color: "#A855F7"
-                                    border.width: 1.5
+                                    border.width: cardSbHover.hovered ? 2 : 1.5
+
+                                    Behavior on color { ColorAnimation { duration: 180 } }
+
+                                    HoverHandler {
+                                        id: cardSbHover
+                                    }
 
                                     ColumnLayout {
                                         id: sbCol
@@ -653,12 +683,22 @@ Item {
                                     id: cardVirt
                                     Layout.fillWidth: true
                                     implicitHeight: virtCol.implicitHeight + 24
-                                    color: "#1C2025"
+                                    color: isHoveredOrFocused ? "#202824" : "#1C2025"
                                     radius: 10
-                                    border.color: (typeof audioRoutingController !== "undefined" && audioRoutingController.isRouting)
-                                                  ? "#10B981" : "#22352B"
-                                    border.width: 1.5
-                                    opacity: (typeof audioRoutingController !== "undefined" && audioRoutingController.isRouting) ? 1.0 : 0.45
+                                    border.color: (isRouting || isHoveredOrFocused) ? "#10B981" : "#22352B"
+                                    border.width: isHoveredOrFocused ? 2 : 1.5
+                                    opacity: isRouting ? 1.0 : (isHoveredOrFocused ? 1.0 : 0.45)
+
+                                    readonly property bool isRouting: typeof audioRoutingController !== "undefined" && audioRoutingController.isRouting
+                                    readonly property bool isHoveredOrFocused: cardVirtHover.hovered || micNameField.activeFocus || copyVirtBtn.hovered || copyVirtBtn.activeFocus
+
+                                    Behavior on opacity { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
+                                    Behavior on border.color { ColorAnimation { duration: 180 } }
+                                    Behavior on color { ColorAnimation { duration: 180 } }
+
+                                    HoverHandler {
+                                        id: cardVirtHover
+                                    }
 
                                     ColumnLayout {
                                         id: virtCol
@@ -670,25 +710,29 @@ Item {
                                             Layout.fillWidth: true
                                             Text {
                                                 text: "🎙️ " + qsTr("Virtual Microphone")
-                                                color: "#6EE7B7"
+                                                color: (cardVirt.isRouting || cardVirt.isHoveredOrFocused) ? "#6EE7B7" : "#6B7280"
                                                 font.bold: true
                                                 font.pointSize: 10.5
+                                                Behavior on color { ColorAnimation { duration: 180 } }
                                             }
                                             Item { Layout.fillWidth: true }
                                             Rectangle {
                                                 width: virtBadgeTxt.implicitWidth + 10
                                                 height: 18
                                                 radius: 4
-                                                color: "#163125"
-                                                border.color: "#059669"
+                                                color: (cardVirt.isRouting || cardVirt.isHoveredOrFocused) ? "#163125" : "#161B22"
+                                                border.color: (cardVirt.isRouting || cardVirt.isHoveredOrFocused) ? "#059669" : "#22352B"
                                                 border.width: 1
+                                                Behavior on color { ColorAnimation { duration: 180 } }
+                                                Behavior on border.color { ColorAnimation { duration: 180 } }
                                                 Text {
                                                     id: virtBadgeTxt
                                                     anchors.centerIn: parent
                                                     text: qsTr("VoIP / Stream")
-                                                    color: "#6EE7B7"
+                                                    color: (cardVirt.isRouting || cardVirt.isHoveredOrFocused) ? "#6EE7B7" : "#6B7280"
                                                     font.pointSize: 8
                                                     font.bold: true
+                                                    Behavior on color { ColorAnimation { duration: 180 } }
                                                 }
                                             }
                                         }
@@ -706,6 +750,11 @@ Item {
                                             DarkTextField {
                                                 id: micNameField
                                                 Layout.fillWidth: true
+                                                Component.onCompleted: {
+                                                    if (typeof focusVirtOnStart !== "undefined" && focusVirtOnStart) {
+                                                        forceActiveFocus();
+                                                    }
+                                                }
                                                 text: typeof audioRoutingController !== "undefined" ? audioRoutingController.virtualMicName : "Caster Soundboard Mic"
                                                 placeholderText: qsTr("Caster Soundboard Mic")
                                                 onTextChanged: {
@@ -721,6 +770,7 @@ Item {
                                             }
 
                                             Button {
+                                                id: copyVirtBtn
                                                 text: qsTr("Copy")
                                                 implicitHeight: 40
                                                 implicitWidth: 54
@@ -778,10 +828,11 @@ Item {
                                         width: 10
                                         height: 10
                                         radius: 5
-                                        color: "#10B981"
+                                        color: (cardVirt.isRouting || cardVirt.isHoveredOrFocused) ? "#10B981" : "#22352B"
                                         border.color: "#131518"
                                         border.width: 2
                                         z: 10
+                                        Behavior on color { ColorAnimation { duration: 180 } }
                                     }
                                 }
 
@@ -790,12 +841,22 @@ Item {
                                     id: cardDir
                                     Layout.fillWidth: true
                                     implicitHeight: dirCol.implicitHeight + 24
-                                    color: "#1C2025"
+                                    color: isHoveredOrFocused ? "#251F2D" : "#1C2025"
                                     radius: 10
-                                    border.color: (typeof audioRoutingController !== "undefined" && audioRoutingController.isRouting)
-                                                  ? "#362646" : "#A855F7"
-                                    border.width: 1.5
-                                    opacity: (typeof audioRoutingController !== "undefined" && audioRoutingController.isRouting) ? 0.35 : 1.0
+                                    border.color: (!isRouting || isHoveredOrFocused) ? "#A855F7" : "#362646"
+                                    border.width: isHoveredOrFocused ? 2 : 1.5
+                                    opacity: isRouting ? (isHoveredOrFocused ? 1.0 : 0.35) : 1.0
+
+                                    readonly property bool isRouting: typeof audioRoutingController !== "undefined" && audioRoutingController.isRouting
+                                    readonly property bool isHoveredOrFocused: cardDirHover.hovered || sbOutCombo.activeFocus || sbOutCombo.popup.visible
+
+                                    Behavior on opacity { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
+                                    Behavior on border.color { ColorAnimation { duration: 180 } }
+                                    Behavior on color { ColorAnimation { duration: 180 } }
+
+                                    HoverHandler {
+                                        id: cardDirHover
+                                    }
 
                                     ColumnLayout {
                                         id: dirCol
@@ -807,25 +868,29 @@ Item {
                                             Layout.fillWidth: true
                                             Text {
                                                 text: "🔈 " + qsTr("Direct Playback Output")
-                                                color: "#D8B4FE"
+                                                color: (!cardDir.isRouting || cardDir.isHoveredOrFocused) ? "#D8B4FE" : "#7E6E8E"
                                                 font.bold: true
                                                 font.pointSize: 10.5
+                                                Behavior on color { ColorAnimation { duration: 180 } }
                                             }
                                             Item { Layout.fillWidth: true }
                                             Rectangle {
                                                 width: dirBadgeTxt.implicitWidth + 10
                                                 height: 18
                                                 radius: 4
-                                                color: "#2C1B3B"
-                                                border.color: "#7E22CE"
+                                                color: (!cardDir.isRouting || cardDir.isHoveredOrFocused) ? "#2C1B3B" : "#1E1825"
+                                                border.color: (!cardDir.isRouting || cardDir.isHoveredOrFocused) ? "#7E22CE" : "#362646"
                                                 border.width: 1
+                                                Behavior on color { ColorAnimation { duration: 180 } }
+                                                Behavior on border.color { ColorAnimation { duration: 180 } }
                                                 Text {
                                                     id: dirBadgeTxt
                                                     anchors.centerIn: parent
                                                     text: qsTr("Speakers / DAC")
-                                                    color: "#D8B4FE"
+                                                    color: (!cardDir.isRouting || cardDir.isHoveredOrFocused) ? "#D8B4FE" : "#7E6E8E"
                                                     font.pointSize: 8
                                                     font.bold: true
+                                                    Behavior on color { ColorAnimation { duration: 180 } }
                                                 }
                                             }
                                         }
@@ -872,10 +937,11 @@ Item {
                                         width: 10
                                         height: 10
                                         radius: 5
-                                        color: "#A855F7"
+                                        color: (!cardDir.isRouting || cardDir.isHoveredOrFocused) ? "#A855F7" : "#362646"
                                         border.color: "#131518"
                                         border.width: 2
                                         z: 10
+                                        Behavior on color { ColorAnimation { duration: 180 } }
                                     }
                                 }
 
@@ -884,12 +950,22 @@ Item {
                                     id: cardMon
                                     Layout.fillWidth: true
                                     implicitHeight: monCol.implicitHeight + 24
-                                    color: "#1C2025"
+                                    color: isHoveredOrFocused ? "#28241D" : "#1C2025"
                                     radius: 10
-                                    border.color: (typeof audioRoutingController !== "undefined" && audioRoutingController.isRouting)
-                                                  ? "#F59E0B" : "#362C1E"
-                                    border.width: 1.5
-                                    opacity: (typeof audioRoutingController !== "undefined" && audioRoutingController.isRouting) ? 1.0 : 0.45
+                                    border.color: (isRouting || isHoveredOrFocused) ? "#F59E0B" : "#362C1E"
+                                    border.width: isHoveredOrFocused ? 2 : 1.5
+                                    opacity: isRouting ? 1.0 : (isHoveredOrFocused ? 1.0 : 0.45)
+
+                                    readonly property bool isRouting: typeof audioRoutingController !== "undefined" && audioRoutingController.isRouting
+                                    readonly property bool isHoveredOrFocused: cardMonHover.hovered || monOutCombo.activeFocus || monOutCombo.popup.visible
+
+                                    Behavior on opacity { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
+                                    Behavior on border.color { ColorAnimation { duration: 180 } }
+                                    Behavior on color { ColorAnimation { duration: 180 } }
+
+                                    HoverHandler {
+                                        id: cardMonHover
+                                    }
 
                                     ColumnLayout {
                                         id: monCol
@@ -901,25 +977,29 @@ Item {
                                             Layout.fillWidth: true
                                             Text {
                                                 text: "🎧 " + qsTr("Headphones Monitor Output")
-                                                color: "#FCD34D"
+                                                color: (cardMon.isRouting || cardMon.isHoveredOrFocused) ? "#FCD34D" : "#8A795D"
                                                 font.bold: true
                                                 font.pointSize: 10.5
+                                                Behavior on color { ColorAnimation { duration: 180 } }
                                             }
                                             Item { Layout.fillWidth: true }
                                             Rectangle {
                                                 width: monBadgeTxt.implicitWidth + 10
                                                 height: 18
                                                 radius: 4
-                                                color: "#342211"
-                                                border.color: "#B45309"
+                                                color: (cardMon.isRouting || cardMon.isHoveredOrFocused) ? "#342211" : "#1E1A16"
+                                                border.color: (cardMon.isRouting || cardMon.isHoveredOrFocused) ? "#B45309" : "#362C1E"
                                                 border.width: 1
+                                                Behavior on color { ColorAnimation { duration: 180 } }
+                                                Behavior on border.color { ColorAnimation { duration: 180 } }
                                                 Text {
                                                     id: monBadgeTxt
                                                     anchors.centerIn: parent
                                                     text: qsTr("YOU Hear")
-                                                    color: "#FCD34D"
+                                                    color: (cardMon.isRouting || cardMon.isHoveredOrFocused) ? "#FCD34D" : "#8A795D"
                                                     font.pointSize: 8
                                                     font.bold: true
+                                                    Behavior on color { ColorAnimation { duration: 180 } }
                                                 }
                                             }
                                         }
@@ -959,10 +1039,11 @@ Item {
                                         width: 10
                                         height: 10
                                         radius: 5
-                                        color: "#F59E0B"
+                                        color: (cardMon.isRouting || cardMon.isHoveredOrFocused) ? "#F59E0B" : "#362C1E"
                                         border.color: "#131518"
                                         border.width: 2
                                         z: 10
+                                        Behavior on color { ColorAnimation { duration: 180 } }
                                     }
                                 }
                             }
@@ -1111,11 +1192,16 @@ Item {
                                         ctx.restore();
                                         drawArrow(ctx, pVirt.x - 2, pVirt.y, 0, "#10B981");
 
-                                        // Inactive Direct wire (Dimmed solid)
+                                        // Inactive Direct wire (Lights up on hover/focus!)
+                                        var dirLit = cardDir.isHoveredOrFocused || directBadge.isHovered;
                                         ctx.save();
                                         ctx.strokeStyle = "#A855F7";
-                                        ctx.globalAlpha = 0.12;
-                                        ctx.lineWidth = 2;
+                                        ctx.globalAlpha = dirLit ? 0.8 : 0.12;
+                                        ctx.lineWidth = dirLit ? 2.5 : 2;
+                                        if (dirLit) {
+                                            ctx.setLineDash([7, 7]);
+                                            ctx.lineDashOffset = wireCanvas.dashOffset;
+                                        }
                                         ctx.beginPath();
                                         ctx.moveTo(pSb.x, pSb.y);
                                         ctx.lineTo(lane1X, pSb.y);
@@ -1123,7 +1209,7 @@ Item {
                                         ctx.lineTo(pDir.x - 2, pDir.y);
                                         ctx.stroke();
                                         ctx.restore();
-                                        drawArrow(ctx, pDir.x - 2, pDir.y, 0, "rgba(168, 85, 247, 0.12)");
+                                        drawArrow(ctx, pDir.x - 2, pDir.y, 0, dirLit ? "rgba(168, 85, 247, 0.8)" : "rgba(168, 85, 247, 0.12)");
 
                                     } else {
                                         // DIRECT MODE
@@ -1142,36 +1228,52 @@ Item {
                                         ctx.restore();
                                         drawArrow(ctx, pDir.x - 2, pDir.y, 0, "#A855F7");
 
-                                        // Inactive Dimmed Wires
+                                        // Inactive Dimmed Wires (Light up when their respective card or mixer badge is hovered or focused!)
+                                        var micLit = cardMic.isHoveredOrFocused || mixerBadge.isHovered;
+                                        var virtLit = cardVirt.isHoveredOrFocused || mixerBadge.isHovered;
+                                        var monLit = cardMon.isHoveredOrFocused;
+
                                         // Mic -> Mixer
                                         ctx.save();
                                         ctx.strokeStyle = "#3B82F6";
-                                        ctx.globalAlpha = 0.12;
-                                        ctx.lineWidth = 2;
+                                        ctx.globalAlpha = micLit ? 0.8 : 0.12;
+                                        ctx.lineWidth = micLit ? 2.5 : 2;
+                                        if (micLit) {
+                                            ctx.setLineDash([7, 7]);
+                                            ctx.lineDashOffset = wireCanvas.dashOffset;
+                                        }
                                         ctx.beginPath();
                                         ctx.moveTo(pMic.x, mixerCenterY);
                                         ctx.lineTo(corMidX - mixerRadius - 2, mixerCenterY);
                                         ctx.stroke();
                                         ctx.restore();
-                                        drawArrow(ctx, corMidX - mixerRadius - 2, mixerCenterY, 0, "rgba(59, 130, 246, 0.12)");
+                                        drawArrow(ctx, corMidX - mixerRadius - 2, mixerCenterY, 0, micLit ? "rgba(59, 130, 246, 0.8)" : "rgba(59, 130, 246, 0.12)");
 
                                         // Mixer -> Virtual Mic
                                         ctx.save();
                                         ctx.strokeStyle = "#10B981";
-                                        ctx.globalAlpha = 0.12;
-                                        ctx.lineWidth = 2;
+                                        ctx.globalAlpha = virtLit ? 0.8 : 0.12;
+                                        ctx.lineWidth = virtLit ? 2.5 : 2;
+                                        if (virtLit) {
+                                            ctx.setLineDash([7, 7]);
+                                            ctx.lineDashOffset = wireCanvas.dashOffset;
+                                        }
                                         ctx.beginPath();
                                         ctx.moveTo(corMidX + mixerRadius + 2, mixerCenterY);
                                         ctx.lineTo(pVirt.x - 2, pVirt.y);
                                         ctx.stroke();
                                         ctx.restore();
-                                        drawArrow(ctx, pVirt.x - 2, pVirt.y, 0, "rgba(16, 185, 129, 0.12)");
+                                        drawArrow(ctx, pVirt.x - 2, pVirt.y, 0, virtLit ? "rgba(16, 185, 129, 0.8)" : "rgba(16, 185, 129, 0.12)");
 
                                         // Monitor
                                         ctx.save();
                                         ctx.strokeStyle = "#F59E0B";
-                                        ctx.globalAlpha = 0.12;
-                                        ctx.lineWidth = 2;
+                                        ctx.globalAlpha = monLit ? 0.8 : 0.12;
+                                        ctx.lineWidth = monLit ? 2.5 : 2;
+                                        if (monLit) {
+                                            ctx.setLineDash([7, 7]);
+                                            ctx.lineDashOffset = wireCanvas.dashOffset;
+                                        }
                                         ctx.beginPath();
                                         if (Math.abs(pSb.y - pMon.y) < 3) {
                                             ctx.moveTo(lane1X, pSb.y);
@@ -1184,7 +1286,7 @@ Item {
                                         }
                                         ctx.stroke();
                                         ctx.restore();
-                                        drawArrow(ctx, pMon.x - 2, pMon.y, 0, "rgba(245, 158, 11, 0.12)");
+                                        drawArrow(ctx, pMon.x - 2, pMon.y, 0, monLit ? "rgba(245, 158, 11, 0.8)" : "rgba(245, 158, 11, 0.12)");
                                     }
                                 }
                             }
@@ -1195,12 +1297,22 @@ Item {
                                 width: 44
                                 height: 44
                                 radius: 22
-                                color: "#16241D"
-                                border.color: (typeof audioRoutingController !== "undefined" && audioRoutingController.isRouting)
-                                              ? "#10B981" : "#333942"
-                                border.width: 2
-                                opacity: (typeof audioRoutingController !== "undefined" && audioRoutingController.isRouting) ? 1.0 : 0.35
+                                color: isHovered ? "#1F382B" : "#16241D"
+                                border.color: (isRouting || isHovered) ? "#10B981" : "#333942"
+                                border.width: isHovered ? 2.5 : 2
+                                opacity: isRouting ? 1.0 : (isHovered ? 1.0 : 0.35)
                                 z: 5
+
+                                readonly property bool isRouting: typeof audioRoutingController !== "undefined" && audioRoutingController.isRouting
+                                readonly property bool isHovered: mixerHover.hovered
+
+                                Behavior on opacity { NumberAnimation { duration: 180 } }
+                                Behavior on border.color { ColorAnimation { duration: 180 } }
+                                Behavior on color { ColorAnimation { duration: 180 } }
+
+                                HoverHandler {
+                                    id: mixerHover
+                                }
 
                                 ColumnLayout {
                                     anchors.centerIn: parent
@@ -1208,14 +1320,14 @@ Item {
                                     Text {
                                         Layout.alignment: Qt.AlignHCenter
                                         text: "⊕"
-                                        color: "#34D399"
+                                        color: (mixerBadge.isRouting || mixerBadge.isHovered) ? "#34D399" : "#6EE7B7"
                                         font.bold: true
                                         font.pixelSize: 16
                                     }
                                     Text {
                                         Layout.alignment: Qt.AlignHCenter
                                         text: "MIX"
-                                        color: "#94A3B8"
+                                        color: (mixerBadge.isRouting || mixerBadge.isHovered) ? "#FFFFFF" : "#94A3B8"
                                         font.bold: true
                                         font.pixelSize: 8
                                     }
@@ -1228,16 +1340,27 @@ Item {
                                 width: 62
                                 height: 22
                                 radius: 11
-                                color: "#241A2D"
-                                border.color: "#A855F7"
-                                border.width: 1
-                                opacity: (typeof audioRoutingController !== "undefined" && audioRoutingController.isRouting) ? 0.2 : 1.0
+                                color: isHovered ? "#361E47" : "#241A2D"
+                                border.color: (!isRouting || isHovered) ? "#A855F7" : "#4A2868"
+                                border.width: isHovered ? 2 : 1
+                                opacity: isRouting ? (isHovered ? 1.0 : 0.2) : 1.0
                                 z: 5
+
+                                readonly property bool isRouting: typeof audioRoutingController !== "undefined" && audioRoutingController.isRouting
+                                readonly property bool isHovered: directHover.hovered
+
+                                Behavior on opacity { NumberAnimation { duration: 180 } }
+                                Behavior on border.color { ColorAnimation { duration: 180 } }
+                                Behavior on color { ColorAnimation { duration: 180 } }
+
+                                HoverHandler {
+                                    id: directHover
+                                }
 
                                 Text {
                                     anchors.centerIn: parent
                                     text: "Direct ►"
-                                    color: "#D8B4FE"
+                                    color: (!directBadge.isRouting || directBadge.isHovered) ? "#D8B4FE" : "#8B65AA"
                                     font.bold: true
                                     font.pointSize: 8.5
                                     font.family: "Monospace"

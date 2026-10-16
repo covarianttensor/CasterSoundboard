@@ -14,10 +14,12 @@ Item {
         placeholderTextColor: "#7E8590"
         implicitHeight: 36
         background: Rectangle {
-            color: "#282C32"
+            color: dtf.activeFocus ? "#30353C" : (dtf.hovered ? "#2D3238" : "#282C32")
             radius: 6
-            border.color: dtf.activeFocus ? "#8E2DE2" : "#454B54"
+            border.color: dtf.activeFocus ? "#8E2DE2" : (dtf.hovered ? "#606875" : "#454B54")
             border.width: dtf.activeFocus ? 2 : 1
+            Behavior on color { ColorAnimation { duration: 150 } }
+            Behavior on border.color { ColorAnimation { duration: 150 } }
         }
     }
 
@@ -29,15 +31,17 @@ Item {
             rightPadding: dcb.indicator.width + 12
             text: dcb.displayText
             font.pointSize: 10
-            color: "#FFFFFF"
+            color: dcb.enabled ? "#FFFFFF" : "#888888"
             verticalAlignment: Text.AlignVCenter
             elide: Text.ElideRight
         }
         background: Rectangle {
-            color: "#282C32"
+            color: (dcb.activeFocus || dcb.popup.visible) ? "#30353C" : (dcb.hovered ? "#2D3238" : "#282C32")
             radius: 6
-            border.color: dcb.activeFocus ? "#8E2DE2" : "#454B54"
-            border.width: 1
+            border.color: (dcb.activeFocus || dcb.popup.visible) ? "#8E2DE2" : (dcb.hovered ? "#606875" : "#454B54")
+            border.width: (dcb.activeFocus || dcb.popup.visible) ? 2 : 1
+            Behavior on color { ColorAnimation { duration: 150 } }
+            Behavior on border.color { ColorAnimation { duration: 150 } }
         }
         popup: Popup {
             y: dcb.height + 2
