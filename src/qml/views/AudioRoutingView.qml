@@ -374,44 +374,11 @@ Item {
                         anchors.margins: 18
                         spacing: 16
 
-                        // Header Row with Columns Title & Refresh Button
+                        // Header Row with Refresh Button
                         RowLayout {
                             Layout.fillWidth: true
 
-                            RowLayout {
-                                spacing: 6
-                                Rectangle { width: 6; height: 6; radius: 3; color: "#3B82F6" }
-                                Text {
-                                    text: qsTr("1. ORIGINATING SOURCES (INPUTS)")
-                                    color: "#60A5FA"
-                                    font.bold: true
-                                    font.pointSize: 9.5
-                                }
-                            }
-
                             Item { Layout.fillWidth: true }
-
-                            Text {
-                                text: qsTr("2. ORTHOGONAL CORRIDOR")
-                                color: "#C084FC"
-                                font.bold: true
-                                font.pointSize: 9.5
-                            }
-
-                            Item { Layout.fillWidth: true }
-
-                            RowLayout {
-                                spacing: 6
-                                Text {
-                                    text: qsTr("3. DESTINATION ENDPOINTS")
-                                    color: "#34D399"
-                                    font.bold: true
-                                    font.pointSize: 9.5
-                                }
-                                Rectangle { width: 6; height: 6; radius: 3; color: "#10B981" }
-                            }
-
-                            Item { width: 16 }
 
                             Button {
                                 text: qsTr("Refresh Devices")
@@ -791,29 +758,6 @@ Item {
                                                     radius: 6
                                                     border.color: "#454B54"
                                                     border.width: 1
-                                                }
-                                            }
-                                        }
-
-                                        Rectangle {
-                                            Layout.fillWidth: true
-                                            implicitHeight: 24
-                                            radius: 4
-                                            color: "#2C2213"
-                                            border.color: "#92400E"
-                                            border.width: 1
-
-                                            RowLayout {
-                                                anchors.fill: parent
-                                                anchors.margins: 4
-                                                spacing: 4
-                                                Text { text: "💡"; font.pointSize: 8 }
-                                                Text {
-                                                    text: qsTr("Turn OFF AI noise suppression (Krisp) so clips aren't muted.")
-                                                    color: "#FCD34D"
-                                                    font.pointSize: 8
-                                                    elide: Text.ElideRight
-                                                    Layout.fillWidth: true
                                                 }
                                             }
                                         }
