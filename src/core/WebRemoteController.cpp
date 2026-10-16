@@ -45,9 +45,14 @@ void WebRemoteController::setProjectController(SoundboardProjectController *proj
     }
 
     m_projectController = project;
+    m_monitoredGrids.clear();
     m_monitoredTiles.clear();
 
     if (m_projectController) {
+        connect(m_projectController, &SoundboardProjectController::projectLoaded,
+                this, [this]() { connectTileSignals(); broadcastState(); });
+        connect(m_projectController, &SoundboardProjectController::filePathChanged,
+                this, [this]() { connectTileSignals(); broadcastState(); });
         connect(m_projectController, &SoundboardProjectController::isDuckingActiveChanged,
                 this, &WebRemoteController::broadcastState);
         connect(m_projectController, &SoundboardProjectController::masterVolumeChanged,
@@ -58,6 +63,10 @@ void WebRemoteController::setProjectController(SoundboardProjectController *proj
         if (m_projectController->tabModel()) {
             connect(m_projectController->tabModel(), &SoundboardTabModel::currentIndexChanged,
                     this, &WebRemoteController::broadcastState);
+            connect(m_projectController->tabModel(), &SoundboardTabModel::countChanged,
+                    this, [this]() { connectTileSignals(); broadcastState(); });
+            connect(m_projectController->tabModel(), &SoundboardTabModel::currentGridModelChanged,
+                    this, [this]() { connectTileSignals(); broadcastState(); });
             connect(m_projectController->tabModel(), &QAbstractItemModel::dataChanged,
                     this, [this]() { connectTileSignals(); broadcastState(); });
             connect(m_projectController->tabModel(), &QAbstractItemModel::rowsInserted,
@@ -78,22 +87,40 @@ void WebRemoteController::connectTileSignals()
     for (int t = 0; t < tabModel->count(); ++t) {
         auto *grid = tabModel->gridModelAt(t);
         if (!grid) continue;
+
+        if (!m_monitoredGrids.contains(grid)) {
+            m_monitoredGrids.insert(grid);
+            connect(grid, &QAbstractItemModel::dataChanged, this, [this]() {
+                broadcastState();
+            });
+            connect(grid, &QAbstractItemModel::rowsInserted, this, [this]() {
+                connectTileSignals();
+                broadcastState();
+            });
+            connect(grid, &QAbstractItemModel::rowsRemoved, this, [this]() {
+                connectTileSignals();
+                broadcastState();
+            });
+            connect(grid, &QAbstractItemModel::modelReset, this, [this]() {
+                connectTileSignals();
+                broadcastState();
+            });
+            connect(grid, &QObject::destroyed, this, [this, grid]() {
+                m_monitoredGrids.remove(grid);
+            });
+        }
+
         for (auto *tile : grid->tiles()) {
             if (!tile || m_monitoredTiles.contains(tile)) continue;
             m_monitoredTiles.insert(tile);
 
-            connect(tile, &SoundTileController::playbackStateChanged, this, [this]() {
-                broadcastState();
-            });
-            connect(tile, &SoundTileController::displayNameChanged, this, [this]() {
-                broadcastState();
-            });
-            connect(tile, &SoundTileController::colorChanged, this, [this]() {
-                broadcastState();
-            });
-            connect(tile, &SoundTileController::hotkeyChanged, this, [this]() {
-                broadcastState();
-            });
+            connect(tile, &SoundTileController::playbackStateChanged, this, &WebRemoteController::broadcastState);
+            connect(tile, &SoundTileController::filePathChanged, this, &WebRemoteController::broadcastState);
+            connect(tile, &SoundTileController::displayNameChanged, this, &WebRemoteController::broadcastState);
+            connect(tile, &SoundTileController::colorChanged, this, &WebRemoteController::broadcastState);
+            connect(tile, &SoundTileController::hotkeyChanged, this, &WebRemoteController::broadcastState);
+            connect(tile, &SoundTileController::volumeChanged, this, &WebRemoteController::broadcastState);
+            connect(tile, &SoundTileController::isLoopedChanged, this, &WebRemoteController::broadcastState);
             connect(tile, &QObject::destroyed, this, [this, tile]() {
                 m_monitoredTiles.remove(tile);
             });
@@ -357,7 +384,9 @@ void WebRemoteController::onSocketReadyRead()
     }
 
     const QByteArray method = requestLine[0];
-    const QByteArray path = requestLine[1];
+    const QByteArray rawPath = requestLine[1];
+    const int queryIndex = rawPath.indexOf('?');
+    const QByteArray path = (queryIndex >= 0) ? rawPath.left(queryIndex) : rawPath;
 
     QMap<QByteArray, QByteArray> headers;
     for (int i = 1; i < lines.size(); ++i) {
@@ -366,6 +395,12 @@ void WebRemoteController::onSocketReadyRead()
         if (colon > 0) {
             headers.insert(line.left(colon).trimmed().toLower(), line.mid(colon + 1).trimmed());
         }
+    }
+
+    // CORS preflight OPTIONS requests must succeed without credentials
+    if (method == "OPTIONS") {
+        sendResponse(socket, "204 No Content");
+        return;
     }
 
     // Basic Authentication Check
@@ -540,6 +575,14 @@ void WebRemoteController::sendResponse(QTcpSocket *socket, const QString &status
 {
     if (!socket || socket->state() != QAbstractSocket::ConnectedState) return;
 
+    QString defaultHeaders = "Access-Control-Allow-Origin: *\r\n"
+                             "Access-Control-Allow-Methods: GET, POST, OPTIONS\r\n"
+                             "Access-Control-Allow-Headers: Authorization, Content-Type, X-Caster-Remote\r\n"
+                             "Cache-Control: no-store, no-cache, must-revalidate\r\n";
+    if (!extraHeaders.isEmpty()) {
+        defaultHeaders += extraHeaders;
+    }
+
     QByteArray resp = QString("HTTP/1.1 %1\r\n"
                               "Content-Type: %2\r\n"
                               "Content-Length: %3\r\n"
@@ -548,7 +591,7 @@ void WebRemoteController::sendResponse(QTcpSocket *socket, const QString &status
                           .arg(status)
                           .arg(contentType)
                           .arg(body.size())
-                          .arg(extraHeaders)
+                          .arg(defaultHeaders)
                           .toUtf8();
     resp.append(body);
     socket->write(resp);

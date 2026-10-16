@@ -151,6 +151,77 @@ private slots:
 
         web.stopServer();
     }
+
+    void testOptionsCorsPreflight()
+    {
+        WebRemoteController web;
+        QVERIFY(web.startServer());
+
+        // OPTIONS request should return 204 without requiring authentication
+        QByteArray resp = sendHttpRequest(15052, "OPTIONS", "/api/stopAll");
+        QVERIFY(resp.startsWith("HTTP/1.1 204 No Content"));
+        QVERIFY(resp.contains("Access-Control-Allow-Origin: *"));
+        QVERIFY(resp.contains("Access-Control-Allow-Methods: GET, POST, OPTIONS"));
+
+        web.stopServer();
+    }
+
+    void testQueryStringAndAjaxSync()
+    {
+        SoundboardProjectController project;
+        WebRemoteController web;
+        web.setProjectController(&project);
+        QVERIFY(web.startServer());
+
+        QMap<QString, QString> authHeaders;
+        authHeaders["Authorization"] = "Basic " + QByteArray("testuser:testpass").toBase64();
+
+        // AJAX GET with cache-busting timestamp parameter
+        QByteArray resp = sendHttpRequest(15052, "GET", "/api/state?_t=123456789", authHeaders);
+        QVERIFY(resp.startsWith("HTTP/1.1 200 OK"));
+        QVERIFY(resp.contains("Cache-Control: no-store"));
+        QVERIFY(resp.contains("\"appName\":\"CasterSoundboard\""));
+
+        web.stopServer();
+    }
+
+    void testDesktopAppChangesReflectInWebRemote()
+    {
+        SoundboardProjectController project;
+        WebRemoteController web;
+        web.setProjectController(&project);
+        QVERIFY(web.startServer());
+
+        // Recreate default project to test signal hookup after project initialization
+        project.newProject();
+
+        QMap<QString, QString> authHeaders;
+        authHeaders["Authorization"] = "Basic " + QByteArray("testuser:testpass").toBase64();
+
+        // Check initial state
+        QByteArray resp1 = sendHttpRequest(15052, "GET", "/api/state", authHeaders);
+        QVERIFY(resp1.startsWith("HTTP/1.1 200 OK"));
+        QVERIFY(resp1.contains("Sound Set 1"));
+
+        // Simulate user action in desktop app: rename tab, add tile, set properties
+        project.tabModel()->renameTab(0, "Morning Show SFX");
+        auto *grid = project.tabModel()->gridModelAt(0);
+        QVERIFY(grid != nullptr);
+
+        auto *tile = grid->appendTile();
+        QVERIFY(tile != nullptr);
+        tile->setDisplayName("Airhorn Drop");
+        tile->setColor("#123456");
+
+        // Fetch state via AJAX again and verify desktop changes reflected immediately
+        QByteArray resp2 = sendHttpRequest(15052, "GET", "/api/state", authHeaders);
+        QVERIFY(resp2.startsWith("HTTP/1.1 200 OK"));
+        QVERIFY(resp2.contains("Morning Show SFX"));
+        QVERIFY(resp2.contains("Airhorn Drop"));
+        QVERIFY(resp2.contains("#123456"));
+
+        web.stopServer();
+    }
 };
 
 QTEST_MAIN(TestWebRemote)

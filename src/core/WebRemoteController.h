@@ -99,6 +99,7 @@ private:
     QTcpServer m_server;
     QSet<QTcpSocket*> m_clients;
     QSet<QTcpSocket*> m_streams;
+    QSet<class SoundboardGridModel*> m_monitoredGrids;
     QSet<SoundTileController*> m_monitoredTiles;
 
     bool m_autoStart{false};

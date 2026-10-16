@@ -373,8 +373,12 @@
 
   <script>
     let appState = null;
+    let lastSerializedState = '';
     let selectedTabIndex = 0;
     let eventSource = null;
+    let pollTimer = null;
+    let isFetching = false;
+    let sseActive = false;
 
     const statusDot = document.getElementById('statusDot');
     const statusText = document.getElementById('statusText');
@@ -393,7 +397,27 @@
       return luminance > 0.45 ? '#0A0A0A' : '#FFFFFF';
     }
 
-    // API Post Request Helper with X-Caster-Remote Header
+    function setConnectionStatus(connected, mode) {
+      if (connected) {
+        statusDot.className = 'status-dot connected';
+        statusText.textContent = mode ? `Live (${mode})` : 'Connected';
+      } else {
+        statusDot.className = 'status-dot reconnecting';
+        statusText.textContent = mode || 'Connecting…';
+      }
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    // API Post Request Helper with X-Caster-Remote Header & immediate AJAX sync
     async function apiPost(endpoint) {
       try {
         const resp = await fetch(endpoint, {
@@ -405,111 +429,246 @@
         if (!resp.ok && resp.status !== 204) {
           console.warn('API call error:', resp.status);
         }
+        // Immediate AJAX state fetch after user interaction
+        await fetchState();
       } catch (err) {
         console.error('Network request failed:', err);
       }
     }
 
-    // Connect to Server-Sent Events
+    // AJAX State Fetcher
+    async function fetchState() {
+      if (isFetching) return;
+      isFetching = true;
+      try {
+        const resp = await fetch('/api/state?_t=' + Date.now(), {
+          method: 'GET',
+          cache: 'no-store'
+        });
+        if (resp.ok) {
+          const data = await resp.json();
+          applyState(data);
+          if (!sseActive) {
+            setConnectionStatus(true, 'AJAX');
+          }
+        } else if (resp.status === 401) {
+          setConnectionStatus(false, 'Auth Required');
+        } else {
+          setConnectionStatus(false, 'Error ' + resp.status);
+        }
+      } catch (err) {
+        if (!sseActive) {
+          setConnectionStatus(false, 'Offline');
+        }
+      } finally {
+        isFetching = false;
+      }
+    }
+
+    // Connect to Server-Sent Events (SSE)
     function initEvents() {
       if (eventSource) {
         eventSource.close();
       }
 
-      eventSource = new EventSource('/events');
+      try {
+        eventSource = new EventSource('/events');
 
-      eventSource.onopen = () => {
-        statusDot.className = 'status-dot connected';
-        statusText.textContent = 'Connected';
-      };
+        eventSource.onopen = () => {
+          sseActive = true;
+          setConnectionStatus(true, 'SSE');
+        };
 
-      eventSource.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          appState = data;
-          render();
-        } catch (e) {
-          console.error('Failed to parse SSE payload:', e);
-        }
-      };
+        eventSource.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            applyState(data);
+            sseActive = true;
+            setConnectionStatus(true, 'SSE');
+          } catch (e) {
+            console.error('Failed to parse SSE payload:', e);
+          }
+        };
 
-      eventSource.onerror = () => {
-        statusDot.className = 'status-dot reconnecting';
-        statusText.textContent = 'Reconnecting…';
-      };
+        eventSource.onerror = () => {
+          sseActive = false;
+          // When SSE drops, AJAX polling continues seamlessly
+          fetchState();
+        };
+      } catch (e) {
+        console.warn('SSE not supported or failed to initialize:', e);
+        sseActive = false;
+      }
     }
 
-    // Render Full UI
+    // Start background AJAX polling loop
+    function startPolling() {
+      if (pollTimer) clearInterval(pollTimer);
+      const interval = document.hidden ? 1200 : 300;
+      pollTimer = setInterval(fetchState, interval);
+    }
+
+    document.addEventListener('visibilitychange', () => {
+      startPolling();
+      if (!document.hidden) {
+        fetchState();
+      }
+    });
+
+    // Smart DOM update using state diffing
+    function applyState(data) {
+      if (!data || !data.tabs) return;
+
+      const serialized = JSON.stringify(data);
+      if (serialized === lastSerializedState && data.activeTabIndex === selectedTabIndex) {
+        return;
+      }
+      lastSerializedState = serialized;
+      appState = data;
+
+      // Sync active tab with desktop app
+      if (typeof appState.activeTabIndex === 'number' &&
+          appState.activeTabIndex >= 0 &&
+          appState.activeTabIndex < appState.tabs.length) {
+        selectedTabIndex = appState.activeTabIndex;
+      } else if (selectedTabIndex >= appState.tabs.length) {
+        selectedTabIndex = Math.max(0, appState.tabs.length - 1);
+      }
+
+      render();
+    }
+
+    // Render Full UI with smart DOM reconciliation
     function render() {
       if (!appState || !appState.tabs) return;
 
       // 1. Ducking State
-      if (appState.isDuckingActive) {
-        duckBtn.classList.add('active');
-        duckBtn.textContent = '🦆 Ducked';
-      } else {
-        duckBtn.classList.remove('active');
-        duckBtn.textContent = '🦆 Ducking';
+      const isDucking = !!appState.isDuckingActive;
+      if (duckBtn.classList.contains('active') !== isDucking) {
+        duckBtn.classList.toggle('active', isDucking);
+        duckBtn.textContent = isDucking ? '🦆 Ducked' : '🦆 Ducking';
       }
 
       // 2. Render Tabs
-      tabBar.innerHTML = '';
-      appState.tabs.forEach((tab, idx) => {
-        const pill = document.createElement('button');
-        pill.className = 'tab-pill' + (idx === selectedTabIndex ? ' active' : '');
-        pill.innerHTML = `<span>${tab.name || ('Tab ' + (idx + 1))}</span>` +
-                         (tab.hotkey ? `<span class="tab-hotkey-badge">${tab.hotkey}</span>` : '');
-        pill.onclick = () => {
-          selectedTabIndex = idx;
-          apiPost('/api/tab/' + idx);
-          render();
-        };
-        tabBar.appendChild(pill);
-      });
+      const currentTabCount = tabBar.children.length;
+      const needsTabRebuild = currentTabCount !== appState.tabs.length ||
+        Array.from(tabBar.children).some((pill, idx) => {
+          const tab = appState.tabs[idx];
+          return !tab || pill.dataset.tabId !== String(tab.id);
+        });
 
-      // 3. Render Tiles for Current Tab
-      tileGrid.innerHTML = '';
+      if (needsTabRebuild) {
+        tabBar.innerHTML = '';
+        appState.tabs.forEach((tab, idx) => {
+          const pill = document.createElement('button');
+          pill.className = 'tab-pill' + (idx === selectedTabIndex ? ' active' : '');
+          pill.dataset.tabId = String(tab.id || idx);
+          pill.innerHTML = `<span>${escapeHtml(tab.name || ('Tab ' + (idx + 1)))}</span>` +
+                           (tab.hotkey ? `<span class="tab-hotkey-badge">${escapeHtml(tab.hotkey)}</span>` : '');
+          pill.onclick = async () => {
+            selectedTabIndex = idx;
+            await apiPost('/api/tab/' + idx);
+          };
+          tabBar.appendChild(pill);
+        });
+      } else {
+        Array.from(tabBar.children).forEach((pill, idx) => {
+          pill.classList.toggle('active', idx === selectedTabIndex);
+        });
+      }
+
+      // 3. Render Sound Tiles
       const currentTab = appState.tabs[selectedTabIndex] || appState.tabs[0];
       if (!currentTab || !currentTab.tiles) return;
 
-      currentTab.tiles.forEach((tile) => {
-        const btn = document.createElement('button');
-        const hasFile = tile.hasFile;
-        const state = (tile.state || 'Stopped').toLowerCase();
+      const tiles = currentTab.tiles;
+      const currentTileCount = tileGrid.children.length;
+      const currentGridTabId = tileGrid.dataset.tabId;
+      const activeTabId = String(currentTab.id || selectedTabIndex);
 
-        btn.className = 'tile-btn ' + state + (hasFile ? '' : ' empty');
+      const needsGridRebuild = currentGridTabId !== activeTabId || currentTileCount !== tiles.length;
 
-        const tileColor = (hasFile && tile.color && tile.color !== '#000000') ? tile.color : '#25292E';
-        btn.style.setProperty('--tile-bg', tileColor);
-        btn.style.setProperty('--tile-text', getContrastTextColor(tileColor));
+      if (needsGridRebuild) {
+        tileGrid.innerHTML = '';
+        tileGrid.dataset.tabId = activeTabId;
 
-        let stateBadgeHtml = '';
-        if (state === 'playing') {
-          stateBadgeHtml = '<span class="tile-state-tag playing">PLAYING</span>';
-        } else if (state === 'paused') {
-          stateBadgeHtml = '<span class="tile-state-tag paused">PAUSED</span>';
-        }
+        tiles.forEach((tile) => {
+          const btn = document.createElement('button');
+          btn.dataset.tileIndex = String(tile.index);
+          updateTileButton(btn, tile);
 
-        btn.innerHTML = `
-          <div class="tile-header">
-            ${tile.hotkey ? `<span class="tile-hotkey">${tile.hotkey}</span>` : '<span></span>'}
-            ${stateBadgeHtml}
-          </div>
-          <div class="tile-title">${tile.name || (hasFile ? 'Untitled Sound' : 'Empty Slot')}</div>
-          <div class="tile-footer">
-            <span>${tile.isLooped ? '🔁 Loop' : ''}</span>
-            <span>${hasFile ? (state === 'playing' ? '▶' : (state === 'paused' ? '⏸' : '')) : ''}</span>
-          </div>
-        `;
-
-        if (hasFile) {
-          btn.onclick = () => {
-            apiPost(`/api/toggle/${selectedTabIndex}/${tile.index}`);
+          btn.onclick = async () => {
+            if (tile.hasFile) {
+              await apiPost(`/api/toggle/${selectedTabIndex}/${tile.index}`);
+            }
           };
-        }
 
-        tileGrid.appendChild(btn);
-      });
+          tileGrid.appendChild(btn);
+        });
+      } else {
+        // Targeted in-place tile update
+        Array.from(tileGrid.children).forEach((btn, idx) => {
+          const tile = tiles[idx];
+          if (tile) {
+            updateTileButton(btn, tile);
+          }
+        });
+      }
+    }
+
+    // Helper to update a single tile button element efficiently
+    function updateTileButton(btn, tile) {
+      const hasFile = !!tile.hasFile;
+      const state = (tile.state || 'Stopped').toLowerCase();
+      const tileColor = (hasFile && tile.color && tile.color !== '#000000') ? tile.color : '#25292E';
+      const textColor = getContrastTextColor(tileColor);
+      const name = tile.name || (hasFile ? 'Untitled Sound' : 'Empty Slot');
+      const hotkey = tile.hotkey || '';
+      const isLooped = !!tile.isLooped;
+
+      // Check if anything changed on this button
+      const oldState = btn.dataset.state;
+      const oldHasFile = btn.dataset.hasFile;
+      const oldColor = btn.dataset.color;
+      const oldName = btn.dataset.name;
+      const oldHotkey = btn.dataset.hotkey;
+      const oldLooped = btn.dataset.isLooped;
+
+      if (oldState === state && oldHasFile === String(hasFile) &&
+          oldColor === tileColor && oldName === name &&
+          oldHotkey === hotkey && oldLooped === String(isLooped)) {
+        return; // No changes on this tile
+      }
+
+      btn.dataset.state = state;
+      btn.dataset.hasFile = String(hasFile);
+      btn.dataset.color = tileColor;
+      btn.dataset.name = name;
+      btn.dataset.hotkey = hotkey;
+      btn.dataset.isLooped = String(isLooped);
+
+      btn.className = 'tile-btn ' + state + (hasFile ? '' : ' empty');
+      btn.style.setProperty('--tile-bg', tileColor);
+      btn.style.setProperty('--tile-text', textColor);
+
+      let stateBadgeHtml = '';
+      if (state === 'playing') {
+        stateBadgeHtml = '<span class="tile-state-tag playing">PLAYING</span>';
+      } else if (state === 'paused') {
+        stateBadgeHtml = '<span class="tile-state-tag paused">PAUSED</span>';
+      }
+
+      btn.innerHTML = `
+        <div class="tile-header">
+          ${hotkey ? `<span class="tile-hotkey">${escapeHtml(hotkey)}</span>` : '<span></span>'}
+          ${stateBadgeHtml}
+        </div>
+        <div class="tile-title">${escapeHtml(name)}</div>
+        <div class="tile-footer">
+          <span>${isLooped ? '🔁 Loop' : ''}</span>
+          <span>${hasFile ? (state === 'playing' ? '▶' : (state === 'paused' ? '⏸' : '')) : ''}</span>
+        </div>
+      `;
     }
 
     // Global Action Button Handlers
@@ -535,14 +694,12 @@
         return;
       }
 
-      // Check number keys 1-9 for tabs or tiles
+      // Check number keys 1-9 for tabs
       if (!isNaN(parseInt(key)) && parseInt(key) >= 1 && parseInt(key) <= 9) {
         const num = parseInt(key);
-        // If matches a tab index + 1
-        if (e.altKey && num <= appState.tabs.length) {
+        if (e.altKey && appState && appState.tabs && num <= appState.tabs.length) {
           selectedTabIndex = num - 1;
           apiPost('/api/tab/' + (num - 1));
-          render();
           return;
         }
       }
@@ -560,7 +717,9 @@
       }
     });
 
-    // Start event stream on load
+    // Start background sync
+    fetchState();
+    startPolling();
     initEvents();
   </script>
 </body>
