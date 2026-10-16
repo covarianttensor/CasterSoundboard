@@ -238,13 +238,13 @@ Rectangle {
         // --- Header Row: Tile Color Dot, Floated-Left Hotkey Badge, Settings Cog ---
         RowLayout {
             Layout.fillWidth: true
-            spacing: 6
+            spacing: 7
 
             // Tile Color Dot
             Rectangle {
-                width: 10
-                height: 10
-                radius: 5
+                width: 12
+                height: 12
+                radius: 6
                 color: (tile && tile.color && tile.color.length > 0) ? tile.color : "#8E2DE2"
                 Layout.alignment: Qt.AlignVCenter
             }
@@ -253,21 +253,21 @@ Rectangle {
             Rectangle {
                 id: hotkeyBadge
                 visible: tile && tile.hotkey && tile.hotkey.length > 0
-                Layout.preferredHeight: 20
-                Layout.preferredWidth: hotkeyLabel.implicitWidth + 12
+                Layout.preferredHeight: 26
+                Layout.preferredWidth: hotkeyLabel.implicitWidth + 16
                 Layout.alignment: Qt.AlignVCenter
-                radius: 4
-                color: "#2C313A"
-                border.color: "#8E2DE2"
-                border.width: 1
+                radius: 6
+                color: "#252930"
+                border.color: (tile && tile.color && tile.color.length > 0) ? tile.color : "#8E2DE2"
+                border.width: 1.5
 
                 Text {
                     id: hotkeyLabel
                     anchors.centerIn: parent
                     text: tile ? tile.hotkey : ""
-                    color: "#D19CF7"
+                    color: "#FFFFFF"
                     font.bold: true
-                    font.pointSize: 8
+                    font.pointSize: 10
                 }
 
                 MouseArea {
@@ -289,23 +289,23 @@ Rectangle {
 
             // Settings Cog Button
             Button {
-                Layout.preferredWidth: 26
-                Layout.preferredHeight: 26
+                Layout.preferredWidth: 32
+                Layout.preferredHeight: 32
                 Layout.alignment: Qt.AlignVCenter
                 flat: true
                 onClicked: root.settingsRequested(tile)
 
                 background: Rectangle {
-                    color: parent.hovered ? "#3A3F47" : "transparent"
-                    radius: 4
+                    color: parent.hovered ? "#3E444E" : (parent.pressed ? "#4F5763" : "transparent")
+                    radius: 6
                 }
 
                 contentItem: Image {
                     source: "icons/cog.png"
-                    sourceSize.width: 16
-                    sourceSize.height: 16
+                    sourceSize.width: 22
+                    sourceSize.height: 22
                     anchors.centerIn: parent
-                    opacity: parent.hovered ? 1.0 : 0.6
+                    opacity: parent.hovered ? 1.0 : 0.75
                 }
 
                 ToolTip.visible: hovered
