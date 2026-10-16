@@ -63,6 +63,8 @@ void HotkeyManager::clear()
     m_keyMap.clear();
     m_customTabKeyMap.clear();
     m_defaultTabKeyMap.clear();
+    m_stopAllSeq = QKeySequence();
+    m_duckingSeq = QKeySequence();
 }
 
 void HotkeyManager::rescanProject()
@@ -127,6 +129,8 @@ void HotkeyManager::monitorProject(SoundboardProjectController *project)
 
     connect(m_monitoredProject, &SoundboardProjectController::projectLoaded, this, &HotkeyManager::rescanProject);
     connect(m_monitoredProject, &SoundboardProjectController::hotkeyScopeChanged, this, &HotkeyManager::rescanProject);
+    connect(m_monitoredProject, &SoundboardProjectController::stopAllHotkeyChanged, this, &HotkeyManager::rebuildMap);
+    connect(m_monitoredProject, &SoundboardProjectController::duckingHotkeyChanged, this, &HotkeyManager::rebuildMap);
 
     if (auto *tabModel = m_monitoredProject->tabModel()) {
         connect(tabModel, &QAbstractItemModel::rowsInserted, this, &HotkeyManager::rescanProject);
@@ -171,6 +175,17 @@ void HotkeyManager::rebuildMap()
 
     m_customTabKeyMap.clear();
     m_defaultTabKeyMap.clear();
+    m_stopAllSeq = QKeySequence();
+    m_duckingSeq = QKeySequence();
+
+    if (m_monitoredProject) {
+        if (!m_monitoredProject->stopAllHotkey().trimmed().isEmpty()) {
+            m_stopAllSeq = QKeySequence::fromString(m_monitoredProject->stopAllHotkey().trimmed(), QKeySequence::NativeText);
+        }
+        if (!m_monitoredProject->duckingHotkey().trimmed().isEmpty()) {
+            m_duckingSeq = QKeySequence::fromString(m_monitoredProject->duckingHotkey().trimmed(), QKeySequence::NativeText);
+        }
+    }
 
     if (m_monitoredProject && m_monitoredProject->tabModel()) {
         SoundboardTabModel *tabModel = m_monitoredProject->tabModel();
@@ -218,7 +233,26 @@ bool HotkeyManager::handleKeyEvent(QKeyEvent *event)
         }
     }
 
-    // 2. Sound tile hotkey
+    // 2. Global production actions: Stop All Sounds (Panic) & Audio Ducking
+    if (!m_stopAllSeq.isEmpty() && seq == m_stopAllSeq) {
+        if (m_monitoredProject) {
+            m_monitoredProject->stopAllSounds();
+        }
+        emit stopAllTriggered();
+        event->accept();
+        return true;
+    }
+
+    if (!m_duckingSeq.isEmpty() && seq == m_duckingSeq) {
+        if (m_monitoredProject) {
+            m_monitoredProject->toggleAudioDucking();
+        }
+        emit duckingTriggered();
+        event->accept();
+        return true;
+    }
+
+    // 3. Sound tile hotkey
     if (m_keyMap.contains(seq)) {
         SoundTileController *tile = m_keyMap.value(seq);
         if (tile) {
@@ -229,7 +263,7 @@ bool HotkeyManager::handleKeyEvent(QKeyEvent *event)
         }
     }
 
-    // 3. Default tab hotkey (Alt+1..Alt+9)
+    // 4. Default tab hotkey (Alt+1..Alt+9)
     if (m_defaultTabKeyMap.contains(seq)) {
         int tabIdx = m_defaultTabKeyMap.value(seq);
         if (m_monitoredProject && m_monitoredProject->tabModel()) {

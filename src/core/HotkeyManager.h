@@ -42,6 +42,8 @@ signals:
     void isMutedChanged();
     void hotkeyTriggered(SoundTileController *tile);
     void tabHotkeyTriggered(int tabIndex);
+    void stopAllTriggered();
+    void duckingTriggered();
 
 private slots:
     void onTileHotkeyChanged();
@@ -57,6 +59,8 @@ private:
     QMap<QKeySequence, SoundTileController*> m_keyMap;
     QMap<QKeySequence, int> m_customTabKeyMap;
     QMap<QKeySequence, int> m_defaultTabKeyMap;
+    QKeySequence m_stopAllSeq;
+    QKeySequence m_duckingSeq;
 };
 
 #endif // HOTKEYMANAGER_H

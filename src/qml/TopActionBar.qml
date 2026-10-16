@@ -15,6 +15,8 @@ Rectangle {
     signal stopAllRequested()
     signal toggleDuckingRequested()
     signal toggleMuteHotkeysRequested()
+    signal changeStopAllShortcutRequested()
+    signal changeDuckingShortcutRequested()
 
     height: 60
     color: "#25282B"
@@ -202,7 +204,45 @@ Rectangle {
             }
 
             ToolTip.visible: hovered
-            ToolTip.text: qsTr("Toggle Audio Ducking (Ctrl+D)")
+            ToolTip.text: {
+                var hk = (typeof projectController !== "undefined" && projectController.duckingHotkey && projectController.duckingHotkey.length > 0)
+                         ? projectController.duckingHotkey : qsTr("None");
+                return qsTr("Toggle Audio Ducking (%1)\nRight-click to configure shortcut").arg(hk);
+            }
+
+            MouseArea {
+                anchors.fill: parent
+                acceptedButtons: Qt.RightButton
+                onClicked: (mouse) => {
+                    if (mouse.button === Qt.RightButton) {
+                        duckingContextMenu.popup();
+                    }
+                }
+            }
+
+            Menu {
+                id: duckingContextMenu
+                MenuItem {
+                    text: qsTr("Change Shortcut...")
+                    onTriggered: root.changeDuckingShortcutRequested()
+                }
+                MenuItem {
+                    text: qsTr("Reset to Default (Ctrl+D)")
+                    onTriggered: {
+                        if (typeof projectController !== "undefined") {
+                            projectController.duckingHotkey = "Ctrl+D";
+                        }
+                    }
+                }
+                MenuItem {
+                    text: qsTr("Clear Shortcut")
+                    onTriggered: {
+                        if (typeof projectController !== "undefined") {
+                            projectController.duckingHotkey = "";
+                        }
+                    }
+                }
+            }
         }
 
         // Panic Button: Stop All Sounds
@@ -240,7 +280,45 @@ Rectangle {
             }
 
             ToolTip.visible: hovered
-            ToolTip.text: qsTr("Panic Button: Stop all playing sounds across all tabs (Space)")
+            ToolTip.text: {
+                var hk = (typeof projectController !== "undefined" && projectController.stopAllHotkey && projectController.stopAllHotkey.length > 0)
+                         ? projectController.stopAllHotkey : qsTr("None");
+                return qsTr("Panic Button: Stop all playing sounds across all tabs (%1)\nRight-click to configure shortcut").arg(hk);
+            }
+
+            MouseArea {
+                anchors.fill: parent
+                acceptedButtons: Qt.RightButton
+                onClicked: (mouse) => {
+                    if (mouse.button === Qt.RightButton) {
+                        stopAllContextMenu.popup();
+                    }
+                }
+            }
+
+            Menu {
+                id: stopAllContextMenu
+                MenuItem {
+                    text: qsTr("Change Shortcut...")
+                    onTriggered: root.changeStopAllShortcutRequested()
+                }
+                MenuItem {
+                    text: qsTr("Reset to Default (Space)")
+                    onTriggered: {
+                        if (typeof projectController !== "undefined") {
+                            projectController.stopAllHotkey = "Space";
+                        }
+                    }
+                }
+                MenuItem {
+                    text: qsTr("Clear Shortcut")
+                    onTriggered: {
+                        if (typeof projectController !== "undefined") {
+                            projectController.stopAllHotkey = "";
+                        }
+                    }
+                }
+            }
         }
     }
 

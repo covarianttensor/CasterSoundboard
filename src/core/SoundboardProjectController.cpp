@@ -136,6 +136,24 @@ void SoundboardProjectController::setHotkeyScope(int scope)
     emit hotkeyScopeChanged();
 }
 
+void SoundboardProjectController::setStopAllHotkey(const QString &hotkey)
+{
+    if (m_stopAllHotkey == hotkey)
+        return;
+    m_stopAllHotkey = hotkey;
+    setDirty(true);
+    emit stopAllHotkeyChanged();
+}
+
+void SoundboardProjectController::setDuckingHotkey(const QString &hotkey)
+{
+    if (m_duckingHotkey == hotkey)
+        return;
+    m_duckingHotkey = hotkey;
+    setDirty(true);
+    emit duckingHotkeyChanged();
+}
+
 void SoundboardProjectController::setDirty(bool dirty)
 {
     if (m_isDirty == dirty)
@@ -155,11 +173,15 @@ bool SoundboardProjectController::newProject()
     m_isDirty = false;
     m_isDuckingActive = false;
     m_hotkeyScope = TabScoped;
+    m_stopAllHotkey = "Space";
+    m_duckingHotkey = "Ctrl+D";
 
     emit filePathChanged();
     emit isDirtyChanged();
     emit isDuckingActiveChanged();
     emit hotkeyScopeChanged();
+    emit stopAllHotkeyChanged();
+    emit duckingHotkeyChanged();
     return true;
 }
 
@@ -322,6 +344,12 @@ QJsonObject SoundboardProjectController::toJson() const
     // Hotkey settings
     root["hotkeyScope"] = m_hotkeyScope;
 
+    // Global action shortcuts
+    QJsonObject shortcutsObj;
+    shortcutsObj["stopAll"] = m_stopAllHotkey;
+    shortcutsObj["ducking"] = m_duckingHotkey;
+    root["shortcuts"] = shortcutsObj;
+
     // Tabs & sounds
     root["tabs"] = m_tabModel->toJson();
 
@@ -354,6 +382,15 @@ bool SoundboardProjectController::fromJson(const QJsonObject &json)
         setHotkeyScope(json["hotkeyScope"].toInt(TabScoped));
     } else {
         setHotkeyScope(TabScoped);
+    }
+
+    if (json.contains("shortcuts") && json["shortcuts"].isObject()) {
+        QJsonObject shortcuts = json["shortcuts"].toObject();
+        setStopAllHotkey(shortcuts["stopAll"].toString("Space"));
+        setDuckingHotkey(shortcuts["ducking"].toString("Ctrl+D"));
+    } else {
+        setStopAllHotkey("Space");
+        setDuckingHotkey("Ctrl+D");
     }
 
     if (json.contains("tabs") && json["tabs"].isArray()) {

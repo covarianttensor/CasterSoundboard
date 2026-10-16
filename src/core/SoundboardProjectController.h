@@ -28,6 +28,8 @@ class SoundboardProjectController : public QObject
     Q_PROPERTY(QString outputDeviceName READ outputDeviceName WRITE setOutputDeviceName NOTIFY outputDeviceNameChanged)
     Q_PROPERTY(QStringList availableAudioOutputs READ availableAudioOutputs NOTIFY availableAudioOutputsChanged)
     Q_PROPERTY(int hotkeyScope READ hotkeyScope WRITE setHotkeyScope NOTIFY hotkeyScopeChanged)
+    Q_PROPERTY(QString stopAllHotkey READ stopAllHotkey WRITE setStopAllHotkey NOTIFY stopAllHotkeyChanged)
+    Q_PROPERTY(QString duckingHotkey READ duckingHotkey WRITE setDuckingHotkey NOTIFY duckingHotkeyChanged)
 
 public:
     enum HotkeyScope {
@@ -71,6 +73,12 @@ public:
     int hotkeyScope() const { return m_hotkeyScope; }
     void setHotkeyScope(int scope);
 
+    QString stopAllHotkey() const { return m_stopAllHotkey; }
+    void setStopAllHotkey(const QString &hotkey);
+
+    QString duckingHotkey() const { return m_duckingHotkey; }
+    void setDuckingHotkey(const QString &hotkey);
+
     QStringList availableAudioOutputs() const;
     Q_INVOKABLE void refreshAudioDevices();
 
@@ -99,6 +107,8 @@ signals:
     void outputDeviceNameChanged();
     void availableAudioOutputsChanged();
     void hotkeyScopeChanged();
+    void stopAllHotkeyChanged();
+    void duckingHotkeyChanged();
     void projectLoaded();
     void projectSaved();
     void errorOccurred(const QString &errorMessage);
@@ -123,6 +133,8 @@ private:
     qreal m_duckingVolumeRatio{0.25};
     QString m_outputDeviceName;
     int m_hotkeyScope{TabScoped};
+    QString m_stopAllHotkey{"Space"};
+    QString m_duckingHotkey{"Ctrl+D"};
 };
 
 #endif // SOUNDBOARDPROJECTCONTROLLER_H

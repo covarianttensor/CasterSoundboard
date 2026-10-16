@@ -174,6 +174,76 @@ private slots:
         QVERIFY(manager.handleKeyEvent(&keyQ));
         QCOMPARE(tileSpy.count(), 4);
     }
+
+    void testGlobalActionShortcuts()
+    {
+        SoundboardProjectController project;
+        project.newProject();
+
+        HotkeyManager manager;
+        manager.monitorProject(&project);
+
+        QSignalSpy stopAllSpy(&manager, &HotkeyManager::stopAllTriggered);
+        QSignalSpy duckingSpy(&manager, &HotkeyManager::duckingTriggered);
+
+        // 1. Defaults: Space = Stop All, Ctrl+D = Toggle Ducking
+        QCOMPARE(project.stopAllHotkey(), QString("Space"));
+        QCOMPARE(project.duckingHotkey(), QString("Ctrl+D"));
+
+        QCOMPARE(project.isDuckingActive(), false);
+
+        // Press Space -> triggers stop all
+        QKeyEvent spaceKey(QEvent::KeyPress, Qt::Key_Space, Qt::NoModifier);
+        QVERIFY(manager.handleKeyEvent(&spaceKey));
+        QCOMPARE(stopAllSpy.count(), 1);
+
+        // Press Ctrl+D -> triggers ducking toggle
+        QKeyEvent duckKey(QEvent::KeyPress, Qt::Key_D, Qt::ControlModifier);
+        QVERIFY(manager.handleKeyEvent(&duckKey));
+        QCOMPARE(duckingSpy.count(), 1);
+        QCOMPARE(project.isDuckingActive(), true);
+
+        // Press Ctrl+D again -> un-ducks
+        QVERIFY(manager.handleKeyEvent(&duckKey));
+        QCOMPARE(duckingSpy.count(), 2);
+        QCOMPARE(project.isDuckingActive(), false);
+
+        // 2. Custom hotkeys: Stop All = F12, Ducking = Ctrl+Alt+K
+        project.setStopAllHotkey("F12");
+        project.setDuckingHotkey("Ctrl+Alt+K");
+
+        // Old keys should not trigger anymore
+        QVERIFY(!manager.handleKeyEvent(&spaceKey));
+        QCOMPARE(stopAllSpy.count(), 1);
+        QVERIFY(!manager.handleKeyEvent(&duckKey));
+        QCOMPARE(duckingSpy.count(), 2);
+
+        // New keys should trigger
+        QKeyEvent f12Key(QEvent::KeyPress, Qt::Key_F12, Qt::NoModifier);
+        QVERIFY(manager.handleKeyEvent(&f12Key));
+        QCOMPARE(stopAllSpy.count(), 2);
+
+        QKeyEvent customDuckKey(QEvent::KeyPress, Qt::Key_K, Qt::ControlModifier | Qt::AltModifier);
+        QVERIFY(manager.handleKeyEvent(&customDuckKey));
+        QCOMPARE(duckingSpy.count(), 3);
+        QCOMPARE(project.isDuckingActive(), true);
+
+        // 3. Muted mode (Issue #76) should mute global action shortcuts too
+        manager.setIsMuted(true);
+        QVERIFY(!manager.handleKeyEvent(&f12Key));
+        QCOMPARE(stopAllSpy.count(), 2);
+        QVERIFY(!manager.handleKeyEvent(&customDuckKey));
+        QCOMPARE(duckingSpy.count(), 3);
+
+        manager.setIsMuted(false);
+        QVERIFY(manager.handleKeyEvent(&f12Key));
+        QCOMPARE(stopAllSpy.count(), 3);
+
+        // 4. Cleared hotkeys should not trigger
+        project.setStopAllHotkey("");
+        QVERIFY(!manager.handleKeyEvent(&f12Key));
+        QCOMPARE(stopAllSpy.count(), 3);
+    }
 };
 
 QTEST_MAIN(TestHotkeyManager)

@@ -101,26 +101,6 @@ ApplicationWindow {
     }
 
     Shortcut {
-        sequence: "Space"
-        context: Qt.ApplicationShortcut
-        onActivated: {
-            if (projectController) {
-                projectController.stopAllSounds();
-            }
-        }
-    }
-
-    Shortcut {
-        sequence: "Ctrl+D"
-        context: Qt.ApplicationShortcut
-        onActivated: {
-            if (projectController) {
-                projectController.toggleAudioDucking();
-            }
-        }
-    }
-
-    Shortcut {
         sequence: "F11"
         context: Qt.ApplicationShortcut
         onActivated: toggleFullscreen()
@@ -167,6 +147,319 @@ ApplicationWindow {
                     path += ".caster";
                 }
                 projectController.saveProject(path);
+            }
+        }
+    }
+
+    function openActionHotkeyPrompt(action) {
+        actionHotkeyPromptDialog.openForAction(action);
+    }
+
+    // Global Action Hotkey Prompt Dialog (Stop All / Ducking)
+    Dialog {
+        id: actionHotkeyPromptDialog
+        parent: Overlay.overlay
+        anchors.centerIn: parent
+        modal: true
+        closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
+        implicitWidth: 460
+        topPadding: 16
+        bottomPadding: 16
+        leftPadding: 20
+        rightPadding: 20
+
+        property string actionKey: "" // "stopAll" or "ducking"
+        property string actionTitle: ""
+        property string defaultKey: ""
+        property string pendingSequence: ""
+        property string pendingModifiers: ""
+
+        function openForAction(action) {
+            actionKey = action;
+            if (action === "stopAll") {
+                actionTitle = qsTr("Stop All Sounds (Panic Button)");
+                defaultKey = "Space";
+                pendingSequence = (projectController && projectController.stopAllHotkey) ? projectController.stopAllHotkey : "Space";
+            } else if (action === "ducking") {
+                actionTitle = qsTr("Toggle Audio Ducking");
+                defaultKey = "Ctrl+D";
+                pendingSequence = (projectController && projectController.duckingHotkey) ? projectController.duckingHotkey : "Ctrl+D";
+            }
+            pendingModifiers = "";
+            open();
+        }
+
+        function applyHotkey() {
+            if (!projectController) {
+                close();
+                return;
+            }
+            if (actionKey === "stopAll") {
+                projectController.stopAllHotkey = pendingSequence;
+            } else if (actionKey === "ducking") {
+                projectController.duckingHotkey = pendingSequence;
+            }
+            close();
+        }
+
+        onOpened: {
+            if (typeof hotkeyManager !== "undefined") {
+                hotkeyManager.isMuted = true;
+            }
+            actionCaptureArea.forceActiveFocus();
+        }
+
+        onClosed: {
+            if (typeof hotkeyManager !== "undefined") {
+                hotkeyManager.isMuted = false;
+            }
+        }
+
+        background: Rectangle {
+            color: "#202327"
+            radius: 10
+            border.color: "#343940"
+            border.width: 1
+        }
+
+        header: Rectangle {
+            implicitHeight: 46
+            height: 46
+            color: "#181A1D"
+            radius: 10
+
+            RowLayout {
+                anchors.fill: parent
+                anchors.leftMargin: 16
+                anchors.rightMargin: 16
+                spacing: 8
+
+                Text {
+                    text: "⌨"
+                    font.pointSize: 13
+                    color: "#8E2DE2"
+                }
+
+                Text {
+                    text: qsTr("Register Shortcut for %1").arg(actionHotkeyPromptDialog.actionTitle)
+                    color: "#FFFFFF"
+                    font.bold: true
+                    font.pointSize: 11
+                    Layout.fillWidth: true
+                    elide: Text.ElideRight
+                }
+            }
+        }
+
+        contentItem: Item {
+            id: actionCaptureArea
+            implicitWidth: 420
+            implicitHeight: 145
+            focus: true
+
+            Keys.priority: Keys.BeforeItem
+            Keys.enabled: true
+            Keys.onPressed: (event) => {
+                event.accepted = true;
+
+                if (event.key === Qt.Key_Escape && event.modifiers === Qt.NoModifier) {
+                    actionHotkeyPromptDialog.close();
+                    return;
+                }
+
+                if ((event.key === Qt.Key_Return || event.key === Qt.Key_Enter) && event.modifiers === Qt.NoModifier) {
+                    actionHotkeyPromptDialog.applyHotkey();
+                    return;
+                }
+
+                if (event.key === Qt.Key_Control || event.key === Qt.Key_Shift || event.key === Qt.Key_Alt || event.key === Qt.Key_Meta) {
+                    if (typeof hotkeyManager !== "undefined") {
+                        actionHotkeyPromptDialog.pendingModifiers = hotkeyManager.modifiersToString(event.modifiers);
+                    }
+                    return;
+                }
+
+                if (typeof hotkeyManager !== "undefined") {
+                    var seq = hotkeyManager.keySequenceToString(event.key, event.modifiers);
+                    if (seq && seq.length > 0) {
+                        actionHotkeyPromptDialog.pendingSequence = seq;
+                        actionHotkeyPromptDialog.pendingModifiers = "";
+                    }
+                }
+            }
+
+            Keys.onReleased: (event) => {
+                if (event.key === Qt.Key_Control || event.key === Qt.Key_Shift || event.key === Qt.Key_Alt || event.key === Qt.Key_Meta) {
+                    if (actionHotkeyPromptDialog.pendingSequence.length === 0) {
+                        actionHotkeyPromptDialog.pendingModifiers = "";
+                    }
+                }
+            }
+
+            MouseArea {
+                anchors.fill: parent
+                onClicked: actionCaptureArea.forceActiveFocus()
+            }
+
+            ColumnLayout {
+                anchors.fill: parent
+                spacing: 10
+
+                Text {
+                    text: qsTr("Press the key combination you wish to use for this global action:")
+                    color: "#AAAAAA"
+                    font.pointSize: 9.5
+                    wrapMode: Text.WordWrap
+                    Layout.fillWidth: true
+                }
+
+                // Key Combination Display Badge
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 56
+                    radius: 8
+                    color: "#16181B"
+                    border.color: actionHotkeyPromptDialog.pendingSequence.length > 0 ? "#8E2DE2" : (actionHotkeyPromptDialog.pendingModifiers.length > 0 ? "#A855F7" : "#2C3036")
+                    border.width: actionHotkeyPromptDialog.pendingSequence.length > 0 ? 2 : 1
+
+                    RowLayout {
+                        anchors.fill: parent
+                        anchors.margins: 12
+                        spacing: 10
+
+                        Text {
+                            text: {
+                                if (actionHotkeyPromptDialog.pendingSequence.length > 0) {
+                                    return actionHotkeyPromptDialog.pendingSequence;
+                                }
+                                if (actionHotkeyPromptDialog.pendingModifiers.length > 0) {
+                                    return actionHotkeyPromptDialog.pendingModifiers;
+                                }
+                                return qsTr("(Press any key or key combination...)");
+                            }
+                            color: actionHotkeyPromptDialog.pendingSequence.length > 0 ? "#FFFFFF" : (actionHotkeyPromptDialog.pendingModifiers.length > 0 ? "#D19CF7" : "#7E8590")
+                            font.bold: actionHotkeyPromptDialog.pendingSequence.length > 0
+                            font.pointSize: actionHotkeyPromptDialog.pendingSequence.length > 0 ? 14 : 11
+                            Layout.fillWidth: true
+                        }
+
+                        Text {
+                            text: qsTr("Default: %1").arg(actionHotkeyPromptDialog.defaultKey)
+                            color: "#6B7280"
+                            font.pointSize: 9
+                        }
+                    }
+                }
+
+                Text {
+                    text: qsTr("Tip: You can use single keys (like Space, F1..F12) or modifier combos (Ctrl+D, Alt+Space, etc.)")
+                    color: "#7E8590"
+                    font.pointSize: 8.5
+                    font.italic: true
+                }
+            }
+        }
+
+        footer: Rectangle {
+            implicitHeight: 52
+            height: 52
+            color: "#181A1D"
+            radius: 10
+
+            RowLayout {
+                anchors.fill: parent
+                anchors.leftMargin: 16
+                anchors.rightMargin: 16
+                spacing: 10
+
+                Button {
+                    text: qsTr("Clear")
+                    implicitHeight: 34
+                    background: Rectangle {
+                        color: parent.hovered ? "#3E1E22" : "#2A181A"
+                        radius: 6
+                        border.color: "#8B2635"
+                        border.width: 1
+                    }
+                    contentItem: Text {
+                        text: parent.text
+                        color: "#FF8A96"
+                        font.bold: true
+                        font.pointSize: 9
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                    }
+                    onClicked: {
+                        actionHotkeyPromptDialog.pendingSequence = "";
+                        actionHotkeyPromptDialog.pendingModifiers = "";
+                        actionHotkeyPromptDialog.applyHotkey();
+                    }
+                }
+
+                Button {
+                    text: qsTr("Reset Default")
+                    implicitHeight: 34
+                    background: Rectangle {
+                        color: parent.hovered ? "#33373B" : "#24272B"
+                        radius: 6
+                        border.color: "#4A4E54"
+                        border.width: 1
+                    }
+                    contentItem: Text {
+                        text: parent.text
+                        color: "#B0B5BD"
+                        font.pointSize: 9
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                    }
+                    onClicked: {
+                        actionHotkeyPromptDialog.pendingSequence = actionHotkeyPromptDialog.defaultKey;
+                        actionHotkeyPromptDialog.pendingModifiers = "";
+                        actionHotkeyPromptDialog.applyHotkey();
+                    }
+                }
+
+                Item {
+                    Layout.fillWidth: true
+                }
+
+                Button {
+                    text: qsTr("Cancel")
+                    implicitHeight: 34
+                    background: Rectangle {
+                        color: parent.hovered ? "#33373B" : "#24272B"
+                        radius: 6
+                        border.color: "#4A4E54"
+                        border.width: 1
+                    }
+                    contentItem: Text {
+                        text: parent.text
+                        color: "#FFFFFF"
+                        font.pointSize: 9.5
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                    }
+                    onClicked: actionHotkeyPromptDialog.close()
+                }
+
+                Button {
+                    text: qsTr("Set Shortcut")
+                    implicitHeight: 34
+                    enabled: actionHotkeyPromptDialog.pendingSequence.length > 0
+                    background: Rectangle {
+                        color: parent.enabled ? (parent.hovered ? "#9D3BF0" : "#8E2DE2") : "#33373B"
+                        radius: 6
+                    }
+                    contentItem: Text {
+                        text: parent.text
+                        color: parent.enabled ? "#FFFFFF" : "#666666"
+                        font.bold: true
+                        font.pointSize: 9.5
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                    }
+                    onClicked: actionHotkeyPromptDialog.applyHotkey()
+                }
             }
         }
     }
@@ -229,6 +522,8 @@ ApplicationWindow {
                         hotkeyManager.toggleMute();
                     }
                 }
+                onChangeStopAllShortcutRequested: openActionHotkeyPrompt("stopAll")
+                onChangeDuckingShortcutRequested: openActionHotkeyPrompt("ducking")
                 onTileScaleValueChanged: {
                     if (projectController) {
                         projectController.tileScale = tileScaleValue;
@@ -257,6 +552,7 @@ ApplicationWindow {
 
                 Views.PreferencesView {
                     id: preferencesView
+                    onActionHotkeyPromptRequested: (action) => openActionHotkeyPrompt(action)
                 }
             }
         }
@@ -265,6 +561,9 @@ ApplicationWindow {
     Component.onCompleted: {
         if (typeof initialViewIndex !== "undefined" && initialViewIndex > 0) {
             sidebar.currentIndex = initialViewIndex;
+        }
+        if (typeof openActionHotkeyPromptOnStart !== "undefined" && openActionHotkeyPromptOnStart.length > 0) {
+            openActionHotkeyPrompt(openActionHotkeyPromptOnStart);
         }
     }
 }

@@ -21,6 +21,8 @@ private slots:
         QCOMPARE(project.isDuckingActive(), false);
         QCOMPARE(project.duckingVolumeRatio(), 0.25);
         QCOMPARE(project.hotkeyScope(), static_cast<int>(SoundboardProjectController::TabScoped));
+        QCOMPARE(project.stopAllHotkey(), QString("Space"));
+        QCOMPARE(project.duckingHotkey(), QString("Ctrl+D"));
         QCOMPARE(project.tabModel()->count(), 1);
     }
 
@@ -40,6 +42,8 @@ private slots:
         p1.setDuckingVolumeRatio(0.20);
         p1.setOutputDeviceName("Virtual Sink Output");
         p1.setHotkeyScope(SoundboardProjectController::Global);
+        p1.setStopAllHotkey("F12");
+        p1.setDuckingHotkey("Ctrl+Alt+D");
 
         // Tab 1: Jingles
         p1.tabModel()->renameTab(0, "Jingles");
@@ -86,6 +90,8 @@ private slots:
         QCOMPARE(p2.duckingVolumeRatio(), 0.20);
         QCOMPARE(p2.outputDeviceName(), QString("Virtual Sink Output"));
         QCOMPARE(p2.hotkeyScope(), static_cast<int>(SoundboardProjectController::Global));
+        QCOMPARE(p2.stopAllHotkey(), QString("F12"));
+        QCOMPARE(p2.duckingHotkey(), QString("Ctrl+Alt+D"));
 
         // Verify tabs
         QCOMPARE(p2.tabModel()->count(), 2);
@@ -119,6 +125,17 @@ private slots:
         QCOMPARE(p2_t2->volume(), 1.0);
         QCOMPARE(p2_t2->isLooped(), true);
         QCOMPARE(p2_t2->color(), QString("#E67E22"));
+    }
+
+    void testLegacyProjectFallback()
+    {
+        // JSON without "shortcuts" object should default to Space and Ctrl+D
+        QJsonObject root;
+        root["formatVersion"] = 2;
+        SoundboardProjectController project;
+        QVERIFY(project.fromJson(root));
+        QCOMPARE(project.stopAllHotkey(), QString("Space"));
+        QCOMPARE(project.duckingHotkey(), QString("Ctrl+D"));
     }
 
     void testDuckingToggle()

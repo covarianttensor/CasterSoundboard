@@ -5,6 +5,8 @@ import QtQuick.Layouts
 Item {
     id: root
 
+    signal actionHotkeyPromptRequested(string action)
+
     Rectangle {
         anchors.fill: parent
         color: "#181A1B"
@@ -251,6 +253,237 @@ Item {
                                             color: "#888888"
                                             font.pointSize: 8.5
                                         }
+                                    }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Global Action Shortcuts Setting (Panic / Stop All & Ducking)
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 185
+                    color: "#222528"
+                    radius: 8
+                    border.color: "#33373B"
+                    border.width: 1
+
+                    ColumnLayout {
+                        anchors.fill: parent
+                        anchors.margins: 16
+                        spacing: 12
+
+                        Text {
+                            text: qsTr("Global Action Shortcuts")
+                            color: "#FFFFFF"
+                            font.bold: true
+                            font.pointSize: 12
+                        }
+
+                        Text {
+                            text: qsTr("Assign custom keyboard shortcuts to instantly panic-stop all sounds or toggle audio ducking during production.")
+                            color: "#AAAAAA"
+                            font.pointSize: 9.5
+                            wrapMode: Text.WordWrap
+                            Layout.fillWidth: true
+                        }
+
+                        // Stop All sounds row
+                        RowLayout {
+                            Layout.fillWidth: true
+                            spacing: 12
+
+                            Rectangle {
+                                width: 28
+                                height: 28
+                                radius: 4
+                                color: "#962D22"
+                                Image {
+                                    source: "../icons/stopAll.png"
+                                    anchors.centerIn: parent
+                                    sourceSize: Qt.size(16, 16)
+                                    fillMode: Image.PreserveAspectFit
+                                }
+                            }
+
+                            ColumnLayout {
+                                Layout.fillWidth: true
+                                spacing: 2
+                                Text {
+                                    text: qsTr("Stop All Sounds (Panic Button)")
+                                    color: "#FFFFFF"
+                                    font.bold: true
+                                    font.pointSize: 10
+                                }
+                                Text {
+                                    text: qsTr("Immediately halts playback of all active sounds on every tab.")
+                                    color: "#888888"
+                                    font.pointSize: 8.5
+                                }
+                            }
+
+                            // Shortcut Badge
+                            Rectangle {
+                                Layout.preferredHeight: 30
+                                Layout.preferredWidth: Math.max(70, stopAllText.implicitWidth + 20)
+                                radius: 6
+                                color: "#16181B"
+                                border.color: (typeof projectController !== "undefined" && projectController.stopAllHotkey.length > 0) ? "#8E2DE2" : "#33373B"
+                                border.width: 1
+
+                                Text {
+                                    id: stopAllText
+                                    anchors.centerIn: parent
+                                    text: (typeof projectController !== "undefined" && projectController.stopAllHotkey.length > 0)
+                                          ? projectController.stopAllHotkey : qsTr("None")
+                                    color: (typeof projectController !== "undefined" && projectController.stopAllHotkey.length > 0) ? "#FFFFFF" : "#777777"
+                                    font.bold: (typeof projectController !== "undefined" && projectController.stopAllHotkey.length > 0)
+                                    font.pointSize: 9.5
+                                }
+                            }
+
+                            Button {
+                                text: qsTr("Change")
+                                Layout.preferredHeight: 32
+                                Layout.preferredWidth: 70
+                                background: Rectangle {
+                                    color: parent.hovered ? "#9D3BF0" : "#8E2DE2"
+                                    radius: 5
+                                }
+                                contentItem: Text {
+                                    text: parent.text
+                                    color: "#FFFFFF"
+                                    font.bold: true
+                                    font.pointSize: 9
+                                    horizontalAlignment: Text.AlignHCenter
+                                    verticalAlignment: Text.AlignVCenter
+                                }
+                                onClicked: root.actionHotkeyPromptRequested("stopAll")
+                            }
+
+                            Button {
+                                text: qsTr("Clear")
+                                Layout.preferredHeight: 32
+                                Layout.preferredWidth: 60
+                                visible: typeof projectController !== "undefined" && projectController.stopAllHotkey.length > 0
+                                background: Rectangle {
+                                    color: parent.hovered ? "#3E1E22" : "#2A181A"
+                                    radius: 5
+                                    border.color: "#8B2635"
+                                    border.width: 1
+                                }
+                                contentItem: Text {
+                                    text: parent.text
+                                    color: "#FF8A96"
+                                    font.bold: true
+                                    font.pointSize: 9
+                                    horizontalAlignment: Text.AlignHCenter
+                                    verticalAlignment: Text.AlignVCenter
+                                }
+                                onClicked: {
+                                    if (typeof projectController !== "undefined") {
+                                        projectController.stopAllHotkey = "";
+                                    }
+                                }
+                            }
+                        }
+
+                        // Ducking row
+                        RowLayout {
+                            Layout.fillWidth: true
+                            spacing: 12
+
+                            Rectangle {
+                                width: 28
+                                height: 28
+                                radius: 4
+                                color: "#F39C12"
+                                Image {
+                                    source: "../icons/duck.png"
+                                    anchors.centerIn: parent
+                                    sourceSize: Qt.size(16, 16)
+                                    fillMode: Image.PreserveAspectFit
+                                }
+                            }
+
+                            ColumnLayout {
+                                Layout.fillWidth: true
+                                spacing: 2
+                                Text {
+                                    text: qsTr("Toggle Audio Ducking")
+                                    color: "#FFFFFF"
+                                    font.bold: true
+                                    font.pointSize: 10
+                                }
+                                Text {
+                                    text: qsTr("Ducks playing sound volume down to the configured attenuation ratio.")
+                                    color: "#888888"
+                                    font.pointSize: 8.5
+                                }
+                            }
+
+                            // Shortcut Badge
+                            Rectangle {
+                                Layout.preferredHeight: 30
+                                Layout.preferredWidth: Math.max(70, duckingText.implicitWidth + 20)
+                                radius: 6
+                                color: "#16181B"
+                                border.color: (typeof projectController !== "undefined" && projectController.duckingHotkey.length > 0) ? "#8E2DE2" : "#33373B"
+                                border.width: 1
+
+                                Text {
+                                    id: duckingText
+                                    anchors.centerIn: parent
+                                    text: (typeof projectController !== "undefined" && projectController.duckingHotkey.length > 0)
+                                          ? projectController.duckingHotkey : qsTr("None")
+                                    color: (typeof projectController !== "undefined" && projectController.duckingHotkey.length > 0) ? "#FFFFFF" : "#777777"
+                                    font.bold: (typeof projectController !== "undefined" && projectController.duckingHotkey.length > 0)
+                                    font.pointSize: 9.5
+                                }
+                            }
+
+                            Button {
+                                text: qsTr("Change")
+                                Layout.preferredHeight: 32
+                                Layout.preferredWidth: 70
+                                background: Rectangle {
+                                    color: parent.hovered ? "#9D3BF0" : "#8E2DE2"
+                                    radius: 5
+                                }
+                                contentItem: Text {
+                                    text: parent.text
+                                    color: "#FFFFFF"
+                                    font.bold: true
+                                    font.pointSize: 9
+                                    horizontalAlignment: Text.AlignHCenter
+                                    verticalAlignment: Text.AlignVCenter
+                                }
+                                onClicked: root.actionHotkeyPromptRequested("ducking")
+                            }
+
+                            Button {
+                                text: qsTr("Clear")
+                                Layout.preferredHeight: 32
+                                Layout.preferredWidth: 60
+                                visible: typeof projectController !== "undefined" && projectController.duckingHotkey.length > 0
+                                background: Rectangle {
+                                    color: parent.hovered ? "#3E1E22" : "#2A181A"
+                                    radius: 5
+                                    border.color: "#8B2635"
+                                    border.width: 1
+                                }
+                                contentItem: Text {
+                                    text: parent.text
+                                    color: "#FF8A96"
+                                    font.bold: true
+                                    font.pointSize: 9
+                                    horizontalAlignment: Text.AlignHCenter
+                                    verticalAlignment: Text.AlignVCenter
+                                }
+                                onClicked: {
+                                    if (typeof projectController !== "undefined") {
+                                        projectController.duckingHotkey = "";
                                     }
                                 }
                             }
