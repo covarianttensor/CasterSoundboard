@@ -580,6 +580,12 @@ ApplicationWindow {
                     Layout.fillHeight: true
                     onActionHotkeyPromptRequested: (action) => openActionHotkeyPrompt(action)
                 }
+
+                Views.DocumentationView {
+                    id: documentationView
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                }
             }
         }
     }

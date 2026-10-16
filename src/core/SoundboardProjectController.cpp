@@ -7,6 +7,8 @@
 #include <QFileInfo>
 #include <QJsonDocument>
 #include <QJsonArray>
+#include <QGuiApplication>
+#include <QClipboard>
 #include <QDebug>
 
 SoundboardProjectController::SoundboardProjectController(QObject *parent)
@@ -419,3 +421,11 @@ bool SoundboardProjectController::fromJson(const QJsonObject &json)
 
     return true;
 }
+
+void SoundboardProjectController::copyToClipboard(const QString &text)
+{
+    if (auto clip = QGuiApplication::clipboard()) {
+        clip->setText(text);
+    }
+}
+

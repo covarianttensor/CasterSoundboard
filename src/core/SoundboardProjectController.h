@@ -85,6 +85,7 @@ public:
 
     QStringList availableAudioOutputs() const;
     Q_INVOKABLE void refreshAudioDevices();
+    Q_INVOKABLE void copyToClipboard(const QString &text);
 
     // Serialization
     QJsonObject toJson() const;

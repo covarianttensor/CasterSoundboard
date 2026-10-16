@@ -55,6 +55,14 @@ Rectangle {
             Layout.fillHeight: true
         }
 
+        // App Documentation (floated to bottom above fullscreen toggle)
+        NavButton {
+            iconSource: "icons/about.png"
+            tooltipText: qsTr("Documentation & Terminal CLI Guide")
+            isActive: root.currentIndex === 4
+            onClicked: root.currentIndex = 4
+        }
+
         // Fullscreen Toggle
         NavButton {
             iconSource: "icons/fullscreen.png"
