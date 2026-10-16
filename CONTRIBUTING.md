@@ -1,22 +1,60 @@
-# How to Contribute to CasterSoundboard
+# Contributing to Caster Soundboard
 
-CasterSoundboard is a volunteer-run project, built and maintained by many contributors. We welcome new team members, and value feedback from users using CastrerSoundboard.
+Thank you for your interest in contributing to **Caster Soundboard**! Whether you are reporting a bug, proposing a new feature, or submitting code, your contributions help make this project better for everyone.
 
-The following is a set of guidelines for contributing to CasterSoundboard, which are hosted in the Jupiter Broadcasting Organization on GitHub. These are just guidelines, not rules. Use your best judgment, and feel free to propose changes to this document in a pull request.
+---
 
-### Reporting a Bug Report or Requesting a Feature
-We utilize a template to keep our issue tracker organized. Please fill it out and remove areas that are not related to your Bug Report or Feature Request. Also keep these guidelines in mind as well:
+## 🧭 Getting Started
 
-* Search before posing to avoid duplicates
-* Please keep the topic of the issue or feature request to **ONE** problem or request.
-  * This will help our contributors keep the issues tracker organized.
-* Please fill out the areas of the template you are using. Delete the parts you are not using.
-* Make sure title is short but useful. It should echo the description.
-  * `Add a "New Data not saved" confirmation` is a good example of a title.
-* Tell us how to reproduce the bug in clear, numbered steps.
-  * If we can't reproduce your bug, we will have to ask more questions. Please answer promptly, otherwise your Bug Report may stall.
-* For Feature Requests, Ask yourself these questions before you post:
-  * What are the advantages to having this Feature?
-  * How will it benefit CasterSoundboard's work flow?
-  * What will be the challenges to adding this feature?
-  * Do you have any mockups or examples from other programs which implement this?
+* **Architecture & Coding Standards**: Please read **[`AGENTS.md`](AGENTS.md)** before contributing code. It documents our project architecture, build commands, technical guardrails (audio routing, PipeWire/Flatpak safety, QML interaction guidelines), and verification protocols.
+* **Target Branch**: All active development and pull requests must target the **`main`** branch. The legacy Qt Widgets v1 codebase is archived in `legacy-v1`.
+
+---
+
+## 🐛 Reporting Bugs
+
+If you encounter unexpected behavior or a crash:
+1. Search [existing issues](https://github.com/covarianttensor/CasterSoundboard/issues) to ensure the problem has not already been reported.
+2. Open a new issue using our **[Bug Report Template](https://github.com/covarianttensor/CasterSoundboard/issues/new?template=bug_report.yml)**.
+3. Include your Linux distribution, desktop environment (Wayland vs. X11), audio system (PipeWire vs. PulseAudio), and how you installed Caster Soundboard (AppImage, Flatpak, NixOS, or native build).
+4. Run `CasterSoundboard` from a terminal and include any error messages or backtraces.
+
+---
+
+## 💡 Suggesting Features
+
+Have an idea for a new feature or improvement?
+1. Check [existing issues and pull requests](https://github.com/covarianttensor/CasterSoundboard/issues) to avoid duplicate proposals.
+2. Open an issue using our **[Feature Request Template](https://github.com/covarianttensor/CasterSoundboard/issues/new?template=feature_request.yml)**.
+3. Describe the problem you are solving, your proposed workflow or interface change, and any mockups or alternatives you have considered.
+
+---
+
+## 🛠️ Development & Testing Protocol
+
+Before submitting a pull request, ensure your code compiles cleanly and passes all automated unit tests:
+
+```bash
+# 1. Configure and build
+cmake -B build-cmake -DCMAKE_BUILD_TYPE=Debug
+cmake --build build-cmake -j$(nproc)
+
+# 2. Run test suite (must pass 100%)
+ctest --test-dir build-cmake --output-on-failure
+```
+
+For headless visual testing without an X11 or Wayland display, use our built-in screenshot flags:
+```bash
+./build-cmake/bin/CasterSoundboard -s /tmp/screenshot_main.png
+./build-cmake/bin/CasterSoundboard --view 1 --test-routing-active -s /tmp/screenshot_routing.png
+```
+
+---
+
+## 📋 Pull Request Guidelines
+
+1. Create a focused feature branch off `main` (`git checkout -b feat/my-enhancement`).
+2. Adhere to our [Conventional Commits](https://www.conventionalcommits.org/) format (`feat:`, `fix:`, `refactor:`, `test:`, `docs:`).
+3. Do not introduce legacy Qt Widgets into active views; use declarative QML (`QtQuick` / `QuickControls 2`).
+4. Ensure cross-platform packaging compatibility (Native CMake, AppImage, Flatpak, and NixOS).
+5. Open your pull request against `main` and complete the PR checklist.

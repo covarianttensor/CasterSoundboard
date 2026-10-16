@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Documentation & User Guide
+    url: https://github.com/covarianttensor/CasterSoundboard#readme
+    about: Read the Caster Soundboard user guide, audio routing details, and CLI reference.
+  - name: Contributor & AI Agent Guide (AGENTS.md)
+    url: https://github.com/covarianttensor/CasterSoundboard/blob/main/AGENTS.md
+    about: Technical guardrails, architecture overview, and build/test protocols.

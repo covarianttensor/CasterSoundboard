@@ -1,0 +1,81 @@
+name: Bug Report
+description: Create a report to help us fix an issue in Caster Soundboard
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug! Please search [existing issues](https://github.com/covarianttensor/CasterSoundboard/issues) first to avoid duplicates.
+  - type: input
+    id: version
+    attributes:
+      label: Caster Soundboard Version
+      description: What version or git commit are you running?
+      placeholder: "e.g. 2.0.0, commit bbaee8d"
+    validations:
+      required: true
+  - type: dropdown
+    id: package_type
+    attributes:
+      label: Package / Installation Method
+      description: How are you running Caster Soundboard?
+      options:
+        - Standalone AppImage
+        - Flatpak Bundle
+        - NixOS (Flake or Derivation)
+        - Native Source Build (CMake)
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: system_info
+    attributes:
+      label: Linux Distribution & Desktop Environment
+      description: What Linux distro, display server (Wayland or X11), and desktop environment are you on?
+      placeholder: "e.g. Ubuntu 24.04 / Wayland / GNOME 46, Arch Linux / KDE Plasma 6"
+    validations:
+      required: true
+  - type: dropdown
+    id: audio_server
+    attributes:
+      label: Audio Server Subsystem
+      description: Which sound server manages your system audio?
+      options:
+        - PipeWire (with pipewire-pulse)
+        - PulseAudio
+        - Other / Unknown
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug Description
+      description: A clear and concise description of what the problem is.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to Reproduce
+      description: Step-by-step instructions to reproduce the issue.
+      placeholder: |
+        1. Launch Caster Soundboard
+        2. Click on '...'
+        3. Trigger tile '...'
+        4. Observe unexpected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What did you expect to happen instead?
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Terminal Logs & Output
+      description: Please launch `CasterSoundboard` from a terminal and paste any errors, warnings, or backtraces here.
+      render: shell
