@@ -266,6 +266,35 @@ Item {
                             Layout.fillWidth: true
                         }
 
+                        ColumnLayout {
+                            Layout.fillWidth: true
+                            spacing: 6
+
+                            Text {
+                                text: qsTr("Virtual Microphone Name (in Discord / VoIP Apps):")
+                                color: "#FFFFFF"
+                                font.bold: true
+                                font.pointSize: 9.5
+                            }
+
+                            DarkTextField {
+                                id: prefVirtualMicField
+                                Layout.fillWidth: true
+                                text: typeof audioRoutingController !== "undefined" ? audioRoutingController.virtualMicName : "Caster Soundboard Mic"
+                                placeholderText: qsTr("Caster Soundboard Mic")
+                                onTextChanged: {
+                                    if (activeFocus && typeof audioRoutingController !== "undefined") {
+                                        audioRoutingController.virtualMicName = text;
+                                    }
+                                }
+                                onEditingFinished: {
+                                    if (typeof audioRoutingController !== "undefined") {
+                                        audioRoutingController.virtualMicName = text;
+                                    }
+                                }
+                            }
+                        }
+
                         // Error Banner if error occurred
                         Rectangle {
                             Layout.fillWidth: true
@@ -308,18 +337,17 @@ Item {
                             Button {
                                 id: prefApplyBtn
                                 text: (typeof audioRoutingController !== "undefined" && audioRoutingController.isRouting)
-                                      ? qsTr("Stop Virtual Routing")
+                                      ? qsTr("Update Routing")
                                       : qsTr("Apply Routing")
                                 Layout.preferredHeight: 44
-                                Layout.preferredWidth: 170
+                                Layout.preferredWidth: 150
                                 enabled: typeof audioRoutingController !== "undefined" && !audioRoutingController.isBusy
                                 onClicked: {
                                     if (typeof audioRoutingController !== "undefined") {
-                                        if (audioRoutingController.isRouting) {
-                                            audioRoutingController.stopSharing();
-                                        } else {
-                                            audioRoutingController.apply();
+                                        if (typeof prefVirtualMicField !== "undefined") {
+                                            audioRoutingController.virtualMicName = prefVirtualMicField.text;
                                         }
+                                        audioRoutingController.apply();
                                     }
                                 }
                                 contentItem: Text {
@@ -330,12 +358,32 @@ Item {
                                     verticalAlignment: Text.AlignVCenter
                                 }
                                 background: Rectangle {
-                                    color: {
-                                        if (typeof audioRoutingController !== "undefined" && audioRoutingController.isRouting) {
-                                            return parent.down ? "#922B21" : (parent.hovered ? "#C0392B" : "#A93226");
-                                        }
-                                        return parent.down ? "#5B18A7" : (parent.hovered ? "#A044FF" : "#8E2DE2");
+                                    color: parent.down ? "#5B18A7" : (parent.hovered ? "#A044FF" : "#8E2DE2")
+                                    radius: 6
+                                }
+                            }
+
+                            Button {
+                                id: prefStopBtn
+                                visible: typeof audioRoutingController !== "undefined" && audioRoutingController.isRouting
+                                text: qsTr("Stop Virtual Routing")
+                                Layout.preferredHeight: 44
+                                Layout.preferredWidth: 160
+                                enabled: typeof audioRoutingController !== "undefined" && !audioRoutingController.isBusy
+                                onClicked: {
+                                    if (typeof audioRoutingController !== "undefined") {
+                                        audioRoutingController.stopSharing();
                                     }
+                                }
+                                contentItem: Text {
+                                    text: parent.text
+                                    color: "#FFFFFF"
+                                    font.bold: true
+                                    horizontalAlignment: Text.AlignHCenter
+                                    verticalAlignment: Text.AlignVCenter
+                                }
+                                background: Rectangle {
+                                    color: parent.down ? "#922B21" : (parent.hovered ? "#C0392B" : "#A93226")
                                     radius: 6
                                 }
                             }

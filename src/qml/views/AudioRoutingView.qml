@@ -195,6 +195,9 @@ Item {
                             enabled: typeof audioRoutingController !== "undefined" && !audioRoutingController.isBusy
                             onClicked: {
                                 if (typeof audioRoutingController !== "undefined") {
+                                    if (typeof micNameField !== "undefined") {
+                                        audioRoutingController.virtualMicName = micNameField.text;
+                                    }
                                     audioRoutingController.apply();
                                 }
                             }
@@ -695,7 +698,12 @@ Item {
                                                 id: micNameField
                                                 Layout.fillWidth: true
                                                 text: typeof audioRoutingController !== "undefined" ? audioRoutingController.virtualMicName : "Caster Soundboard Mic"
-                                                placeholderText: qsTr("Virtual_Microphone")
+                                                placeholderText: qsTr("Caster Soundboard Mic")
+                                                onTextChanged: {
+                                                    if (activeFocus && typeof audioRoutingController !== "undefined") {
+                                                        audioRoutingController.virtualMicName = text;
+                                                    }
+                                                }
                                                 onEditingFinished: {
                                                     if (typeof audioRoutingController !== "undefined") {
                                                         audioRoutingController.virtualMicName = text;

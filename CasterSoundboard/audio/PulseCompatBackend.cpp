@@ -353,7 +353,7 @@ Result PulseCompatBackend::restartAudioServices(const Plan &supplied) {
         healthError = "Audio service restart failed or is incomplete: " + restarted.error + "\nSome services may have restarted. Inspect your user audio services before retrying.";
         return {false, healthError};
     }
-    owned.clear(); loops.clear(); boardSink.clear(); micSink.clear(); micSource.clear();
+    owned.clear(); loops.clear(); boardSink.clear(); micSink.clear(); micSource.clear(); appliedMicDescription.clear();
     previousSource.clear(); appliedSource.clear(); healthError.clear();
     for (int retry = 0; retry < 6; ++retry) {
         recoveryWait(500);
@@ -465,7 +465,7 @@ Result PulseCompatBackend::apply(const Plan &supplied) {
     if (plan.metadata != supplied.metadata) return {false, "Devices changed since preview. Review and Apply again.", boardSink, running && effective.mix ? micSource : QString()};
     if (!healthError.isEmpty()) return {false, healthError + "\nStop routing before applying again.", boardSink, {}};
     const auto desired = plan.desired;
-    auto oldOwned = owned; auto oldLoops = loops; const auto oldBoard = boardSink, oldMic = micSink, oldMicSource = micSource;
+    auto oldOwned = owned; auto oldLoops = loops; const auto oldBoard = boardSink, oldMic = micSink, oldMicSource = micSource, oldMicDesc = appliedMicDescription;
     const auto oldPrevious = previousSource, oldApplied = appliedSource;
     QJsonObject before;
     QMap<QString, QString> oldProfiles, setProfiles;
@@ -519,14 +519,22 @@ Result PulseCompatBackend::apply(const Plan &supplied) {
             load("module-null-sink", {"sink_name=" + boardSink, "sink_properties=\"device.description=Caster_Soundboard caster.owner=" + token + "\""});
         }
         if (desired.mix) {
-            QString sanitizedName = desired.virtualMicName.trimmed();
-            sanitizedName.replace(QRegularExpression("\\s+"), "_");
-            sanitizedName.remove(QRegularExpression("[^A-Za-z0-9_.-]"));
-            const bool isDefault = sanitizedName.isEmpty() || sanitizedName == "Virtual_Microphone" || sanitizedName == "VirtualMic";
-            if (sanitizedName.isEmpty()) sanitizedName = "Virtual_Microphone";
-            const QString targetSinkName = isDefault ? QString("VirtualMic") : sanitizedName;
+            QString rawName = desired.virtualMicName.trimmed();
+            QString sanitizedNodeName = rawName;
+            sanitizedNodeName.replace(QRegularExpression("\\s+"), "_");
+            sanitizedNodeName.remove(QRegularExpression("[^A-Za-z0-9_.-]"));
+            const bool isDefault = sanitizedNodeName.isEmpty() || sanitizedNodeName == "Virtual_Microphone" || sanitizedNodeName == "VirtualMic";
+            if (sanitizedNodeName.isEmpty())
+                sanitizedNodeName = "VirtualMic";
+            const QString targetSinkName = isDefault ? QString("VirtualMic") : sanitizedNodeName;
 
-            if (micSink.isEmpty() || !micSink.startsWith(targetSinkName) || micSource.isEmpty()) {
+            QString displayDescription = rawName;
+            displayDescription.replace('_', ' ');
+            if (displayDescription.isEmpty())
+                displayDescription = "Caster Soundboard Mic";
+            displayDescription.remove('"').remove('\\');
+
+            if (micSink.isEmpty() || !micSink.startsWith(targetSinkName) || micSource.isEmpty() || appliedMicDescription != displayDescription) {
                 if (!micSource.isEmpty()) {
                     for (int i = owned.size() - 1; i >= 0; --i) {
                         if (owned[i].name == "module-remap-source" && owned[i].arguments.contains("source_name=" + micSource)) {
@@ -544,14 +552,10 @@ Result PulseCompatBackend::apply(const Plan &supplied) {
                     micSink.clear();
                 }
                 micSink = uniqueName(targetSinkName);
-                load("module-null-sink", {"sink_name=" + micSink, "sink_properties=\"device.description=" + sanitizedName + " caster.owner=" + token + "\""});
+                load("module-null-sink", {"sink_name=" + micSink, "sink_properties=\"device.description=" + sanitizedNodeName + " caster.owner=" + token + "\""});
 
                 micSource = uniqueSourceName(micSink);
-                QString displayDescription = desired.virtualMicName.trimmed();
-                displayDescription.replace('_', ' ');
-                if (displayDescription.isEmpty() || displayDescription == "Virtual Microphone" || displayDescription == "VirtualMic")
-                    displayDescription = "Caster Soundboard Mic";
-                displayDescription.remove('"').remove('\\');
+                appliedMicDescription = displayDescription;
                 load("module-remap-source", {"master=" + micSink + ".monitor", "source_name=" + micSource,
                     "source_properties=\"device.description=\\\"" + displayDescription + "\\\" caster.owner=" + token + "\""});
             }
@@ -626,7 +630,7 @@ Result PulseCompatBackend::apply(const Plan &supplied) {
         auto current = owned;
         for (int i = current.size() - 1; i >= oldOwned.size(); --i) attempt([&] { unload(current[i].id); });
         if (!recovery.isEmpty()) healthError = "Partial recovery; Stop routing and inspect:\n" + recovery.join('\n');
-        boardSink = oldBoard; micSink = oldMic; micSource = oldMicSource; loops = oldLoops; previousSource = oldPrevious; appliedSource = oldApplied;
+        boardSink = oldBoard; micSink = oldMic; micSource = oldMicSource; appliedMicDescription = oldMicDesc; loops = oldLoops; previousSource = oldPrevious; appliedSource = oldApplied;
         return {false, QString::fromUtf8(e.what()) + (recovery.isEmpty() ? "\nChanges rolled back. Refresh devices and retry." : "\nPartial recovery; Stop routing and inspect:\n" + recovery.join('\n')), running ? boardSink : QString(), running && effective.mix ? micSource : QString()};
     }
 }
@@ -637,7 +641,7 @@ Result PulseCompatBackend::stopManagedRouting() {
     for (int i = modules.size() - 1; i >= 0; --i) {
         try { unload(modules[i].id); } catch (const std::exception &e) { errors << QString::fromUtf8(e.what()); }
     }
-    if (owned.isEmpty()) { loops.clear(); boardSink.clear(); micSink.clear(); micSource.clear(); running = false; healthError.clear(); }
+    if (owned.isEmpty()) { loops.clear(); boardSink.clear(); micSink.clear(); micSource.clear(); appliedMicDescription.clear(); running = false; healthError.clear(); }
     return {errors.isEmpty(), errors.isEmpty() ? "Routing stopped. Physical default output and card profiles retained." : "Partial cleanup:\n" + errors.join('\n'), {}, {}};
 }
 Result PulseCompatBackend::status() {

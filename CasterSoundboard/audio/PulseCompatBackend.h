@@ -32,7 +32,7 @@ private:
     std::function<void(unsigned long)> recoveryWait;
     QJsonArray cards, sinks, sources;
     Discovery discovery;
-    QString token, boardSink, micSink, micSource, previousSource, appliedSource, healthError;
+    QString token, boardSink, micSink, micSource, appliedMicDescription, previousSource, appliedSource, healthError;
     QVector<Module> owned;
     QMap<QString, QString> loops;
     Configuration effective;
