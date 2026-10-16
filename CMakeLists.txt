@@ -87,7 +87,9 @@ target_link_libraries(CasterSoundboard PRIVATE
     Qt6::Network
 )
 
-qt_policy(SET QTP0004 OLD)
+if(COMMAND qt_policy)
+    qt_policy(SET QTP0004 OLD)
+endif()
 
 qt_add_qml_module(CasterSoundboard
     URI CasterSoundboard
