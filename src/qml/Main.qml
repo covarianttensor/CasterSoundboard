@@ -579,7 +579,6 @@ ApplicationWindow {
                     Layout.fillWidth: true
                     Layout.fillHeight: true
                     onActionHotkeyPromptRequested: (action) => openActionHotkeyPrompt(action)
-                    onNavigateToAudioRoutingRequested: sidebar.currentIndex = 1
                 }
 
                 Views.DocumentationView {
