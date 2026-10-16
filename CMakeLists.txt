@@ -41,20 +41,20 @@ set(CORE_SOURCES
     src/core/AudioRoutingController.cpp
     src/core/WebRemoteController.h
     src/core/WebRemoteController.cpp
-    CasterSoundboard/audio/AudioBackend.h
-    CasterSoundboard/audio/AudioDeviceController.h
-    CasterSoundboard/audio/AudioDeviceController.cpp
-    CasterSoundboard/audio/PulseCompatBackend.h
-    CasterSoundboard/audio/PulseCompatBackend.cpp
-    CasterSoundboard/audio/CasterPlaybackRouter.h
-    CasterSoundboard/audio/CasterPlaybackRouter.cpp
+    src/audio/AudioBackend.h
+    src/audio/AudioDeviceController.h
+    src/audio/AudioDeviceController.cpp
+    src/audio/PulseCompatBackend.h
+    src/audio/PulseCompatBackend.cpp
+    src/audio/CasterPlaybackRouter.h
+    src/audio/CasterPlaybackRouter.cpp
 )
 
 add_library(CasterCore STATIC ${CORE_SOURCES})
 
 target_include_directories(CasterCore PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/src/core
-    ${CMAKE_CURRENT_SOURCE_DIR}/CasterSoundboard/audio
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/audio
 )
 
 target_link_libraries(CasterCore PUBLIC
