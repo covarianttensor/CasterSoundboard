@@ -56,6 +56,10 @@ struct FakeServer {
                 lists["sinks"].append(QJsonObject{{"index",id},{"name",name}});
                 lists["sources"].append(QJsonObject{{"index",id},{"name",name+".monitor"}});
             }
+            if(a[1]=="module-remap-source") {
+                QString name=argument(a,"source_name");
+                lists["sources"].append(QJsonObject{{"index",id},{"name",name}});
+            }
             return {true,QString::number(id),{}};
         }
         if (a[0]=="unload-module") {
@@ -123,17 +127,17 @@ private slots:
     void idempotenceAndMonitorDiff() {
         FakeServer f;PulseCompatBackend b([&](const QStringList&a){return f.run(a);});
         auto c=f.config();auto r=b.apply(b.validateConfiguration(c));QVERIFY2(r.ok,qPrintable(r.message));
-        QCOMPARE(f.lists["modules"].size(),5);int loads=f.loads;
-        QVERIFY(b.apply(b.validateConfiguration(c)).ok);QCOMPARE(f.loads,loads);QCOMPARE(f.lists["modules"].size(),5);
-        c.monitor=false;QVERIFY(b.apply(b.validateConfiguration(c)).ok);QCOMPARE(f.lists["modules"].size(),4);
-        c.monitor=true;QVERIFY(b.apply(b.validateConfiguration(c)).ok);QCOMPARE(f.lists["modules"].size(),5);
+        QCOMPARE(f.lists["modules"].size(),6);int loads=f.loads;
+        QVERIFY(b.apply(b.validateConfiguration(c)).ok);QCOMPARE(f.loads,loads);QCOMPARE(f.lists["modules"].size(),6);
+        c.monitor=false;QVERIFY(b.apply(b.validateConfiguration(c)).ok);QCOMPARE(f.lists["modules"].size(),5);
+        c.monitor=true;QVERIFY(b.apply(b.validateConfiguration(c)).ok);QCOMPARE(f.lists["modules"].size(),6);
         for(auto v:f.lists["modules"]) {
             QString arg=v.toObject()["argument"].toString();
             QVERIFY(!(arg.contains("source=source.card.focusrite") && arg.contains("sink=sink.card.focusrite")));
         }
         QVERIFY(b.stopManagedRouting().ok);QCOMPARE(f.lists["modules"].size(),0);QCOMPARE(f.defaultSource,QString("source.card.focusrite"));
     }
-    void rollbackEachLoad_data() {QTest::addColumn<int>("failure");for(int n=1;n<=5;++n)QTest::newRow(qPrintable(QString::number(n)))<<n;}
+    void rollbackEachLoad_data() {QTest::addColumn<int>("failure");for(int n=1;n<=6;++n)QTest::newRow(qPrintable(QString::number(n)))<<n;}
     void rollbackEachLoad() {
         QFETCH(int,failure);FakeServer f;f.failLoad=failure;PulseCompatBackend b([&](const QStringList&a){return f.run(a);});
         auto r=b.apply(b.validateConfiguration(f.config()));QVERIFY(!r.ok);QVERIFY(r.message.contains("Injected module failure"));
@@ -179,12 +183,17 @@ private slots:
         QVERIFY(plan.changes.join('\n').contains("Discord_Soundboard_Mic"));
         auto r = b.apply(plan);
         QVERIFY2(r.ok, qPrintable(r.message));
-        QCOMPARE(r.voiceSource, QString("Discord_Soundboard_Mic.monitor"));
+        QCOMPARE(r.voiceSource, QString("Discord_Soundboard_Mic"));
         bool foundSink = false;
         for (auto v : f.lists["sinks"]) {
             if (v.toObject()["name"].toString() == "Discord_Soundboard_Mic") foundSink = true;
         }
         QVERIFY(foundSink);
+        bool foundSource = false;
+        for (auto v : f.lists["sources"]) {
+            if (v.toObject()["name"].toString() == "Discord_Soundboard_Mic") foundSource = true;
+        }
+        QVERIFY(foundSource);
         QVERIFY(b.stopManagedRouting().ok);
     }
     void rejectReusedModuleId() {
@@ -222,7 +231,7 @@ private slots:
             return f.run(a);
         });
         auto c = f.config(); auto r = b.apply(b.validateConfiguration(c)); QVERIFY2(r.ok, qPrintable(r.message));
-        QVERIFY(b.apply(b.validateConfiguration(c)).ok); QCOMPARE(f.lists["modules"].size(), 5);
+        auto r2 = b.apply(b.validateConfiguration(c)); QVERIFY2(r2.ok, qPrintable(r2.message)); QCOMPARE(f.lists["modules"].size(), 6);
         QVERIFY(b.stopManagedRouting().ok); QVERIFY(f.lists["modules"].isEmpty());
     }
     void recoveryDiscoveryIsGeneric() {
@@ -436,7 +445,7 @@ private slots:
         FakeServer config;
         auto plan = b.validateConfiguration(config.config()); QVERIFY2(plan.error.isEmpty(), qPrintable(plan.error));
         auto result = b.apply(plan); QVERIFY2(result.ok, qPrintable(result.message));
-        QCOMPARE(result.voiceSource, QString("VirtualMic.monitor"));
+        QCOMPARE(result.voiceSource, QString("VirtualMic"));
         result = b.apply(b.validateConfiguration(config.config())); QVERIFY2(result.ok, qPrintable(result.message));
         auto c = config.config(); c.monitor = false;
         result = b.apply(b.validateConfiguration(c)); QVERIFY2(result.ok, qPrintable(result.message));
