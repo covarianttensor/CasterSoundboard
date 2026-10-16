@@ -135,6 +135,8 @@ int main(int argc, char *argv[])
     QCommandLineOption tabHotkeyPromptOption("open-tab-hotkey-prompt", "Open tab hotkey prompt dialog on startup for testing.");
     QCommandLineOption actionHotkeyPromptOption("open-action-hotkey-prompt", "Open action hotkey prompt dialog on startup for testing.", "action");
     QCommandLineOption testRoutingActiveOption("test-routing-active", "Simulate active virtual audio routing for visual testing.");
+    QCommandLineOption scrollBottomOption("scroll-bottom", "Scroll active view to bottom for testing.");
+    QCommandLineOption openAccordionOption("open-accordion", "Expand advanced accordion on startup.");
     parser.addOption(headlessOption);
     parser.addOption(autoStartWebOption);
     parser.addOption(webPortOption);
@@ -154,6 +156,8 @@ int main(int argc, char *argv[])
     parser.addOption(tabHotkeyPromptOption);
     parser.addOption(actionHotkeyPromptOption);
     parser.addOption(testRoutingActiveOption);
+    parser.addOption(scrollBottomOption);
+    parser.addOption(openAccordionOption);
     parser.addPositionalArgument("project", "Project file (.caster) to open on launch.", "[project]");
     parser.process(app);
 
@@ -257,6 +261,8 @@ int main(int argc, char *argv[])
     engine.rootContext()->setContextProperty("openDeleteTabPromptOnStart", parser.isSet(deleteTabPromptOption));
     engine.rootContext()->setContextProperty("openTabHotkeyPromptOnStart", parser.isSet(tabHotkeyPromptOption));
     engine.rootContext()->setContextProperty("openActionHotkeyPromptOnStart", parser.isSet(actionHotkeyPromptOption) ? (parser.value(actionHotkeyPromptOption).isEmpty() ? QString("stopAll") : parser.value(actionHotkeyPromptOption)) : QString());
+    engine.rootContext()->setContextProperty("scrollBottomOnStart", parser.isSet(scrollBottomOption));
+    engine.rootContext()->setContextProperty("openAccordionOnStart", parser.isSet(openAccordionOption));
 
     // Install application-wide hotkey event filter
     GlobalHotkeyFilter hotkeyFilter(&hotkeyManager, &app);

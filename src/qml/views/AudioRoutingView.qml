@@ -68,6 +68,15 @@ Item {
             contentHeight: contentCol.implicitHeight + 40
             clip: true
 
+            Timer {
+                id: scrollTimer
+                interval: 150
+                running: typeof scrollBottomOnStart !== "undefined" && scrollBottomOnStart
+                onTriggered: {
+                    flickable.contentY = Math.max(0, flickable.contentHeight - flickable.height);
+                }
+            }
+
             ScrollBar.vertical: ScrollBar {
                 policy: ScrollBar.AsNeeded
             }
@@ -1467,7 +1476,7 @@ Item {
                 Rectangle {
                     id: advancedAccordion
                     Layout.fillWidth: true
-                    property bool isExpanded: false
+                    property bool isExpanded: (typeof openAccordionOnStart !== "undefined" && openAccordionOnStart) ? true : false
                     implicitHeight: isExpanded ? advInnerCol.implicitHeight : 52
                     Layout.preferredHeight: implicitHeight
                     color: "#222528"
