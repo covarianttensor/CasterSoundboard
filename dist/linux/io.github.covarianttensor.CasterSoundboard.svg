@@ -1,0 +1,80 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <!-- Clean, subtle flat elevation shadow -->
+    <filter id="flatDropShadow" x="-8%" y="-8%" width="116%" height="120%">
+      <feDropShadow dx="0" dy="10" stdDeviation="14" flood-color="#000000" flood-opacity="0.4" />
+    </filter>
+
+    <!-- Colored Backlight Glow Filters -->
+    <filter id="blueGlyphGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feDropShadow dx="0" dy="0" stdDeviation="8" flood-color="#93C5FD" flood-opacity="0.9" />
+      <feDropShadow dx="0" dy="0" stdDeviation="2.5" flood-color="#FFFFFF" flood-opacity="1.0" />
+    </filter>
+
+    <filter id="greenGlyphGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feDropShadow dx="0" dy="0" stdDeviation="8" flood-color="#6EE7B7" flood-opacity="0.9" />
+      <feDropShadow dx="0" dy="0" stdDeviation="2.5" flood-color="#FFFFFF" flood-opacity="1.0" />
+    </filter>
+
+    <filter id="purpleGlyphGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feDropShadow dx="0" dy="0" stdDeviation="8" flood-color="#C084FC" flood-opacity="0.9" />
+      <feDropShadow dx="0" dy="0" stdDeviation="2.5" flood-color="#FFFFFF" flood-opacity="1.0" />
+    </filter>
+
+    <filter id="tealGlyphGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feDropShadow dx="0" dy="0" stdDeviation="8" flood-color="#67E8F9" flood-opacity="0.9" />
+      <feDropShadow dx="0" dy="0" stdDeviation="2.5" flood-color="#FFFFFF" flood-opacity="1.0" />
+    </filter>
+  </defs>
+
+  <!-- Dark Squircle Canvas (Flat Graphite) -->
+  <rect x="40" y="40" width="432" height="432" rx="96" ry="96"
+        fill="#1C1E22" stroke="#2B2F36" stroke-width="2"
+        filter="url(#flatDropShadow)" />
+
+  <!-- ======================================================== -->
+  <!-- 1. Top-Left: Microphone (Electric Blue)                  -->
+  <!-- ======================================================== -->
+  <rect x="68" y="68" width="176" height="176" rx="36" ry="36" fill="#2563EB" />
+  
+  <g filter="url(#blueGlyphGlow)">
+    <rect x="141" y="114" width="30" height="54" rx="15" ry="15" fill="#FFFFFF" />
+    <line x1="144" y1="140" x2="168" y2="140" stroke="#2563EB" stroke-width="3" stroke-linecap="round" />
+    <path d="M 128 146 C 128 176 184 176 184 146" fill="none" stroke="#FFFFFF" stroke-width="6.5" stroke-linecap="round" />
+    <line x1="156" y1="173" x2="156" y2="195" stroke="#FFFFFF" stroke-width="6.5" stroke-linecap="round" />
+    <line x1="138" y1="195" x2="174" y2="195" stroke="#FFFFFF" stroke-width="6.5" stroke-linecap="round" />
+  </g>
+
+  <!-- ======================================================== -->
+  <!-- 2. Top-Right: Audio Waveform (Emerald Green)             -->
+  <!-- ======================================================== -->
+  <rect x="268" y="68" width="176" height="176" rx="36" ry="36" fill="#059669" />
+
+  <g filter="url(#greenGlyphGlow)">
+    <path d="M 292 156 L 314 156 L 326 178 L 339 116 L 354 196 L 369 126 L 381 172 L 393 156 L 420 156"
+          fill="none" stroke="#FFFFFF" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" />
+  </g>
+
+  <!-- ======================================================== -->
+  <!-- 3. Bottom-Left: Play Button (Ultraviolet Violet)        -->
+  <!-- ======================================================== -->
+  <rect x="68" y="268" width="176" height="176" rx="36" ry="36" fill="#7C3AED" />
+
+  <g filter="url(#purpleGlyphGlow)">
+    <path d="M 140 322 C 140 316 145 312 151 315 L 186 350 C 191 353 191 359 186 362 L 151 397 C 145 400 140 396 140 390 Z"
+          fill="#FFFFFF" />
+  </g>
+
+  <!-- ======================================================== -->
+  <!-- 4. Bottom-Right: Broadcast Waves (Bright Light Teal)     -->
+  <!-- ======================================================== -->
+  <rect x="268" y="268" width="176" height="176" rx="36" ry="36" fill="#06B6D4" />
+
+  <g filter="url(#tealGlyphGlow)">
+    <circle cx="356" cy="356" r="11" fill="#FFFFFF" />
+    <path d="M 333 335 A 28 28 0 0 0 333 377" fill="none" stroke="#FFFFFF" stroke-width="6.5" stroke-linecap="round" />
+    <path d="M 379 335 A 28 28 0 0 1 379 377" fill="none" stroke="#FFFFFF" stroke-width="6.5" stroke-linecap="round" />
+    <path d="M 317 319 A 50 50 0 0 0 317 393" fill="none" stroke="#FFFFFF" stroke-width="6.5" stroke-linecap="round" />
+    <path d="M 395 319 A 50 50 0 0 1 395 393" fill="none" stroke="#FFFFFF" stroke-width="6.5" stroke-linecap="round" />
+  </g>
+</svg>

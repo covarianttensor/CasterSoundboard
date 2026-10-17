@@ -28,7 +28,7 @@ CasterSoundboard/
 ├── README.md                  # User-facing project documentation
 ├── default.nix & flake.nix    # NixOS package derivation & flake
 ├── io.github.covarianttensor.CasterSoundboard.yml # Flatpak manifest
-├── dist/linux/                # AppStream metainfo, .desktop file, and 256x256 app icon
+├── dist/linux/                # AppStream metainfo, .desktop file, and 256x256 & scalable SVG app icons
 ├── docs/ & examples/          # Sample .caster profiles and documentation
 ├── TouchOSC-Layouts/          # TouchOSC layout templates
 ├── scripts/

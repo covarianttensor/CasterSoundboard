@@ -184,3 +184,8 @@ install(FILES dist/linux/io.github.covarianttensor.CasterSoundboard.metainfo.xml
 install(FILES dist/linux/io.github.covarianttensor.CasterSoundboard.png
     DESTINATION ${CMAKE_INSTALL_DATADIR}/icons/hicolor/256x256/apps
 )
+
+install(FILES dist/linux/io.github.covarianttensor.CasterSoundboard.svg
+    DESTINATION ${CMAKE_INSTALL_DATADIR}/icons/hicolor/scalable/apps
+)
+
