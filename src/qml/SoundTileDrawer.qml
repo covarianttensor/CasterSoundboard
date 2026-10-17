@@ -1080,7 +1080,7 @@ Dialog {
                                 if (tile.playbackState === 1) {
                                     tile.pause();
                                 } else {
-                                    tile.play();
+                                    tile.play(false);
                                 }
                             }
                         }
@@ -1175,7 +1175,7 @@ Dialog {
                             onClicked: {
                                 if (tile) {
                                     tile.seek(tile.cueBeginMs);
-                                    tile.play();
+                                    tile.play(false);
                                 }
                             }
                         }

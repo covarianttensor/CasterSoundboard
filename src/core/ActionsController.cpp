@@ -1,0 +1,361 @@
+#include "ActionsController.h"
+#include "UInputChannel.h"
+#include "SoundTileController.h"
+
+#include <QUuid>
+#include <QDebug>
+
+namespace {
+QString formatKeyBadge(const QString &rawKey) {
+    if (rawKey.startsWith("KEY_")) {
+        QString sub = rawKey.mid(4);
+        if (sub == "SPACE") return "Space";
+        if (sub == "DOT") return ".";
+        if (sub == "COMMA") return ",";
+        if (sub == "LEFTCTRL") return "Ctrl";
+        if (sub == "LEFTSHIFT") return "Shift";
+        if (sub == "LEFTALT") return "Alt";
+        return sub;
+    }
+    return rawKey;
+}
+}
+
+ActionsController::ActionsController(QObject *parent)
+    : QObject(parent)
+    , m_uinput(new UInputChannel(this))
+{
+}
+
+ActionsController::~ActionsController()
+{
+    stopAll();
+}
+
+void ActionsController::notifyProfilesChanged()
+{
+    ++m_revision;
+    emit profilesChanged();
+}
+
+bool ActionsController::isUInputAvailable() const
+{
+    return m_uinput && m_uinput->isAvailable();
+}
+
+QString ActionsController::uinputStatusMessage() const
+{
+    return m_uinput ? m_uinput->statusMessage() : QString();
+}
+
+QVariantList ActionsController::profilesList() const
+{
+    QVariantList list;
+    for (int i = 0; i < m_profiles.size(); ++i) {
+        list.append(getProfile(i));
+    }
+    return list;
+}
+
+QVariantMap ActionsController::getProfile(int index) const
+{
+    QVariantMap map;
+    if (index < 0 || index >= m_profiles.size())
+        return map;
+
+    const auto &p = m_profiles.at(index);
+    map["index"] = index;
+    map["id"] = p.id;
+    map["name"] = p.name;
+    map["mode"] = static_cast<int>(p.mode);
+    map["pinnedTabName"] = p.pinnedTabName;
+    map["pttKey"] = p.pttKey;
+    map["muteKey"] = p.muteKey;
+    map["bufferMs"] = p.bufferMs;
+    return map;
+}
+
+void ActionsController::setProfile(int index, const QVariantMap &data)
+{
+    if (index < 0 || index >= m_profiles.size())
+        return;
+
+    auto &p = m_profiles[index];
+    if (data.contains("name")) p.name = data["name"].toString();
+    if (data.contains("mode")) p.mode = static_cast<Actions::TalkMode>(data["mode"].toInt());
+    if (data.contains("pinnedTabName")) p.pinnedTabName = data["pinnedTabName"].toString();
+    if (data.contains("pttKey")) p.pttKey = data["pttKey"].toString();
+    if (data.contains("muteKey")) p.muteKey = data["muteKey"].toString();
+    if (data.contains("bufferMs")) p.bufferMs = qBound(0, data["bufferMs"].toInt(), 5000);
+
+    notifyProfilesChanged();
+}
+
+int ActionsController::addProfile(const QString &name)
+{
+    Actions::Profile p;
+    p.id = QUuid::createUuid().toString(QUuid::WithoutBraces);
+    p.name = name.isEmpty() ? tr("New Action %1").arg(m_profiles.size() + 1) : name;
+    p.mode = Actions::ModePushToTalk;
+    p.pttKey = "KEY_V";
+    p.muteKey = "KEY_M";
+    p.bufferMs = 150;
+
+    m_profiles.append(p);
+    notifyProfilesChanged();
+    return m_profiles.size() - 1;
+}
+
+bool ActionsController::removeProfile(int index)
+{
+    if (index < 0 || index >= m_profiles.size())
+        return false;
+
+    m_profiles.removeAt(index);
+    notifyProfilesChanged();
+    return true;
+}
+
+QString ActionsController::activeBadgeForTab(const QString &tabName) const
+{
+    if (tabName.isEmpty())
+        return QString();
+
+    for (const auto &p : m_profiles) {
+        if (p.pinnedTabName == tabName && p.mode != Actions::ModeNone) {
+            if (p.mode == Actions::ModePushToTalk) {
+                return QString("PTT: %1").arg(formatKeyBadge(p.pttKey));
+            } else if (p.mode == Actions::ModeMuteToggle) {
+                return QString("Mute: %1").arg(formatKeyBadge(p.muteKey));
+            }
+        }
+    }
+    return QString();
+}
+
+bool ActionsController::hasActionForTab(const QString &tabName) const
+{
+    return !activeBadgeForTab(tabName).isEmpty();
+}
+
+QString ActionsController::keyNameFromEvent(int qtKey, quint32 nativeScanCode) const
+{
+    return UInputChannel::nameFromQtKey(qtKey, nativeScanCode);
+}
+
+Actions::Profile ActionsController::profileForTab(const QString &tabName) const
+{
+    if (tabName.isEmpty())
+        return Actions::Profile();
+
+    for (const auto &p : m_profiles) {
+        if (p.pinnedTabName == tabName)
+            return p;
+    }
+    return Actions::Profile();
+}
+
+void ActionsController::handleTabRenamed(const QString &oldName, const QString &newName)
+{
+    bool changed = false;
+    for (auto &p : m_profiles) {
+        if (p.pinnedTabName == oldName) {
+            p.pinnedTabName = newName;
+            changed = true;
+        }
+    }
+    if (changed)
+        notifyProfilesChanged();
+}
+
+void ActionsController::handleTabRemoved(const QString &tabName)
+{
+    bool changed = false;
+    for (auto &p : m_profiles) {
+        if (p.pinnedTabName == tabName) {
+            p.pinnedTabName.clear();
+            changed = true;
+        }
+    }
+    if (changed)
+        notifyProfilesChanged();
+}
+
+void ActionsController::coordinatePlayback(SoundTileController *tile, const QString &tabName, std::function<void()> onReadyToPlay)
+{
+    if (!tile) {
+        if (onReadyToPlay) onReadyToPlay();
+        return;
+    }
+
+    Actions::Profile prof = profileForTab(tabName);
+    if (prof.mode == Actions::ModeNone || !prof.isValid()) {
+        if (onReadyToPlay) onReadyToPlay();
+        return;
+    }
+
+    const QString key = prof.activeKey();
+    Session *session = m_sessions.value(key, nullptr);
+
+    if (!session) {
+        session = new Session();
+        session->keyName = key;
+        session->mode = prof.mode;
+        session->bufferMs = prof.bufferMs;
+        session->isOpened = false;
+        m_sessions.insert(key, session);
+    }
+
+    // Cancel any tail release timer
+    if (session->tailTimer) {
+        session->tailTimer->stop();
+        session->tailTimer->deleteLater();
+        session->tailTimer = nullptr;
+    }
+
+    session->activeTiles.insert(tile);
+    m_tileToKey.insert(tile, key);
+
+    if (session->isOpened) {
+        // Session already active and audio gate is open; play immediately
+        if (onReadyToPlay) onReadyToPlay();
+        return;
+    }
+
+    // Session opening phase
+    if (prof.mode == Actions::ModePushToTalk) {
+        m_uinput->sendKeyDown(key);
+    } else if (prof.mode == Actions::ModeMuteToggle) {
+        m_uinput->sendKeyTap(key, 80);
+    }
+    emit actionStarted(prof.name, key, static_cast<int>(prof.mode));
+
+    if (prof.bufferMs <= 0) {
+        session->isOpened = true;
+        if (onReadyToPlay) onReadyToPlay();
+        return;
+    }
+
+    session->pendingCallbacks.append(onReadyToPlay);
+
+    if (!session->leadInTimer) {
+        session->leadInTimer = new QTimer(this);
+        session->leadInTimer->setSingleShot(true);
+        connect(session->leadInTimer, &QTimer::timeout, this, [this, session]() {
+            session->isOpened = true;
+            session->leadInTimer->deleteLater();
+            session->leadInTimer = nullptr;
+
+            auto cbs = session->pendingCallbacks;
+            session->pendingCallbacks.clear();
+            for (auto &cb : cbs) {
+                if (cb) cb();
+            }
+        });
+        session->leadInTimer->start(prof.bufferMs);
+    }
+}
+
+void ActionsController::coordinatePlaybackFinished(SoundTileController *tile)
+{
+    if (!tile || !m_tileToKey.contains(tile))
+        return;
+
+    const QString key = m_tileToKey.take(tile);
+    Session *session = m_sessions.value(key, nullptr);
+    if (!session)
+        return;
+
+    session->activeTiles.remove(tile);
+
+    // If other sounds are still playing on this key, keep session open
+    if (!session->activeTiles.isEmpty())
+        return;
+
+    // Last sound ended: begin tail buffer timer before key release
+    if (session->bufferMs <= 0) {
+        cleanupSession(session);
+        return;
+    }
+
+    if (!session->tailTimer) {
+        session->tailTimer = new QTimer(this);
+        session->tailTimer->setSingleShot(true);
+        connect(session->tailTimer, &QTimer::timeout, this, [this, session]() {
+            cleanupSession(session);
+        });
+        session->tailTimer->start(session->bufferMs);
+    }
+}
+
+void ActionsController::cleanupSession(Session *s)
+{
+    if (!s)
+        return;
+
+    if (s->leadInTimer) {
+        s->leadInTimer->stop();
+        s->leadInTimer->deleteLater();
+        s->leadInTimer = nullptr;
+    }
+    if (s->tailTimer) {
+        s->tailTimer->stop();
+        s->tailTimer->deleteLater();
+        s->tailTimer = nullptr;
+    }
+
+    if (s->mode == Actions::ModePushToTalk) {
+        m_uinput->sendKeyUp(s->keyName);
+    } else if (s->mode == Actions::ModeMuteToggle) {
+        m_uinput->sendKeyTap(s->keyName, 80);
+    }
+
+    emit actionEnded(s->keyName, s->keyName);
+
+    m_sessions.remove(s->keyName);
+    delete s;
+}
+
+void ActionsController::stopAll()
+{
+    for (auto it = m_sessions.begin(); it != m_sessions.end(); ++it) {
+        Session *s = it.value();
+        if (s->leadInTimer) {
+            s->leadInTimer->stop();
+            s->leadInTimer->deleteLater();
+        }
+        if (s->tailTimer) {
+            s->tailTimer->stop();
+            s->tailTimer->deleteLater();
+        }
+        if (s->mode == Actions::ModePushToTalk) {
+            m_uinput->sendKeyUp(s->keyName);
+        } else if (s->mode == Actions::ModeMuteToggle) {
+            m_uinput->sendKeyTap(s->keyName, 80);
+        }
+        delete s;
+    }
+    m_sessions.clear();
+    m_tileToKey.clear();
+}
+
+QJsonArray ActionsController::toJson() const
+{
+    QJsonArray array;
+    for (const auto &p : m_profiles) {
+        array.append(p.toJson());
+    }
+    return array;
+}
+
+void ActionsController::fromJson(const QJsonArray &array)
+{
+    stopAll();
+    m_profiles.clear();
+    for (const auto &val : array) {
+        if (val.isObject()) {
+            m_profiles.append(Actions::Profile::fromJson(val.toObject()));
+        }
+    }
+    notifyProfilesChanged();
+}

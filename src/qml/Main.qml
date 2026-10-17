@@ -493,6 +493,11 @@ ApplicationWindow {
         }
     }
 
+    // Soundboard Actions Dialog (Push-To-Talk & Mute) (Issue #24)
+    ActionsDialog {
+        id: actionsDialog
+    }
+
     // --- Main Shell Layout ---
     RowLayout {
         anchors.fill: parent
@@ -536,6 +541,7 @@ ApplicationWindow {
                         soundboardsView.requestRenameCurrentTab();
                     }
                 }
+                onOpenActionsRequested: actionsDialog.open()
                 onStopAllRequested: {
                     if (projectController) {
                         projectController.stopAllSounds();
@@ -571,6 +577,13 @@ ApplicationWindow {
                     id: soundboardsView
                     Layout.fillWidth: true
                     Layout.fillHeight: true
+                    onConfigureTabActionsRequested: (index) => {
+                        if (projectController && projectController.tabModel) {
+                            actionsDialog.openForTab(projectController.tabModel.tabNameAt(index));
+                        } else {
+                            actionsDialog.open();
+                        }
+                    }
                 }
 
                 Views.AudioRoutingView {

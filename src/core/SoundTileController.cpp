@@ -375,6 +375,25 @@ void SoundTileController::trigger()
 
 void SoundTileController::play()
 {
+    play(true);
+}
+
+void SoundTileController::play(bool withActions)
+{
+    if (m_filePath.isEmpty())
+        return;
+
+    if (withActions && m_playbackCoordinator) {
+        m_playbackCoordinator(this, [this]() {
+            playDirect();
+        });
+        return;
+    }
+    playDirect();
+}
+
+void SoundTileController::playDirect()
+{
     if (m_filePath.isEmpty())
         return;
 
@@ -400,6 +419,9 @@ void SoundTileController::stop()
         m_player->setPosition(m_cueBeginMs);
     } else {
         m_player->setPosition(0);
+    }
+    if (m_stopCoordinator) {
+        m_stopCoordinator(this);
     }
 }
 
@@ -460,6 +482,9 @@ void SoundTileController::onMediaStatusChanged(QMediaPlayer::MediaStatus status)
             m_playbackState = QMediaPlayer::StoppedState;
             emit playbackStateChanged();
             emit playbackFinished();
+            if (m_stopCoordinator) {
+                m_stopCoordinator(this);
+            }
         }
     }
 }

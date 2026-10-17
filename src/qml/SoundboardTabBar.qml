@@ -11,6 +11,7 @@ Rectangle {
     signal closeTabRequested(int index)
     signal renameTabRequested(int index)
     signal setTabHotkeyRequested(int index)
+    signal configureTabActionsRequested(int index)
 
     height: 48
     implicitHeight: 48
@@ -43,8 +44,14 @@ Rectangle {
 
                     property bool isActive: root.currentIndex === index
                     property string effectiveHotkey: (hotkey && hotkey.length > 0) ? hotkey : (index < 9 ? ("Alt+" + (index + 1)) : "")
+                    property string actionBadgeText: {
+                        if (typeof projectController === "undefined" || !projectController.actionsController) return "";
+                        var rev = projectController.actionsController.revision;
+                        return projectController.actionsController.activeBadgeForTab(tabItem.name);
+                    }
+                    property bool hasActionBadge: actionBadgeText.length > 0
 
-                    implicitWidth: Math.max(140, tabLabel.implicitWidth + (effectiveHotkey.length > 0 ? (hotkeyBadge.implicitWidth + 10) : 0) + (showCloseBtn ? 48 : 24))
+                    implicitWidth: Math.max(140, tabLabel.implicitWidth + (hasActionBadge ? (actionBadge.implicitWidth + 8) : 0) + (effectiveHotkey.length > 0 ? (hotkeyBadge.implicitWidth + 10) : 0) + (showCloseBtn ? 48 : 24))
                     implicitHeight: 38
                     radius: 6
                     color: isActive ? "#2D3035" : (tabMouse.containsMouse ? "#24272B" : "#1E2023")
@@ -54,11 +61,11 @@ Rectangle {
                     property bool showCloseBtn: root.tabModel ? root.tabModel.count > 1 : false
 
                     // Main Tab Click & Right-click MouseArea
-                    // Restricted to not overlap the hotkey badge or close button
+                    // Restricted to not overlap the action badge, hotkey badge, or close button
                     MouseArea {
                         id: tabMouse
                         anchors.fill: parent
-                        anchors.rightMargin: (tabItem.showCloseBtn ? 32 : 0) + (tabItem.effectiveHotkey.length > 0 ? (hotkeyBadge.width + 8) : 0)
+                        anchors.rightMargin: (tabItem.showCloseBtn ? 32 : 0) + (tabItem.effectiveHotkey.length > 0 ? (hotkeyBadge.width + 8) : 0) + (tabItem.hasActionBadge ? (actionBadge.width + 8) : 0)
                         hoverEnabled: true
                         cursorShape: Qt.PointingHandCursor
                         acceptedButtons: Qt.LeftButton | Qt.RightButton
@@ -90,6 +97,68 @@ Rectangle {
                             elide: Text.ElideRight
                             Layout.fillWidth: true
                             verticalAlignment: Text.AlignVCenter
+                        }
+
+                        // Action Indicator Badge (PTT / Mute) with glowing border
+                        Rectangle {
+                            id: actionBadge
+                            visible: tabItem.hasActionBadge
+                            implicitWidth: actionBadgeLayout.implicitWidth + 12
+                            implicitHeight: 20
+                            Layout.preferredWidth: implicitWidth
+                            Layout.preferredHeight: 20
+                            Layout.alignment: Qt.AlignVCenter
+                            radius: 4
+                            z: 2
+                            color: tabItem.isActive ? "#3D1E4E" : "#281D3B"
+                            border.color: "#8E2DE2"
+                            border.width: 1
+
+                            // Pulsing glowing border overlay
+                            Rectangle {
+                                anchors.fill: parent
+                                radius: 4
+                                color: "transparent"
+                                border.color: "#D946EF"
+                                border.width: 1
+                                opacity: 0.4
+
+                                SequentialAnimation on opacity {
+                                    running: actionBadge.visible
+                                    loops: Animation.Infinite
+                                    NumberAnimation { from: 0.2; to: 0.85; duration: 1000; easing.type: Easing.InOutQuad }
+                                    NumberAnimation { from: 0.85; to: 0.2; duration: 1000; easing.type: Easing.InOutQuad }
+                                }
+                            }
+
+                            RowLayout {
+                                id: actionBadgeLayout
+                                anchors.centerIn: parent
+                                spacing: 4
+
+                                Text {
+                                    text: "⚡"
+                                    font.pixelSize: 9
+                                    color: "#D946EF"
+                                }
+
+                                Text {
+                                    text: tabItem.actionBadgeText
+                                    color: "#F0ABFC"
+                                    font.pointSize: 8
+                                    font.bold: true
+                                }
+                            }
+
+                            MouseArea {
+                                id: actionBadgeMouse
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: root.configureTabActionsRequested(tabItem.index)
+                                ToolTip.visible: containsMouse
+                                ToolTip.text: qsTr("Action: %1 (Click to configure Tab Actions)").arg(tabItem.actionBadgeText)
+                            }
                         }
 
                         // Hotkey Indicator Badge
@@ -176,6 +245,11 @@ Rectangle {
                                     root.tabModel.setTabHotkey(tabItem.index, "");
                                 }
                             }
+                        }
+
+                        MenuItem {
+                            text: qsTr("Configure Tab Actions…")
+                            onTriggered: root.configureTabActionsRequested(tabItem.index)
                         }
 
                         MenuSeparator {}

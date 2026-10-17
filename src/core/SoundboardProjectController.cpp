@@ -2,6 +2,7 @@
 #include "SoundboardTabModel.h"
 #include "SoundboardGridModel.h"
 #include "SoundTileController.h"
+#include "ActionsController.h"
 
 #include <QFile>
 #include <QFileInfo>
@@ -15,28 +16,47 @@ SoundboardProjectController::SoundboardProjectController(QObject *parent)
     : QObject(parent)
 {
     m_tabModel = new SoundboardTabModel(this);
+    m_actionsController = new ActionsController(this);
     m_mediaDevices = new QMediaDevices(this);
+
+    connect(m_actionsController, &ActionsController::profilesChanged, this, [this]() {
+        setupActionsCoordination();
+        setDirty(true);
+    });
+
     connect(m_mediaDevices, &QMediaDevices::audioOutputsChanged, this, [this]() {
         applyOutputDeviceToAllTiles();
         emit availableAudioOutputsChanged();
     });
-    connect(m_tabModel, &QAbstractItemModel::dataChanged, this, [this]() { setDirty(true); });
+    connect(m_tabModel, &QAbstractItemModel::dataChanged, this, [this]() {
+        setupActionsCoordination();
+        setDirty(true);
+    });
     connect(m_tabModel, &QAbstractItemModel::rowsInserted, this, [this](const QModelIndex &, int first, int last) {
         for (int i = first; i <= last; ++i) {
             SoundboardGridModel *g = m_tabModel->gridModelAt(i);
             if (g) {
                 connect(g, &QAbstractItemModel::rowsInserted, this, [this]() {
                     applyOutputDeviceToAllTiles();
+                    setupActionsCoordination();
                 });
             }
         }
         applyOutputDeviceToAllTiles();
+        setupActionsCoordination();
         setDirty(true);
     });
-    connect(m_tabModel, &QAbstractItemModel::rowsRemoved, this, [this]() { setDirty(true); });
-    connect(m_tabModel, &QAbstractItemModel::rowsMoved, this, [this]() { setDirty(true); });
+    connect(m_tabModel, &QAbstractItemModel::rowsRemoved, this, [this]() {
+        setupActionsCoordination();
+        setDirty(true);
+    });
+    connect(m_tabModel, &QAbstractItemModel::rowsMoved, this, [this]() {
+        setupActionsCoordination();
+        setDirty(true);
+    });
     connect(m_tabModel, &SoundboardTabModel::currentGridModelChanged, this, [this]() {
         applyOutputDeviceToAllTiles();
+        setupActionsCoordination();
     });
     newProject();
 }
@@ -286,6 +306,9 @@ bool SoundboardProjectController::save()
 
 void SoundboardProjectController::stopAllSounds()
 {
+    if (m_actionsController) {
+        m_actionsController->stopAll();
+    }
     for (int t = 0; t < m_tabModel->count(); ++t) {
         SoundboardGridModel *grid = m_tabModel->gridModelAt(t);
         if (grid) {
@@ -363,6 +386,30 @@ void SoundboardProjectController::applyOutputDeviceToAllTiles()
     }
 }
 
+void SoundboardProjectController::setupActionsCoordination()
+{
+    for (int t = 0; t < m_tabModel->count(); ++t) {
+        const QString tabName = m_tabModel->tabNameAt(t);
+        SoundboardGridModel *grid = m_tabModel->gridModelAt(t);
+        if (!grid) continue;
+        for (SoundTileController *tile : grid->tiles()) {
+            if (!tile) continue;
+            tile->setPlaybackCoordinator([this, tabName](SoundTileController *tile, std::function<void()> onReady) {
+                if (m_actionsController) {
+                    m_actionsController->coordinatePlayback(tile, tabName, onReady);
+                } else if (onReady) {
+                    onReady();
+                }
+            });
+            tile->setStopCoordinator([this](SoundTileController *tile) {
+                if (m_actionsController) {
+                    m_actionsController->coordinatePlaybackFinished(tile);
+                }
+            });
+        }
+    }
+}
+
 QJsonObject SoundboardProjectController::toJson() const
 {
     QJsonObject root;
@@ -395,6 +442,11 @@ QJsonObject SoundboardProjectController::toJson() const
     shortcutsObj["stopAll"] = m_stopAllHotkey;
     shortcutsObj["ducking"] = m_duckingHotkey;
     root["shortcuts"] = shortcutsObj;
+
+    // Action profiles (Issue #24)
+    if (m_actionsController) {
+        root["actions"] = m_actionsController->toJson();
+    }
 
     // Tabs & sounds
     root["tabs"] = m_tabModel->toJson();
@@ -440,6 +492,14 @@ bool SoundboardProjectController::fromJson(const QJsonObject &json)
         setDuckingHotkey("Ctrl+D");
     }
 
+    if (json.contains("actions") && json["actions"].isArray()) {
+        if (m_actionsController) {
+            m_actionsController->fromJson(json["actions"].toArray());
+        }
+    } else if (m_actionsController) {
+        m_actionsController->fromJson(QJsonArray());
+    }
+
     if (json.contains("tabs") && json["tabs"].isArray()) {
         m_tabModel->fromJson(json["tabs"].toArray());
     }
@@ -450,6 +510,7 @@ bool SoundboardProjectController::fromJson(const QJsonObject &json)
 
     applyOutputDeviceToAllTiles();
     applyDuckingToAllTiles();
+    setupActionsCoordination();
 
     return true;
 }

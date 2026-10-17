@@ -12,6 +12,7 @@ Rectangle {
     signal saveProjectRequested()
     signal saveAsProjectRequested()
     signal renameTabRequested()
+    signal openActionsRequested()
     signal stopAllRequested()
     signal toggleDuckingRequested()
     signal toggleMuteHotkeysRequested()
@@ -68,6 +69,47 @@ Rectangle {
             iconSource: "icons/rename.png"
             tooltipText: qsTr("Rename Current Tab")
             onClicked: root.renameTabRequested()
+        }
+
+        // Actions (Push-To-Talk / Mute) Button (Issue #24)
+        Button {
+            id: actionsBtn
+            property bool hasActiveAction: {
+                if (typeof projectController !== "undefined" && projectController.actionsController && projectController.tabModel) {
+                    var curTab = projectController.tabModel.tabNameAt(projectController.tabModel.currentIndex);
+                    return projectController.actionsController.hasActionForTab(curTab);
+                }
+                return false;
+            }
+            Layout.preferredHeight: 38
+            Layout.preferredWidth: 96
+            onClicked: root.openActionsRequested()
+
+            background: Rectangle {
+                color: actionsBtn.hasActiveAction ? "#2F2344" : (actionsBtn.hovered ? "#353A42" : "#282C32")
+                radius: 6
+                border.color: actionsBtn.hasActiveAction ? "#8E2DE2" : (actionsBtn.hovered ? "#4E545F" : "#3A3E42")
+                border.width: actionsBtn.hasActiveAction ? 2 : 1
+            }
+
+            contentItem: RowLayout {
+                anchors.centerIn: parent
+                spacing: 6
+                Text {
+                    text: "⚡"
+                    font.pixelSize: 13
+                    color: actionsBtn.hasActiveAction ? "#A855F7" : "#CCCCCC"
+                }
+                Text {
+                    text: qsTr("Actions")
+                    color: actionsBtn.hasActiveAction ? "#FFFFFF" : "#CCCCCC"
+                    font.bold: actionsBtn.hasActiveAction
+                    font.pointSize: 9
+                }
+            }
+
+            ToolTip.visible: hovered
+            ToolTip.text: qsTr("Configure Push-To-Talk & Mute Actions for the active soundboard")
         }
 
         Rectangle {

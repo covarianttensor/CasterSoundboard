@@ -10,6 +10,8 @@ Item {
     property var currentGrid: (typeof projectController !== "undefined" && projectController.tabModel)
                               ? projectController.tabModel.currentGridModel : null
 
+    signal configureTabActionsRequested(int index)
+
     ColumnLayout {
         anchors.fill: parent
         spacing: 0
@@ -36,6 +38,9 @@ Item {
             }
             onSetTabHotkeyRequested: (index) => {
                 root.requestSetTabHotkey(index);
+            }
+            onConfigureTabActionsRequested: (index) => {
+                root.configureTabActionsRequested(index);
             }
         }
 

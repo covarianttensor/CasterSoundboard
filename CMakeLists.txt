@@ -41,6 +41,11 @@ set(CORE_SOURCES
     src/core/AudioRoutingController.cpp
     src/core/WebRemoteController.h
     src/core/WebRemoteController.cpp
+    src/core/ActionProfile.h
+    src/core/UInputChannel.h
+    src/core/UInputChannel.cpp
+    src/core/ActionsController.h
+    src/core/ActionsController.cpp
     src/audio/AudioBackend.h
     src/audio/AudioDeviceController.h
     src/audio/AudioDeviceController.cpp
@@ -102,6 +107,7 @@ qt_add_qml_module(CasterSoundboard
         src/qml/SoundboardTabBar.qml
         src/qml/SoundTile.qml
         src/qml/SoundTileDrawer.qml
+        src/qml/ActionsDialog.qml
         src/qml/views/SoundboardsView.qml
         src/qml/views/AudioRoutingView.qml
         src/qml/views/OscView.qml
@@ -164,6 +170,7 @@ add_caster_test(test_hotkey_manager tests/core/test_hotkey_manager.cpp)
 add_caster_test(test_osc_server tests/core/test_osc_server.cpp)
 add_caster_test(test_audio_routing tests/core/test_audio_routing.cpp)
 add_caster_test(test_web_remote tests/core/test_web_remote.cpp)
+add_caster_test(test_actions tests/core/test_actions.cpp)
 
 # -------------------------------------------------------------
 # Installation

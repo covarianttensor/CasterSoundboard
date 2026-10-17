@@ -8,6 +8,7 @@
 #include <QJsonObject>
 #include <QMediaPlayer>
 #include <QAudioOutput>
+#include <functional>
 
 class SoundTileController : public QObject
 {
@@ -95,9 +96,18 @@ public:
     QJsonObject toJson() const;
     bool fromJson(const QJsonObject &json);
 
+    void setPlaybackCoordinator(std::function<void(SoundTileController*, std::function<void()>)> coordinator) {
+        m_playbackCoordinator = coordinator;
+    }
+    void setStopCoordinator(std::function<void(SoundTileController*)> coordinator) {
+        m_stopCoordinator = coordinator;
+    }
+
 public slots:
     void trigger();
     void play();
+    Q_INVOKABLE void play(bool withActions);
+    void playDirect();
     void pause();
     void stop();
     void seek(qint64 ms);
@@ -155,6 +165,8 @@ private:
 
     QMediaPlayer *m_player{nullptr};
     QAudioOutput *m_audioOutput{nullptr};
+    std::function<void(SoundTileController*, std::function<void()>)> m_playbackCoordinator;
+    std::function<void(SoundTileController*)> m_stopCoordinator;
 };
 
 #endif // SOUNDTILECONTROLLER_H

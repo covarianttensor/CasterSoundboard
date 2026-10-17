@@ -10,6 +10,7 @@
 
 class SoundboardGridModel;
 class SoundTileController;
+class ActionsController;
 
 class SoundboardProjectController : public QObject
 {
@@ -31,6 +32,7 @@ class SoundboardProjectController : public QObject
     Q_PROPERTY(int hotkeyScope READ hotkeyScope WRITE setHotkeyScope NOTIFY hotkeyScopeChanged)
     Q_PROPERTY(QString stopAllHotkey READ stopAllHotkey WRITE setStopAllHotkey NOTIFY stopAllHotkeyChanged)
     Q_PROPERTY(QString duckingHotkey READ duckingHotkey WRITE setDuckingHotkey NOTIFY duckingHotkeyChanged)
+    Q_PROPERTY(ActionsController* actionsController READ actionsController CONSTANT)
 
 public:
     enum HotkeyScope {
@@ -43,6 +45,7 @@ public:
     ~SoundboardProjectController() override;
 
     SoundboardTabModel* tabModel() const { return m_tabModel; }
+    ActionsController* actionsController() const { return m_actionsController; }
 
     QString filePath() const { return m_filePath; }
     bool isDirty() const { return m_isDirty; }
@@ -124,8 +127,10 @@ private:
     void setDirty(bool dirty);
     void applyDuckingToAllTiles();
     void applyOutputDeviceToAllTiles();
+    void setupActionsCoordination();
 
     SoundboardTabModel *m_tabModel{nullptr};
+    ActionsController *m_actionsController{nullptr};
     QMediaDevices *m_mediaDevices{nullptr};
     QString m_filePath;
     bool m_isDirty{false};
