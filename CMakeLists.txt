@@ -46,6 +46,8 @@ set(CORE_SOURCES
     src/core/UInputChannel.cpp
     src/core/ActionsController.h
     src/core/ActionsController.cpp
+    src/core/LegacyProjectImporter.h
+    src/core/LegacyProjectImporter.cpp
     src/audio/AudioBackend.h
     src/audio/AudioDeviceController.h
     src/audio/AudioDeviceController.cpp
@@ -108,6 +110,7 @@ qt_add_qml_module(CasterSoundboard
         src/qml/SoundTile.qml
         src/qml/SoundTileDrawer.qml
         src/qml/ActionsDialog.qml
+        src/qml/LegacyImportDialog.qml
         src/qml/views/SoundboardsView.qml
         src/qml/views/AudioRoutingView.qml
         src/qml/views/OscView.qml

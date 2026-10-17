@@ -90,6 +90,7 @@ public:
     QAudioDevice currentAudioOutputDevice() const;
     Q_INVOKABLE void refreshAudioDevices();
     Q_INVOKABLE void copyToClipboard(const QString &text);
+    Q_INVOKABLE bool isLegacyFile(const QString &filePath) const;
 
     // Serialization
     QJsonObject toJson() const;

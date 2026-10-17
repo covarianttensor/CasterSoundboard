@@ -1,9 +1,11 @@
 #include <QTest>
 #include <QTemporaryDir>
+#include <QDataStream>
 #include "SoundboardProjectController.h"
 #include "SoundboardTabModel.h"
 #include "SoundboardGridModel.h"
 #include "SoundTileController.h"
+#include "ActionsController.h"
 
 class TestProjectSerialization : public QObject
 {
@@ -139,6 +141,107 @@ private slots:
         QVERIFY(project.fromJson(root));
         QCOMPARE(project.stopAllHotkey(), QString("Space"));
         QCOMPARE(project.duckingHotkey(), QString("Ctrl+D"));
+    }
+
+    void testBinaryLegacyImport()
+    {
+        QTemporaryDir dir;
+        const QString path = dir.filePath("legacy.caster");
+        QByteArray data;
+        QDataStream out(&data, QIODevice::WriteOnly);
+        out.setVersion(QDataStream::Qt_5_0);
+        out << QString("Old board");
+        // Alphabetical QMap order starts with comma, then 1 through 8.
+        for (int i = 0; i < 32; ++i)
+            out << QString() << qint32(i == 1 ? 37 : 100)
+                << qint32(100) << qint32(850) << true << true
+                << qint32(-88) << qint32(0) << qint32(0)
+                << QString("rgba(188.733,252,184,255)") << true;
+        out << quint32(0x43414354) << quint32(2) << quint32(0) << qint32(-1);
+        out << quint32(0x4357535a) << quint32(1) << QSize(1200, 800);
+        QFile file(path);
+        QVERIFY(file.open(QIODevice::WriteOnly));
+        QCOMPARE(file.write(data), data.size());
+        file.close();
+
+        SoundboardProjectController project;
+        // Verify initial window size
+        QCOMPARE(project.windowWidth(), 1024);
+        QCOMPARE(project.windowHeight(), 720);
+
+        QVERIFY(project.loadProject(path));
+        QCOMPARE(project.tabModel()->tabNameAt(0), QString("Old board"));
+        auto *grid = project.tabModel()->gridModelAt(0);
+        QCOMPARE(grid->count(), 32);
+        auto *tile = grid->tileAt(0);
+        QCOMPARE(tile->hotkey(), QString("1"));
+        QCOMPARE(tile->volume(), 0.37);
+        QVERIFY(tile->isLooped());
+        QVERIFY(tile->hasCueRegion());
+        QCOMPARE(tile->cueBeginMs(), 100);
+        QCOMPARE(tile->cueEndMs(), 850);
+        QCOMPARE(tile->color(), QString("#bdfcb8"));
+        QCOMPARE(grid->tileAt(31)->hotkey(), QString(","));
+
+        // Crucial test: Window size from legacy CWSZ MUST NOT be imported or alter window dimensions
+        QCOMPARE(project.windowWidth(), 1024);
+        QCOMPARE(project.windowHeight(), 720);
+
+        QVERIFY(project.filePath().isEmpty());
+        QVERIFY(project.isDirty());
+        QVERIFY(!project.save());
+        QVERIFY(file.open(QIODevice::ReadOnly));
+        QCOMPARE(file.readAll(), data);
+        file.close();
+        QVERIFY(project.saveProject(dir.filePath("converted.caster")));
+        SoundboardProjectController reloaded;
+        QVERIFY(reloaded.loadProject(dir.filePath("converted.caster")));
+        QCOMPARE(reloaded.tabModel()->gridModelAt(0)->tileAt(0)->volume(), 0.37);
+
+        // Failed imports must not replace the current board.
+        for (const auto &bad : {data.left(100), data.left(data.size() - 1), data + "junk"}) {
+            QVERIFY(file.open(QIODevice::WriteOnly | QIODevice::Truncate));
+            file.write(bad);
+            file.close();
+            QVERIFY(!project.loadProject(path));
+            QCOMPARE(project.tabModel()->tabNameAt(0), QString("Old board"));
+        }
+        // Original v1 files had no extension blocks.
+        QVERIFY(file.open(QIODevice::WriteOnly | QIODevice::Truncate));
+        file.write(data.left(data.size() - 32));
+        file.close();
+        QVERIFY(project.loadProject(path));
+    }
+
+    void testLegacyImportWithActions()
+    {
+        QTemporaryDir dir;
+        const QString path = dir.filePath("legacy_with_actions.caster");
+        QByteArray data;
+        QDataStream out(&data, QIODevice::WriteOnly);
+        out.setVersion(QDataStream::Qt_5_0);
+        out << QString("Gaming Board");
+        for (int i = 0; i < 32; ++i)
+            out << QString("/sound.mp3") << qint32(100)
+                << qint32(0) << qint32(0) << false << false
+                << qint32(0) << qint32(0) << qint32(0)
+                << QString() << false;
+        // CACT block version 2 with 1 action
+        out << quint32(0x43414354) << quint32(2) << quint32(1) << qint32(0);
+        out << QString("Overwatch PTT") << qint32(1) << QString("KEY_V") << qint32(200);
+        out << QString("KEY_M") << true; // attached = true
+        QFile file(path);
+        QVERIFY(file.open(QIODevice::WriteOnly));
+        file.write(data);
+        file.close();
+
+        SoundboardProjectController project;
+        QVERIFY(project.loadProject(path));
+        QCOMPARE(project.tabModel()->tabNameAt(0), QString("Gaming Board"));
+        QVERIFY(project.actionsController() != nullptr);
+        QCOMPARE(project.actionsController()->count(), 1);
+        QVERIFY(project.actionsController()->hasActionForTab("Gaming Board"));
+        QCOMPARE(project.actionsController()->activeBadgeForTab("Gaming Board"), QString("PTT: V"));
     }
 
     void testDuckingToggle()

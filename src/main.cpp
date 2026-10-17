@@ -140,6 +140,7 @@ int main(int argc, char *argv[])
     QCommandLineOption openAccordionOption("open-accordion", "Expand advanced accordion on startup.");
     QCommandLineOption testFocusMicOption("test-focus-mic", "Focus microphone selector on startup for visual verification.");
     QCommandLineOption testFocusVirtOption("test-focus-virt", "Focus virtual mic text field on startup for visual verification.");
+    QCommandLineOption legacyImportPromptOption("open-legacy-import-prompt", "Open legacy import prompt dialog on startup for testing.");
     parser.addOption(headlessOption);
     parser.addOption(autoStartWebOption);
     parser.addOption(webPortOption);
@@ -164,6 +165,7 @@ int main(int argc, char *argv[])
     parser.addOption(openAccordionOption);
     parser.addOption(testFocusMicOption);
     parser.addOption(testFocusVirtOption);
+    parser.addOption(legacyImportPromptOption);
     parser.addPositionalArgument("project", "Project file (.caster) to open on launch.", "[project]");
     parser.process(app);
 
@@ -213,9 +215,16 @@ int main(int argc, char *argv[])
     }
 
     // Load initial project from CLI or create a fresh default project
+    QString legacyStartupFile;
     const QStringList posArgs = parser.positionalArguments();
     if (!posArgs.isEmpty()) {
-        projectController.loadProject(posArgs.first());
+        const QString startupPath = posArgs.first();
+        if (projectController.isLegacyFile(startupPath) && !headless) {
+            legacyStartupFile = startupPath;
+            projectController.newProject();
+        } else {
+            projectController.loadProject(startupPath);
+        }
     } else {
         projectController.newProject();
     }
@@ -275,6 +284,8 @@ int main(int argc, char *argv[])
     engine.rootContext()->setContextProperty("focusMicOnStart", parser.isSet(testFocusMicOption));
     engine.rootContext()->setContextProperty("focusVirtOnStart", parser.isSet(testFocusVirtOption));
     engine.rootContext()->setContextProperty("fullscreenOnStart", parser.isSet(fullscreenOption));
+    engine.rootContext()->setContextProperty("legacyStartupFile", legacyStartupFile);
+    engine.rootContext()->setContextProperty("openLegacyImportPromptOnStart", parser.isSet(legacyImportPromptOption));
 
     // Install application-wide hotkey event filter
     GlobalHotkeyFilter hotkeyFilter(&hotkeyManager, &app);

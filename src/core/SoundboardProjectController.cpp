@@ -3,6 +3,7 @@
 #include "SoundboardGridModel.h"
 #include "SoundTileController.h"
 #include "ActionsController.h"
+#include "LegacyProjectImporter.h"
 
 #include <QFile>
 #include <QFileInfo>
@@ -235,13 +236,18 @@ bool SoundboardProjectController::newProject()
     return true;
 }
 
+bool SoundboardProjectController::isLegacyFile(const QString &filePath) const
+{
+    return LegacyProjectImporter::isLegacyFile(filePath);
+}
+
 bool SoundboardProjectController::loadProject(const QString &filePath)
 {
     if (filePath.isEmpty())
         return false;
 
     QFile file(filePath);
-    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+    if (!file.open(QIODevice::ReadOnly)) {
         emit errorOccurred(tr("Could not open file for reading: %1").arg(file.errorString()));
         return false;
     }
@@ -251,20 +257,34 @@ bool SoundboardProjectController::loadProject(const QString &filePath)
 
     QJsonParseError parseError;
     QJsonDocument doc = QJsonDocument::fromJson(data, &parseError);
-    if (parseError.error != QJsonParseError::NoError || !doc.isObject()) {
-        emit errorOccurred(tr("Invalid JSON project file: %1").arg(parseError.errorString()));
+    QJsonObject root;
+    bool isLegacy = false;
+
+    if (parseError.error == QJsonParseError::NoError && doc.isObject()) {
+        root = doc.object();
+    } else if (LegacyProjectImporter::isLegacyBinary(data)) {
+        auto result = LegacyProjectImporter::importLegacyProject(data);
+        if (!result.success) {
+            emit errorOccurred(tr("Invalid or unsupported project file."));
+            return false;
+        }
+        root = result.projectJson;
+        isLegacy = true;
+    } else {
+        emit errorOccurred(tr("Invalid or unsupported project file."));
         return false;
     }
 
     stopAllSounds();
 
-    if (!fromJson(doc.object())) {
+    if (!fromJson(root)) {
         emit errorOccurred(tr("Failed to parse project contents."));
         return false;
     }
 
-    m_filePath = QFileInfo(filePath).absoluteFilePath();
-    m_isDirty = false;
+    // An imported legacy board must use Save As, preserving the binary original.
+    m_filePath = isLegacy ? QString() : QFileInfo(filePath).absoluteFilePath();
+    m_isDirty = isLegacy;
 
     emit filePathChanged();
     emit isDirtyChanged();

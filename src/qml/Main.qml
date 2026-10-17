@@ -156,7 +156,11 @@ ApplicationWindow {
                 if (path.indexOf("file://") === 0) {
                     path = path.substring(7);
                 }
-                projectController.loadProject(path);
+                if (projectController.isLegacyFile(path)) {
+                    legacyImportDialog.openForFile(path);
+                } else {
+                    projectController.loadProject(path);
+                }
             }
         }
     }
@@ -498,6 +502,11 @@ ApplicationWindow {
         id: actionsDialog
     }
 
+    // Legacy Profile Import Dialog (Issue #23)
+    LegacyImportDialog {
+        id: legacyImportDialog
+    }
+
     // --- Main Shell Layout ---
     RowLayout {
         anchors.fill: parent
@@ -671,6 +680,11 @@ ApplicationWindow {
         }
         if (typeof openActionHotkeyPromptOnStart !== "undefined" && openActionHotkeyPromptOnStart.length > 0) {
             openActionHotkeyPrompt(openActionHotkeyPromptOnStart);
+        }
+        if (typeof legacyStartupFile !== "undefined" && legacyStartupFile.length > 0) {
+            legacyImportDialog.openForFile(legacyStartupFile);
+        } else if (typeof openLegacyImportPromptOnStart !== "undefined" && openLegacyImportPromptOnStart) {
+            legacyImportDialog.openForFile("retro_sounds.caster");
         }
     }
 }
