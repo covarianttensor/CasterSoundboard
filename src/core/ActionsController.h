@@ -77,6 +77,7 @@ signals:
 private:
     struct Session {
         QString keyName;
+        QString tabName;
         Actions::TalkMode mode;
         int bufferMs;
         QSet<SoundTileController*> activeTiles;

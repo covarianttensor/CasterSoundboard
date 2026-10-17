@@ -71,7 +71,17 @@ bool ActionsController::isTransmittingForTab(const QString &tabName) const
     if (prof.mode == Actions::ModeNone || !prof.isValid())
         return false;
 
-    return m_sessions.contains(prof.activeKey());
+    const QString activeKey = prof.activeKey();
+
+    if (!m_testKeyName.isEmpty() && m_testKeyName == activeKey)
+        return true;
+
+    for (auto it = m_sessions.begin(); it != m_sessions.end(); ++it) {
+        if (it.value()->tabName == tabName)
+            return true;
+    }
+
+    return m_sessions.contains(activeKey);
 }
 
 bool ActionsController::isTransmittingKey(const QString &key) const
@@ -268,10 +278,13 @@ void ActionsController::coordinatePlayback(SoundTileController *tile, const QStr
     if (!session) {
         session = new Session();
         session->keyName = key;
+        session->tabName = tabName;
         session->mode = prof.mode;
         session->bufferMs = prof.bufferMs;
         session->isOpened = false;
         m_sessions.insert(key, session);
+    } else {
+        session->tabName = tabName;
     }
 
     // Cancel any tail release timer

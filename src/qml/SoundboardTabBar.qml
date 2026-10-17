@@ -50,13 +50,38 @@ Rectangle {
                         return projectController.actionsController.activeBadgeForTab(tabItem.name);
                     }
                     property bool hasActionBadge: actionBadgeText.length > 0
+                    readonly property bool isTransmitting: {
+                        if (typeof projectController === "undefined" || !projectController.actionsController) return false;
+                        var tx = projectController.actionsController.isTransmitting;
+                        if (!tx) return false;
+                        return projectController.actionsController.isTransmittingForTab(tabItem.name);
+                    }
 
                     implicitWidth: Math.max(140, tabLabel.implicitWidth + (hasActionBadge ? (actionBadge.implicitWidth + 8) : 0) + (effectiveHotkey.length > 0 ? (hotkeyBadge.implicitWidth + 10) : 0) + (showCloseBtn ? 48 : 24))
                     implicitHeight: 38
                     radius: 6
                     color: isActive ? "#2D3035" : (tabMouse.containsMouse ? "#24272B" : "#1E2023")
-                    border.color: isActive ? "#8E2DE2" : "#33363B"
-                    border.width: isActive ? 2 : 1
+                    border.color: tabItem.isTransmitting ? "#2ECC71" : (isActive ? "#8E2DE2" : "#33363B")
+                    border.width: (tabItem.isTransmitting || isActive) ? 2 : 1
+
+                    // Transmitting Pulse Glow on the tab card itself (matches SoundTile style)
+                    Rectangle {
+                        anchors.fill: parent
+                        radius: 6
+                        color: "transparent"
+                        border.color: "#2ECC71"
+                        border.width: 2
+                        visible: tabItem.isTransmitting
+                        opacity: 0.8
+                        z: 3
+
+                        SequentialAnimation on opacity {
+                            running: tabItem.isTransmitting
+                            loops: Animation.Infinite
+                            NumberAnimation { from: 0.3; to: 0.9; duration: 500; easing.type: Easing.InOutQuad }
+                            NumberAnimation { from: 0.9; to: 0.3; duration: 500; easing.type: Easing.InOutQuad }
+                        }
+                    }
 
                     property bool showCloseBtn: root.tabModel ? root.tabModel.count > 1 : false
 
@@ -91,59 +116,64 @@ Rectangle {
                         Text {
                             id: tabLabel
                             text: tabItem.name
-                            color: tabItem.isActive ? "#FFFFFF" : "#AAAAAA"
-                            font.bold: tabItem.isActive
+                            color: tabItem.isTransmitting ? "#A7F3D0" : (tabItem.isActive ? "#FFFFFF" : "#AAAAAA")
+                            font.bold: tabItem.isActive || tabItem.isTransmitting
                             font.pointSize: 10
                             elide: Text.ElideRight
                             Layout.fillWidth: true
                             verticalAlignment: Text.AlignVCenter
                         }
 
-                        // Action Indicator Badge (PTT / Mute) with live transmitting state
+                        // Action Indicator Badge (PTT / Mute) with live transmitting state and glow
                         Rectangle {
                             id: actionBadge
                             visible: tabItem.hasActionBadge
-                            property bool isTransmitting: {
-                                if (typeof projectController !== "undefined" && projectController.actionsController) {
-                                    return projectController.actionsController.isTransmittingForTab(tabItem.name);
-                                }
-                                return false;
-                            }
-                            implicitWidth: actionBadgeLayout.implicitWidth + 12
-                            implicitHeight: 20
+                            implicitWidth: actionBadgeLayout.implicitWidth + 14
+                            implicitHeight: 22
                             Layout.preferredWidth: implicitWidth
-                            Layout.preferredHeight: 20
+                            Layout.preferredHeight: 22
                             Layout.alignment: Qt.AlignVCenter
                             radius: 4
-                            z: 2
-                            color: actionBadge.isTransmitting ? "#064E3B" : (tabItem.isActive ? "#3D1E4E" : "#281D3B")
-                            border.color: actionBadge.isTransmitting ? "#10B981" : "#8E2DE2"
-                            border.width: actionBadge.isTransmitting ? 2 : 1
+                            z: 4
+                            color: tabItem.isTransmitting ? "#064E3B" : (tabItem.isActive ? "#3D1E4E" : "#281D3B")
+                            border.color: tabItem.isTransmitting ? "#2ECC71" : "#8E2DE2"
+                            border.width: tabItem.isTransmitting ? 2 : 1
 
-                            // Pulsing glowing border overlay
+                            // Dedicated Transmitting Glow Overlay (matches SoundTile style)
+                            Rectangle {
+                                anchors.fill: parent
+                                anchors.margins: -3
+                                radius: 7
+                                color: "transparent"
+                                border.color: "#2ECC71"
+                                border.width: 2
+                                visible: tabItem.isTransmitting
+                                opacity: 0.8
+                                z: 5
+
+                                SequentialAnimation on opacity {
+                                    running: tabItem.isTransmitting
+                                    loops: Animation.Infinite
+                                    NumberAnimation { from: 0.2; to: 1.0; duration: 400; easing.type: Easing.InOutQuad }
+                                    NumberAnimation { from: 1.0; to: 0.2; duration: 400; easing.type: Easing.InOutQuad }
+                                }
+                            }
+
+                            // Idle purple pulse (when NOT transmitting)
                             Rectangle {
                                 anchors.fill: parent
                                 radius: 4
                                 color: "transparent"
-                                border.color: actionBadge.isTransmitting ? "#34D399" : "#D946EF"
-                                border.width: actionBadge.isTransmitting ? 2 : 1
-                                opacity: actionBadge.isTransmitting ? 0.8 : 0.4
+                                border.color: "#D946EF"
+                                border.width: 1
+                                visible: !tabItem.isTransmitting
+                                opacity: 0.4
 
                                 SequentialAnimation on opacity {
-                                    running: actionBadge.visible
+                                    running: actionBadge.visible && !tabItem.isTransmitting
                                     loops: Animation.Infinite
-                                    NumberAnimation {
-                                        from: actionBadge.isTransmitting ? 0.3 : 0.2
-                                        to: actionBadge.isTransmitting ? 1.0 : 0.85
-                                        duration: actionBadge.isTransmitting ? 400 : 1000
-                                        easing.type: Easing.InOutQuad
-                                    }
-                                    NumberAnimation {
-                                        from: actionBadge.isTransmitting ? 1.0 : 0.85
-                                        to: actionBadge.isTransmitting ? 0.3 : 0.2
-                                        duration: actionBadge.isTransmitting ? 400 : 1000
-                                        easing.type: Easing.InOutQuad
-                                    }
+                                    NumberAnimation { from: 0.2; to: 0.85; duration: 1000; easing.type: Easing.InOutQuad }
+                                    NumberAnimation { from: 0.85; to: 0.2; duration: 1000; easing.type: Easing.InOutQuad }
                                 }
                             }
 
@@ -153,16 +183,16 @@ Rectangle {
                                 spacing: 4
 
                                 Text {
-                                    text: actionBadge.isTransmitting ? "🟢" : "⚡"
-                                    font.pixelSize: actionBadge.isTransmitting ? 8 : 9
-                                    color: actionBadge.isTransmitting ? "#34D399" : "#D946EF"
+                                    text: tabItem.isTransmitting ? "🟢" : "⚡"
+                                    font.pixelSize: tabItem.isTransmitting ? 9 : 9
+                                    color: tabItem.isTransmitting ? "#2ECC71" : "#D946EF"
                                 }
 
                                 Text {
-                                    text: actionBadge.isTransmitting 
+                                    text: tabItem.isTransmitting 
                                           ? qsTr("TRANSMITTING (%1)").arg(tabItem.actionBadgeText.replace("PTT: ", "").replace("Mute: ", "")) 
                                           : tabItem.actionBadgeText
-                                    color: actionBadge.isTransmitting ? "#A7F3D0" : "#F0ABFC"
+                                    color: tabItem.isTransmitting ? "#FFFFFF" : "#F0ABFC"
                                     font.pointSize: 8
                                     font.bold: true
                                 }
@@ -175,7 +205,7 @@ Rectangle {
                                 cursorShape: Qt.PointingHandCursor
                                 onClicked: root.configureTabActionsRequested(tabItem.index)
                                 ToolTip.visible: containsMouse
-                                ToolTip.text: actionBadge.isTransmitting
+                                ToolTip.text: tabItem.isTransmitting
                                     ? qsTr("PTT key is currently held down! (%1)").arg(tabItem.actionBadgeText)
                                     : qsTr("Action: %1 (Click to configure Tab Actions)").arg(tabItem.actionBadgeText)
                             }
