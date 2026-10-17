@@ -279,7 +279,8 @@ bool UInputChannel::openDevice()
 
     // Configure virtual keyboard capabilities
     if (::ioctl(m_fd, UI_SET_EVBIT, EV_KEY) < 0 ||
-        ::ioctl(m_fd, UI_SET_EVBIT, EV_SYN) < 0) {
+        ::ioctl(m_fd, UI_SET_EVBIT, EV_SYN) < 0 ||
+        ::ioctl(m_fd, UI_SET_EVBIT, EV_REP) < 0) {
         m_statusMessage = tr("Failed to set uinput event bits.");
         closeDevice();
         return false;
@@ -329,7 +330,7 @@ void UInputChannel::closeDevice()
 void UInputChannel::emitRawEvent(int type, int code, int value)
 {
 #ifdef __linux__
-    if (m_fd < 0 || code <= 0)
+    if (m_fd < 0 || code < 0)
         return;
 
     struct input_event ev;
@@ -338,7 +339,10 @@ void UInputChannel::emitRawEvent(int type, int code, int value)
     ev.code = static_cast<__u16>(code);
     ev.value = static_cast<__s32>(value);
 
-    ::write(m_fd, &ev, sizeof(ev));
+    ssize_t n = ::write(m_fd, &ev, sizeof(ev));
+    if (n < 0) {
+        qWarning().noquote() << QString("[Actions] uinput write failed: %1").arg(strerror(errno));
+    }
 #else
     Q_UNUSED(type);
     Q_UNUSED(code);
