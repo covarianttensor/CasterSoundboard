@@ -383,6 +383,16 @@ Item {
                         exampleCommand: "./CasterSoundboard --window-width 1920 --window-height 1080"
                     }
 
+                    // 5b. -f, --fullscreen
+                    CliCard {
+                        optFlag: "-f, --fullscreen"
+                        optParams: qsTr("Flag (no arguments)")
+                        optBadge: qsTr("Window Geometry")
+                        badgeColor: "#F39C12"
+                        description: qsTr("Launches Caster Soundboard directly in fullscreen mode. Fullscreen can also be toggled dynamically at any time using the F11 keyboard shortcut.")
+                        exampleCommand: "./CasterSoundboard -f"
+                    }
+
                     // 6. --open-drawer
                     CliCard {
                         optFlag: "--open-drawer"

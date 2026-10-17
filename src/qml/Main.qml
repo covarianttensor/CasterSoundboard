@@ -13,6 +13,17 @@ ApplicationWindow {
     minimumWidth: 640
     minimumHeight: 480
 
+    visibility: {
+        if ((typeof fullscreenOnStart !== "undefined" && fullscreenOnStart) ||
+            (typeof projectController !== "undefined" && projectController.isFullScreen)) {
+            return Window.FullScreen;
+        }
+        if (typeof projectController !== "undefined" && projectController.isMaximized) {
+            return Window.Maximized;
+        }
+        return Window.Windowed;
+    }
+
     title: {
         var base = (typeof projectController !== "undefined" && projectController.filePath.length > 0)
                    ? projectController.filePath : qsTr("Unsaved Project");
@@ -594,6 +605,11 @@ ApplicationWindow {
         target: (typeof projectController !== "undefined") ? projectController : null
         function onProjectLoaded() {
             if (!projectController) return;
+            if (typeof fullscreenOnStart !== "undefined" && fullscreenOnStart) {
+                window.showFullScreen();
+                projectController.isFullScreen = true;
+                return;
+            }
             if (projectController.isFullScreen) {
                 window.showFullScreen();
             } else if (projectController.isMaximized) {
@@ -620,17 +636,21 @@ ApplicationWindow {
     }
 
     Component.onCompleted: {
-        if (typeof projectController !== "undefined") {
+        var startFullscreen = (typeof fullscreenOnStart !== "undefined" && fullscreenOnStart) ||
+                              (typeof projectController !== "undefined" && projectController.isFullScreen);
+        if (startFullscreen) {
+            window.showFullScreen();
+            if (typeof projectController !== "undefined") {
+                projectController.isFullScreen = true;
+            }
+        } else if (typeof projectController !== "undefined" && projectController.isMaximized) {
+            window.showMaximized();
+        } else if (typeof projectController !== "undefined") {
             if (projectController.windowWidth >= window.minimumWidth) {
                 window.width = projectController.windowWidth;
             }
             if (projectController.windowHeight >= window.minimumHeight) {
                 window.height = projectController.windowHeight;
-            }
-            if (projectController.isFullScreen) {
-                window.showFullScreen();
-            } else if (projectController.isMaximized) {
-                window.showMaximized();
             }
         }
         if (typeof initialViewIndex !== "undefined" && initialViewIndex > 0) {

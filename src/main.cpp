@@ -126,6 +126,7 @@ int main(int argc, char *argv[])
     QCommandLineOption drawerIndexOption("drawer-index", "Tile index to open in drawer on startup.", "index", "0");
     QCommandLineOption viewOption("view", "Initial view index (0=Soundboards, 1=Audio, 2=OSC, 3=Preferences, 4=Documentation).", "index", "0");
     QCommandLineOption autoStartOscOption("auto-start-osc", "Automatically start OSC server on startup.");
+    QCommandLineOption fullscreenOption(QStringList() << "f" << "fullscreen", "Launch application in fullscreen mode.");
     QCommandLineOption widthOption("window-width", "Initial window width in pixels.", "width");
     QCommandLineOption heightOption("window-height", "Initial window height in pixels.", "height");
     QCommandLineOption hotkeyPromptOption("open-hotkey-prompt", "Open hotkey prompt dialog on startup for testing.");
@@ -149,6 +150,7 @@ int main(int argc, char *argv[])
     parser.addOption(drawerIndexOption);
     parser.addOption(viewOption);
     parser.addOption(autoStartOscOption);
+    parser.addOption(fullscreenOption);
     parser.addOption(widthOption);
     parser.addOption(heightOption);
     parser.addOption(hotkeyPromptOption);
@@ -224,6 +226,9 @@ int main(int argc, char *argv[])
     if (parser.isSet(heightOption)) {
         projectController.setWindowHeight(parser.value(heightOption).toInt());
     }
+    if (parser.isSet(fullscreenOption)) {
+        projectController.setIsFullScreen(true);
+    }
 
     // Headless mode execution branch: runs without loading QML GUI window
     if (headless) {
@@ -269,6 +274,7 @@ int main(int argc, char *argv[])
     engine.rootContext()->setContextProperty("openAccordionOnStart", parser.isSet(openAccordionOption));
     engine.rootContext()->setContextProperty("focusMicOnStart", parser.isSet(testFocusMicOption));
     engine.rootContext()->setContextProperty("focusVirtOnStart", parser.isSet(testFocusVirtOption));
+    engine.rootContext()->setContextProperty("fullscreenOnStart", parser.isSet(fullscreenOption));
 
     // Install application-wide hotkey event filter
     GlobalHotkeyFilter hotkeyFilter(&hotkeyManager, &app);

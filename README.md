@@ -135,12 +135,17 @@ CasterSoundboard [options] [project.caster]
 | Option | Description |
 | :--- | :--- |
 | `[project.caster]` | Load a specific `.caster` project file on launch. |
+| `-f, --fullscreen` | Launch application directly in fullscreen mode (toggle with `F11`). |
+| `--window-width <px>` | Set initial window width in pixels (minimum: 640). |
+| `--window-height <px>` | Set initial window height in pixels (minimum: 480). |
 | `--headless` | Run without a graphical window (ideal for studio servers and OSC/Web controllers). |
-| `--web` | Automatically start the Web Remote server on launch. |
-| `--web-port <port>` | Specify custom port for Web Remote (default: `8080`). |
-| `--web-auth <pass>` | Protect Web Remote with an access password. |
+| `--auto-start-web` | Automatically start the Web Remote server on launch. |
+| `--web-port <port>` | Specify custom TCP port for Web Remote (default: `5052`). |
+| `--web-user <user>` | Username for Web Remote authentication (default: `caster`). |
+| `--web-pass <pass>` | Password for Web Remote authentication (default: `caster`). |
+| `--auto-start-osc` | Automatically start the UDP Open Sound Control (OSC) server. |
 | `--view <0-4>` | Start directly on a specific view (`0`: Soundboard, `1`: Audio Devices, `2`: OSC, `3`: Settings, `4`: Docs). |
-| `--master-volume <0-100>`| Set initial master playback volume percentage on startup. |
+| `-s, --screenshot <path>` | Capture high-resolution window screenshot to path and exit immediately. |
 
 ---
 
