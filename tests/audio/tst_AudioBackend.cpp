@@ -211,9 +211,27 @@ private slots:
     void incompatibleProfilesDontMutate() {
         FakeServer f;auto cards=f.lists["cards"];
         for(int i=0;i<cards.size();++i) {auto c=cards[i].toObject();if(c["name"]=="card.focusrite") {
-            auto profiles=c["profiles"].toObject();profiles.remove("output:analog-stereo+input:analog-stereo");c["profiles"]=profiles;cards[i]=c;
+            auto profiles=c["profiles"].toObject();
+            profiles.remove("output:analog-stereo+input:analog-stereo");
+            profiles.remove("pro-audio");
+            c["profiles"]=profiles;cards[i]=c;
         }} f.lists["cards"]=cards;
         PulseCompatBackend b([&](const QStringList&a){return f.run(a);});auto p=b.validateConfiguration(f.config());QVERIFY(!p.error.isEmpty());QVERIFY(f.mutations.isEmpty());
+    }
+    void proAudioDuplexSelection() {
+        FakeServer f;auto cards=f.lists["cards"];
+        for(int i=0;i<cards.size();++i) {auto c=cards[i].toObject();if(c["name"]=="card.focusrite") {
+            auto profiles=c["profiles"].toObject();
+            profiles.remove("output:analog-stereo+input:analog-stereo");
+            c["profiles"]=profiles;cards[i]=c;
+        }} f.lists["cards"]=cards;
+        PulseCompatBackend b([&](const QStringList&a){return f.run(a);});
+        auto p=b.validateConfiguration(f.config());
+        QVERIFY2(p.error.isEmpty(), qPrintable(p.error));
+        QCOMPARE(p.metadata["profiles"].toMap()["card.focusrite"].toString(), QString("pro-audio"));
+        auto r=b.apply(p);
+        QVERIFY2(r.ok, qPrintable(r.message));
+        QVERIFY(b.stopManagedRouting().ok);
     }
     void pactl16ModuleIndexFallback() {
         FakeServer f;

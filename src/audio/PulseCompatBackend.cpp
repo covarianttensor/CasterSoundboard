@@ -33,7 +33,11 @@ QString cardName(const QJsonObject &node, const QJsonArray &cards) {
     }
     return {};
 }
-bool hasPort(const QJsonObject &node, const QString &port) { return port.isEmpty() ? named(node.value("ports")).isEmpty() : named(node.value("ports")).contains(port); }
+bool hasPort(const QJsonObject &node, const QString &port) {
+    auto ports = named(node.value("ports"));
+    if (ports.isEmpty()) return true;
+    return port.isEmpty() || ports.contains(port);
+}
 }
 PulseCompatBackend::PulseCompatBackend(CommandRunner r, std::function<void(unsigned long)> wait, CommandRunner service)
     : runner(r), serviceRunner(service), recoveryWait(wait), token(QUuid::createUuid().toString(QUuid::Id128)) {
@@ -174,6 +178,17 @@ QVector<Endpoint> PulseCompatBackend::decodeDevices(const QJsonArray &cards, con
                         if (available(profile.value("available"))) compatible << name;
                     }
                 }
+                for (auto it = profiles.begin(); it != profiles.end(); ++it) {
+                    const QString pName = it.key();
+                    if (advertised.contains(pName)) continue;
+                    auto prof = it.value().toObject();
+                    if (pName == "pro-audio" || (prof.value("sinks").toInt() > 0 && prof.value("sources").toInt() > 0)) {
+                        if (prof.value(input ? "sources" : "sinks").toInt() > 0) {
+                            advertised << pName;
+                            if (available(prof.value("available"))) compatible << pName;
+                        }
+                    }
+                }
                 const auto recoveryProfiles = advertised;
                 if (recoveryProfiles.isEmpty()) continue;
                 Endpoint e; e.input = input; e.available = available(port.value("availability"));
@@ -186,7 +201,7 @@ QVector<Endpoint> PulseCompatBackend::decodeDevices(const QJsonArray &cards, con
                     auto n = nv.toObject();
                     if (!n.value("name").toString().endsWith(".monitor") && cardName(n, cards) == card && hasPort(n, portless ? QString() : p.key())) {
                         realized = true;
-                        e.active = e.active || n.value("active_port").toString() == p.key();
+                        e.active = e.active || n.value("active_port").toString() == p.key() || named(n.value("ports")).isEmpty();
                     }
                 }
                 if (e.recoverySupported && advertised.contains(c.value("active_profile").toString()) && !realized)
@@ -525,8 +540,10 @@ Result PulseCompatBackend::apply(const Plan &supplied) {
         if (desired.monitor && output == monitor && desired.systemOutput != desired.monitorOutput) fail("The selected output ports share one sink; choose the same port or separate devices.");
         auto setPort = [&](const QString &id, const QString &device, bool isInput) {
             auto e = endpoint(id); const QString port = e.metadata.value("port").toString();
+            if (port.isEmpty()) return;
             for (auto v : isInput ? sources : sinks) {
                 auto n = v.toObject(); if (n.value("name").toString() != device) continue;
+                if (!named(n.value("ports")).contains(port)) return;
                 QString previous = n.value("active_port").toString(); if (previous == port) return;
                 QString kind = isInput ? "source" : "sink";
                 command({"set-" + kind + "-port", device, port}); portChanges.append({kind, device, previous, port}); return;
