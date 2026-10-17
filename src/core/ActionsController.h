@@ -22,6 +22,7 @@ class ActionsController : public QObject
 
     Q_PROPERTY(int count READ count NOTIFY profilesChanged)
     Q_PROPERTY(int revision READ revision NOTIFY profilesChanged)
+    Q_PROPERTY(QVariantList profiles READ profilesList NOTIFY profilesChanged)
     Q_PROPERTY(bool uinputAvailable READ isUInputAvailable NOTIFY uinputStatusChanged)
     Q_PROPERTY(QString uinputStatus READ uinputStatusMessage NOTIFY uinputStatusChanged)
     Q_PROPERTY(bool isTransmitting READ isTransmitting NOTIFY transmissionChanged)

@@ -201,7 +201,7 @@ Dialog {
                 id: profileCombo
                 Layout.fillWidth: true
                 Layout.preferredHeight: 34
-                model: projectController && projectController.actionsController ? projectController.actionsController.profilesList() : []
+                model: (projectController && projectController.actionsController) ? projectController.actionsController.profiles : []
                 textRole: "name"
                 currentIndex: root.selectedProfileIndex
                 onActivated: (index) => {
@@ -224,6 +224,40 @@ Dialog {
                     leftPadding: 10
                     rightPadding: 24
                     elide: Text.ElideRight
+                }
+                delegate: ItemDelegate {
+                    width: profileCombo.width
+                    implicitHeight: 34
+                    contentItem: Text {
+                        text: (model && model.name !== undefined) ? model.name : ((modelData && modelData.name !== undefined) ? modelData.name : "")
+                        color: highlighted ? "#FFFFFF" : "#CCCCCC"
+                        font.pointSize: 9.5
+                        verticalAlignment: Text.AlignVCenter
+                        elide: Text.ElideRight
+                    }
+                    background: Rectangle {
+                        color: highlighted ? "#8E2DE2" : (hovered ? "#2D3238" : "transparent")
+                        radius: 4
+                    }
+                }
+                popup: Popup {
+                    y: profileCombo.height + 2
+                    width: profileCombo.width
+                    implicitHeight: Math.min(240, contentItem.implicitHeight + 10)
+                    padding: 4
+                    contentItem: ListView {
+                        clip: true
+                        implicitHeight: contentHeight
+                        model: profileCombo.popup.visible ? profileCombo.delegateModel : null
+                        currentIndex: profileCombo.highlightedIndex
+                        ScrollIndicator.vertical: ScrollIndicator { }
+                    }
+                    background: Rectangle {
+                        color: "#222528"
+                        radius: 6
+                        border.color: "#3A3E42"
+                        border.width: 1
+                    }
                 }
             }
 
@@ -352,6 +386,40 @@ Dialog {
                             leftPadding: 10
                             rightPadding: 24
                             elide: Text.ElideRight
+                        }
+                        delegate: ItemDelegate {
+                            width: tabCombo.width
+                            implicitHeight: 34
+                            contentItem: Text {
+                                text: modelData || ""
+                                color: highlighted ? "#FFFFFF" : "#CCCCCC"
+                                font.pointSize: 9.5
+                                verticalAlignment: Text.AlignVCenter
+                                elide: Text.ElideRight
+                            }
+                            background: Rectangle {
+                                color: highlighted ? "#8E2DE2" : (hovered ? "#2D3238" : "transparent")
+                                radius: 4
+                            }
+                        }
+                        popup: Popup {
+                            y: tabCombo.height + 2
+                            width: tabCombo.width
+                            implicitHeight: Math.min(240, contentItem.implicitHeight + 10)
+                            padding: 4
+                            contentItem: ListView {
+                                clip: true
+                                implicitHeight: contentHeight
+                                model: tabCombo.popup.visible ? tabCombo.delegateModel : null
+                                currentIndex: tabCombo.highlightedIndex
+                                ScrollIndicator.vertical: ScrollIndicator { }
+                            }
+                            background: Rectangle {
+                                color: "#222528"
+                                radius: 6
+                                border.color: "#3A3E42"
+                                border.width: 1
+                            }
                         }
                         onActivated: root.saveCurrentProfile()
                     }

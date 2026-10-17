@@ -73,10 +73,12 @@ private slots:
 
         QVariantList list = controller.profilesList();
         QCOMPARE(list.size(), 1);
+        QCOMPARE(controller.property("profiles").toList().size(), 1);
 
         bool removed = controller.removeProfile(0);
         QVERIFY(removed);
         QCOMPARE(controller.count(), 0);
+        QCOMPARE(controller.property("profiles").toList().size(), 0);
         QCOMPARE(spy.count(), 3);
     }
 
