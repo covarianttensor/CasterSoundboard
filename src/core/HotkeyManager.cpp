@@ -3,6 +3,8 @@
 #include "SoundboardProjectController.h"
 #include "SoundboardTabModel.h"
 #include "SoundboardGridModel.h"
+#include "ActionsController.h"
+#include <QInputDevice>
 
 HotkeyManager::HotkeyManager(QObject *parent)
     : QObject(parent)
@@ -213,10 +215,28 @@ bool HotkeyManager::handleKeyEvent(QKeyEvent *event)
     if (m_isMuted || !event)
         return false;
 
+    // 0. Ignore synthetic keystrokes originating from Caster's own virtual keyboard device
+    if (const auto *dev = event->device()) {
+        if (dev->name().contains("Caster Soundboard")) {
+            return false;
+        }
+    }
+
     // Build the QKeySequence from the key event
     int key = event->key();
     if (key == Qt::Key_Control || key == Qt::Key_Shift || key == Qt::Key_Alt || key == Qt::Key_Meta) {
         return false; // Modifier keys alone don't trigger sounds or switch tabs
+    }
+
+    // 0b. Ignore incoming keystroke if it matches an actively transmitting PTT/Mute action
+    if (m_monitoredProject && m_monitoredProject->actionsController()) {
+        ActionsController *actions = m_monitoredProject->actionsController();
+        if (actions->isTransmitting()) {
+            QString keyName = actions->keyNameFromEvent(key, event->nativeScanCode());
+            if (!keyName.isEmpty() && actions->isTransmittingKey(keyName)) {
+                return false;
+            }
+        }
     }
 
     Qt::KeyboardModifiers modifiers = event->modifiers();

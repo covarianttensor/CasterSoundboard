@@ -4,6 +4,7 @@
 #include <QIcon>
 #include <QCommandLineParser>
 #include <QKeyEvent>
+#include <QInputDevice>
 #include <QQuickItem>
 #include <QQuickWindow>
 #include <QTimer>
@@ -67,6 +68,13 @@ protected:
     {
         if (event->type() == QEvent::KeyPress) {
             auto *keyEvent = static_cast<QKeyEvent *>(event);
+
+            // Ignore synthetic keystrokes originating from Caster's own virtual keyboard device
+            if (const auto *dev = keyEvent->device()) {
+                if (dev->name().contains("Caster Soundboard")) {
+                    return true; // Ignore self-injected virtual keystrokes
+                }
+            }
 
             // Never intercept typing when a text field or editor has active keyboard focus
             QObject *focusObj = QGuiApplication::focusObject();

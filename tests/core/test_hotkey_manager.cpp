@@ -4,6 +4,7 @@
 #include "SoundTileController.h"
 #include "SoundboardProjectController.h"
 #include "SoundboardGridModel.h"
+#include "ActionsController.h"
 
 class TestHotkeyManager : public QObject
 {
@@ -243,6 +244,41 @@ private slots:
         project.setStopAllHotkey("");
         QVERIFY(!manager.handleKeyEvent(&f12Key));
         QCOMPARE(stopAllSpy.count(), 3);
+    }
+
+    void testSelfTransmittingKeySuppression()
+    {
+        SoundboardProjectController project;
+        HotkeyManager manager;
+        manager.monitorProject(&project);
+
+        SoundTileController tile;
+        tile.setFilePath("/dummy/sound.wav");
+        tile.setHotkey("V");
+
+        manager.registerTile(&tile);
+
+        QSignalSpy triggerSpy(&manager, &HotkeyManager::hotkeyTriggered);
+
+        // Physical V press triggers tile
+        QKeyEvent keyV(QEvent::KeyPress, Qt::Key_V, Qt::NoModifier);
+        QVERIFY(manager.handleKeyEvent(&keyV));
+        QCOMPARE(triggerSpy.count(), 1);
+
+        // Active transmission suppresses hotkey re-trigger
+        ActionsController *actions = project.actionsController();
+        QVERIFY(actions != nullptr);
+        actions->testTriggerKey("KEY_V", 1000);
+        QVERIFY(actions->isTransmittingKey("KEY_V"));
+
+        QVERIFY(!manager.handleKeyEvent(&keyV));
+        QCOMPARE(triggerSpy.count(), 1);
+
+        actions->stopAll();
+        QVERIFY(!actions->isTransmitting());
+
+        QVERIFY(manager.handleKeyEvent(&keyV));
+        QCOMPARE(triggerSpy.count(), 2);
     }
 };
 
