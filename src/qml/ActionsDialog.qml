@@ -397,17 +397,17 @@ Dialog {
                     }
                 }
 
-                // Key Binding Capture Box
+                // Key Binding Capture Box & Test Button
                 RowLayout {
                     Layout.fillWidth: true
-                    spacing: 10
+                    spacing: 8
                     visible: !modeNoneRadio.checked
 
                     Text {
                         text: modePttRadio.checked ? qsTr("PTT Key:") : qsTr("Mute Key:")
                         color: "#CCCCCC"
                         font.pointSize: 10
-                        Layout.preferredWidth: 100
+                        Layout.preferredWidth: 90
                     }
 
                     Button {
@@ -420,7 +420,7 @@ Dialog {
                                                   ? projectController.actionsController.getProfile(root.selectedProfileIndex) : null
 
                         property string keyDisplay: {
-                            if (root.isCapturingKey) return qsTr("Press any key on your keyboard…");
+                            if (root.isCapturingKey) return qsTr("Press any key on keyboard…");
                             if (!currentProf) return "KEY_V";
                             return modePttRadio.checked ? (currentProf.pttKey || "KEY_V") : (currentProf.muteKey || "KEY_M");
                         }
@@ -468,6 +468,61 @@ Dialog {
                             }
                         }
                     }
+
+                    // Test Keypress Button
+                    Button {
+                        id: testKeyBtn
+                        readonly property string currentKeyName: {
+                            if (!keyCaptureBtn.currentProf) return "KEY_V";
+                            return modePttRadio.checked ? (keyCaptureBtn.currentProf.pttKey || "KEY_V") : (keyCaptureBtn.currentProf.muteKey || "KEY_M");
+                        }
+                        property bool isTesting: (typeof projectController !== "undefined" && projectController.actionsController)
+                            ? projectController.actionsController.isTransmittingKey(currentKeyName)
+                            : false
+
+                        Layout.preferredHeight: 38
+                        Layout.preferredWidth: 140
+                        enabled: !root.isCapturingKey && (projectController && projectController.actionsController && projectController.actionsController.uinputAvailable)
+
+                        background: Rectangle {
+                            color: testKeyBtn.isTesting ? "#064E3B" : (testKeyBtn.pressed ? "#1E2022" : (testKeyBtn.hovered ? "#353A42" : "#282C32"))
+                            radius: 6
+                            border.color: testKeyBtn.isTesting ? "#10B981" : (testKeyBtn.hovered ? "#4E545F" : "#3A3E42")
+                            border.width: testKeyBtn.isTesting ? 2 : 1
+                        }
+
+                        contentItem: RowLayout {
+                            anchors.centerIn: parent
+                            spacing: 6
+                            Text {
+                                text: testKeyBtn.isTesting ? "🟢" : "⚡"
+                                font.pixelSize: 11
+                            }
+                            Text {
+                                text: testKeyBtn.isTesting ? qsTr("Holding Key…") : qsTr("Test Key (2s)")
+                                color: testKeyBtn.isTesting ? "#A7F3D0" : (testKeyBtn.enabled ? "#FFFFFF" : "#666666")
+                                font.bold: true
+                                font.pointSize: 9
+                            }
+                        }
+
+                        onClicked: {
+                            if (projectController && projectController.actionsController) {
+                                projectController.actionsController.testTriggerKey(currentKeyName, 2000);
+                            }
+                        }
+
+                        ToolTip.visible: hovered
+                        ToolTip.text: qsTr("Hold %1 down for 2 seconds to verify detection in Discord or your game").arg(currentKeyName)
+                    }
+                }
+
+                Text {
+                    visible: !modeNoneRadio.checked
+                    text: qsTr("Tip: Click 'Test Key (2s)' and switch to Discord or your game to test keypress detection.")
+                    color: "#7E8590"
+                    font.pointSize: 8
+                    Layout.leftMargin: 98
                 }
 
                 // Buffer Slider

@@ -99,10 +99,16 @@ Rectangle {
                             verticalAlignment: Text.AlignVCenter
                         }
 
-                        // Action Indicator Badge (PTT / Mute) with glowing border
+                        // Action Indicator Badge (PTT / Mute) with live transmitting state
                         Rectangle {
                             id: actionBadge
                             visible: tabItem.hasActionBadge
+                            property bool isTransmitting: {
+                                if (typeof projectController !== "undefined" && projectController.actionsController) {
+                                    return projectController.actionsController.isTransmittingForTab(tabItem.name);
+                                }
+                                return false;
+                            }
                             implicitWidth: actionBadgeLayout.implicitWidth + 12
                             implicitHeight: 20
                             Layout.preferredWidth: implicitWidth
@@ -110,24 +116,34 @@ Rectangle {
                             Layout.alignment: Qt.AlignVCenter
                             radius: 4
                             z: 2
-                            color: tabItem.isActive ? "#3D1E4E" : "#281D3B"
-                            border.color: "#8E2DE2"
-                            border.width: 1
+                            color: actionBadge.isTransmitting ? "#064E3B" : (tabItem.isActive ? "#3D1E4E" : "#281D3B")
+                            border.color: actionBadge.isTransmitting ? "#10B981" : "#8E2DE2"
+                            border.width: actionBadge.isTransmitting ? 2 : 1
 
                             // Pulsing glowing border overlay
                             Rectangle {
                                 anchors.fill: parent
                                 radius: 4
                                 color: "transparent"
-                                border.color: "#D946EF"
-                                border.width: 1
-                                opacity: 0.4
+                                border.color: actionBadge.isTransmitting ? "#34D399" : "#D946EF"
+                                border.width: actionBadge.isTransmitting ? 2 : 1
+                                opacity: actionBadge.isTransmitting ? 0.8 : 0.4
 
                                 SequentialAnimation on opacity {
                                     running: actionBadge.visible
                                     loops: Animation.Infinite
-                                    NumberAnimation { from: 0.2; to: 0.85; duration: 1000; easing.type: Easing.InOutQuad }
-                                    NumberAnimation { from: 0.85; to: 0.2; duration: 1000; easing.type: Easing.InOutQuad }
+                                    NumberAnimation {
+                                        from: actionBadge.isTransmitting ? 0.3 : 0.2
+                                        to: actionBadge.isTransmitting ? 1.0 : 0.85
+                                        duration: actionBadge.isTransmitting ? 400 : 1000
+                                        easing.type: Easing.InOutQuad
+                                    }
+                                    NumberAnimation {
+                                        from: actionBadge.isTransmitting ? 1.0 : 0.85
+                                        to: actionBadge.isTransmitting ? 0.3 : 0.2
+                                        duration: actionBadge.isTransmitting ? 400 : 1000
+                                        easing.type: Easing.InOutQuad
+                                    }
                                 }
                             }
 
@@ -137,14 +153,16 @@ Rectangle {
                                 spacing: 4
 
                                 Text {
-                                    text: "⚡"
-                                    font.pixelSize: 9
-                                    color: "#D946EF"
+                                    text: actionBadge.isTransmitting ? "🟢" : "⚡"
+                                    font.pixelSize: actionBadge.isTransmitting ? 8 : 9
+                                    color: actionBadge.isTransmitting ? "#34D399" : "#D946EF"
                                 }
 
                                 Text {
-                                    text: tabItem.actionBadgeText
-                                    color: "#F0ABFC"
+                                    text: actionBadge.isTransmitting 
+                                          ? qsTr("TRANSMITTING (%1)").arg(tabItem.actionBadgeText.replace("PTT: ", "").replace("Mute: ", "")) 
+                                          : tabItem.actionBadgeText
+                                    color: actionBadge.isTransmitting ? "#A7F3D0" : "#F0ABFC"
                                     font.pointSize: 8
                                     font.bold: true
                                 }
@@ -157,7 +175,9 @@ Rectangle {
                                 cursorShape: Qt.PointingHandCursor
                                 onClicked: root.configureTabActionsRequested(tabItem.index)
                                 ToolTip.visible: containsMouse
-                                ToolTip.text: qsTr("Action: %1 (Click to configure Tab Actions)").arg(tabItem.actionBadgeText)
+                                ToolTip.text: actionBadge.isTransmitting
+                                    ? qsTr("PTT key is currently held down! (%1)").arg(tabItem.actionBadgeText)
+                                    : qsTr("Action: %1 (Click to configure Tab Actions)").arg(tabItem.actionBadgeText)
                             }
                         }
 

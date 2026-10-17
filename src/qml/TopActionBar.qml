@@ -75,7 +75,21 @@ Rectangle {
         ActionIconButton {
             id: actionsBtn
             iconSource: "icons/actions.png"
-            tooltipText: qsTr("Soundboard Actions (Push-To-Talk & Mute)")
+            readonly property bool isTransmitting: {
+                if (typeof projectController !== "undefined" && projectController.actionsController) {
+                    return projectController.actionsController.isTransmitting;
+                }
+                return false;
+            }
+            readonly property string activeKey: {
+                if (typeof projectController !== "undefined" && projectController.actionsController) {
+                    return projectController.actionsController.activeTransmittingKey;
+                }
+                return "";
+            }
+            tooltipText: isTransmitting
+                ? qsTr("Soundboard Actions - TRANSMITTING (%1)").arg(activeKey)
+                : qsTr("Soundboard Actions (Push-To-Talk & Mute)")
             isActive: {
                 if (typeof projectController !== "undefined" && projectController.actionsController && projectController.tabModel) {
                     var rev = projectController.actionsController.revision;
@@ -84,6 +98,7 @@ Rectangle {
                 }
                 return false;
             }
+            isTransmittingActive: isTransmitting
             onClicked: root.openActionsRequested()
         }
 
@@ -356,15 +371,37 @@ Rectangle {
         property string iconSource
         property string tooltipText
         property bool isActive: false
+        property bool isTransmittingActive: false
 
         Layout.preferredWidth: 44
         Layout.preferredHeight: 44
 
         background: Rectangle {
-            color: aib.pressed ? "#1E2022" : (aib.isActive ? "#2F2344" : (aib.hovered ? "#3A3E42" : "#2E3236"))
+            color: aib.pressed 
+                   ? "#1E2022" 
+                   : (aib.isTransmittingActive ? "#064E3B" : (aib.isActive ? "#2F2344" : (aib.hovered ? "#3A3E42" : "#2E3236")))
             radius: 6
-            border.color: aib.isActive ? "#8E2DE2" : (aib.hovered ? "#4E545F" : "#3A3E42")
-            border.width: aib.isActive ? 2 : 1
+            border.color: aib.isTransmittingActive 
+                          ? "#10B981" 
+                          : (aib.isActive ? "#8E2DE2" : (aib.hovered ? "#4E545F" : "#3A3E42"))
+            border.width: (aib.isTransmittingActive || aib.isActive) ? 2 : 1
+
+            // Pulsing border overlay when actively transmitting
+            Rectangle {
+                anchors.fill: parent
+                radius: 6
+                color: "transparent"
+                border.color: "#34D399"
+                border.width: 2
+                visible: aib.isTransmittingActive
+
+                SequentialAnimation on opacity {
+                    running: aib.isTransmittingActive
+                    loops: Animation.Infinite
+                    NumberAnimation { from: 0.3; to: 1.0; duration: 400; easing.type: Easing.InOutQuad }
+                    NumberAnimation { from: 1.0; to: 0.3; duration: 400; easing.type: Easing.InOutQuad }
+                }
+            }
         }
 
         contentItem: Image {
@@ -375,7 +412,7 @@ Rectangle {
             width: 22
             height: 22
             fillMode: Image.PreserveAspectFit
-            opacity: aib.hovered || aib.isActive ? 1.0 : 0.85
+            opacity: aib.hovered || aib.isActive || aib.isTransmittingActive ? 1.0 : 0.85
         }
 
         ToolTip.visible: hovered

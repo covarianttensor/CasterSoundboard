@@ -24,6 +24,8 @@ class ActionsController : public QObject
     Q_PROPERTY(int revision READ revision NOTIFY profilesChanged)
     Q_PROPERTY(bool uinputAvailable READ isUInputAvailable NOTIFY uinputStatusChanged)
     Q_PROPERTY(QString uinputStatus READ uinputStatusMessage NOTIFY uinputStatusChanged)
+    Q_PROPERTY(bool isTransmitting READ isTransmitting NOTIFY transmissionChanged)
+    Q_PROPERTY(QString activeTransmittingKey READ activeTransmittingKey NOTIFY transmissionChanged)
 
 public:
     explicit ActionsController(QObject *parent = nullptr);
@@ -33,6 +35,12 @@ public:
     int revision() const { return m_revision; }
     bool isUInputAvailable() const;
     QString uinputStatusMessage() const;
+
+    bool isTransmitting() const;
+    QString activeTransmittingKey() const;
+    Q_INVOKABLE bool isTransmittingForTab(const QString &tabName) const;
+    Q_INVOKABLE bool isTransmittingKey(const QString &key) const;
+    Q_INVOKABLE void testTriggerKey(const QString &keyName, int durationMs = 2000);
 
     Q_INVOKABLE QVariantList profilesList() const;
     Q_INVOKABLE QVariantMap getProfile(int index) const;
@@ -62,6 +70,7 @@ public:
 signals:
     void profilesChanged();
     void uinputStatusChanged();
+    void transmissionChanged();
     void actionStarted(const QString &profileName, const QString &key, int mode);
     void actionEnded(const QString &profileName, const QString &key);
 
@@ -82,6 +91,8 @@ private:
     QMap<QString, Session*> m_sessions; // keyName -> Session
     QMap<SoundTileController*, QString> m_tileToKey;
     int m_revision = 0;
+    QTimer *m_testTimer = nullptr;
+    QString m_testKeyName;
     void notifyProfilesChanged();
     void cleanupSession(Session *s);
 };

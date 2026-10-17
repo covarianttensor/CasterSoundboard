@@ -175,6 +175,60 @@ private slots:
         // Finish tile playback
         controller.coordinatePlaybackFinished(&tile1);
     }
+
+    void testTransmittingState()
+    {
+        ActionsController controller;
+        QCOMPARE(controller.isTransmitting(), false);
+        QCOMPARE(controller.activeTransmittingKey(), QString());
+
+        int idx = controller.addProfile("PTT Board");
+        QVariantMap data = controller.getProfile(idx);
+        data["mode"] = static_cast<int>(Actions::ModePushToTalk);
+        data["pttKey"] = "KEY_V";
+        data["bufferMs"] = 0;
+        data["pinnedTabName"] = "Gaming";
+        controller.setProfile(idx, data);
+
+        QSignalSpy spy(&controller, &ActionsController::transmissionChanged);
+
+        SoundTileController tile;
+        bool ready = false;
+        controller.coordinatePlayback(&tile, "Gaming", [&]() {
+            ready = true;
+        });
+
+        QVERIFY(ready);
+        QCOMPARE(spy.count(), 1);
+        QCOMPARE(controller.isTransmitting(), true);
+        QCOMPARE(controller.isTransmittingForTab("Gaming"), true);
+        QCOMPARE(controller.isTransmittingForTab("Other"), false);
+        QCOMPARE(controller.activeTransmittingKey(), QString("KEY_V"));
+        QCOMPARE(controller.isTransmittingKey("KEY_V"), true);
+
+        controller.coordinatePlaybackFinished(&tile);
+        QCOMPARE(controller.isTransmitting(), false);
+        QCOMPARE(controller.isTransmittingForTab("Gaming"), false);
+        QCOMPARE(spy.count(), 2);
+    }
+
+    void testTestTriggerKey()
+    {
+        ActionsController controller;
+        QSignalSpy spy(&controller, &ActionsController::transmissionChanged);
+
+        controller.testTriggerKey("KEY_F13", 50);
+        if (controller.isUInputAvailable()) {
+            QCOMPARE(controller.isTransmitting(), true);
+            QCOMPARE(controller.activeTransmittingKey(), QString("KEY_F13"));
+            QCOMPARE(controller.isTransmittingKey("KEY_F13"), true);
+            QCOMPARE(spy.count(), 1);
+
+            // Wait for 50ms test timer
+            QTRY_VERIFY_WITH_TIMEOUT(!controller.isTransmitting(), 500);
+            QCOMPARE(spy.count(), 2);
+        }
+    }
 };
 
 QTEST_MAIN(TestActions)

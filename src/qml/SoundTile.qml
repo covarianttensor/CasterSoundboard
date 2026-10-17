@@ -282,6 +282,59 @@ Rectangle {
                 ToolTip.text: tile ? qsTr("Hotkey: %1 (Click to edit)").arg(tile.hotkey) : ""
             }
 
+            // PTT Transmitting Badge on active tile
+            Rectangle {
+                id: pttLiveBadge
+                readonly property bool isTransmittingThisTab: {
+                    if (tile && tile.playbackState === 1 && typeof projectController !== "undefined" && projectController.actionsController && projectController.tabModel) {
+                        var curTab = projectController.tabModel.tabNameAt(projectController.tabModel.currentIndex);
+                        return projectController.actionsController.isTransmittingForTab(curTab);
+                    }
+                    return false;
+                }
+                visible: isTransmittingThisTab
+                Layout.preferredHeight: 24
+                Layout.preferredWidth: pttLiveLayout.implicitWidth + 12
+                Layout.alignment: Qt.AlignVCenter
+                radius: 4
+                color: "#064E3B"
+                border.color: "#10B981"
+                border.width: 1.5
+
+                RowLayout {
+                    id: pttLiveLayout
+                    anchors.centerIn: parent
+                    spacing: 4
+                    Text {
+                        text: "⚡"
+                        color: "#34D399"
+                        font.pixelSize: 9
+                    }
+                    Text {
+                        text: qsTr("PTT ON")
+                        color: "#A7F3D0"
+                        font.bold: true
+                        font.pointSize: 8
+                    }
+                }
+
+                SequentialAnimation on opacity {
+                    running: pttLiveBadge.visible
+                    loops: Animation.Infinite
+                    NumberAnimation { from: 0.6; to: 1.0; duration: 400; easing.type: Easing.InOutQuad }
+                    NumberAnimation { from: 1.0; to: 0.6; duration: 400; easing.type: Easing.InOutQuad }
+                }
+
+                ToolTip.visible: pttTileMouse.containsMouse
+                ToolTip.text: qsTr("Push-To-Talk virtual key is actively being pressed while this sound plays")
+
+                MouseArea {
+                    id: pttTileMouse
+                    anchors.fill: parent
+                    hoverEnabled: true
+                }
+            }
+
             // Spacer expanding across middle, keeping hotkey on left and cog on right
             Item {
                 Layout.fillWidth: true

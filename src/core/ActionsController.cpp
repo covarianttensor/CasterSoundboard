@@ -48,6 +48,74 @@ QString ActionsController::uinputStatusMessage() const
     return m_uinput ? m_uinput->statusMessage() : QString();
 }
 
+bool ActionsController::isTransmitting() const
+{
+    return !m_sessions.isEmpty() || !m_testKeyName.isEmpty();
+}
+
+QString ActionsController::activeTransmittingKey() const
+{
+    if (!m_testKeyName.isEmpty())
+        return m_testKeyName;
+    if (!m_sessions.isEmpty())
+        return m_sessions.firstKey();
+    return QString();
+}
+
+bool ActionsController::isTransmittingForTab(const QString &tabName) const
+{
+    if (tabName.isEmpty())
+        return false;
+
+    Actions::Profile prof = profileForTab(tabName);
+    if (prof.mode == Actions::ModeNone || !prof.isValid())
+        return false;
+
+    return m_sessions.contains(prof.activeKey());
+}
+
+bool ActionsController::isTransmittingKey(const QString &key) const
+{
+    if (key.isEmpty())
+        return false;
+    return m_sessions.contains(key) || m_testKeyName == key;
+}
+
+void ActionsController::testTriggerKey(const QString &keyName, int durationMs)
+{
+    if (keyName.isEmpty() || !m_uinput || !m_uinput->isAvailable())
+        return;
+
+    if (m_testTimer) {
+        m_testTimer->stop();
+        m_testTimer->deleteLater();
+        m_testTimer = nullptr;
+        if (!m_testKeyName.isEmpty()) {
+            m_uinput->sendKeyUp(m_testKeyName);
+            m_testKeyName.clear();
+        }
+    }
+
+    m_testKeyName = keyName;
+    m_uinput->sendKeyDown(keyName);
+    emit transmissionChanged();
+
+    m_testTimer = new QTimer(this);
+    m_testTimer->setSingleShot(true);
+    connect(m_testTimer, &QTimer::timeout, this, [this]() {
+        if (!m_testKeyName.isEmpty() && m_uinput) {
+            m_uinput->sendKeyUp(m_testKeyName);
+            m_testKeyName.clear();
+        }
+        if (m_testTimer) {
+            m_testTimer->deleteLater();
+            m_testTimer = nullptr;
+        }
+        emit transmissionChanged();
+    });
+    m_testTimer->start(qMax(100, durationMs));
+}
+
 QVariantList ActionsController::profilesList() const
 {
     QVariantList list;
@@ -229,6 +297,7 @@ void ActionsController::coordinatePlayback(SoundTileController *tile, const QStr
         m_uinput->sendKeyTap(key, 80);
     }
     emit actionStarted(prof.name, key, static_cast<int>(prof.mode));
+    emit transmissionChanged();
 
     if (prof.bufferMs <= 0) {
         session->isOpened = true;
@@ -314,10 +383,21 @@ void ActionsController::cleanupSession(Session *s)
 
     m_sessions.remove(s->keyName);
     delete s;
+    emit transmissionChanged();
 }
 
 void ActionsController::stopAll()
 {
+    if (m_testTimer) {
+        m_testTimer->stop();
+        m_testTimer->deleteLater();
+        m_testTimer = nullptr;
+    }
+    if (!m_testKeyName.isEmpty()) {
+        if (m_uinput) m_uinput->sendKeyUp(m_testKeyName);
+        m_testKeyName.clear();
+    }
+
     for (auto it = m_sessions.begin(); it != m_sessions.end(); ++it) {
         Session *s = it.value();
         if (s->leadInTimer) {
@@ -337,6 +417,7 @@ void ActionsController::stopAll()
     }
     m_sessions.clear();
     m_tileToKey.clear();
+    emit transmissionChanged();
 }
 
 QJsonArray ActionsController::toJson() const
