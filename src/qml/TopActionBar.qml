@@ -72,44 +72,19 @@ Rectangle {
         }
 
         // Actions (Push-To-Talk / Mute) Button (Issue #24)
-        Button {
+        ActionIconButton {
             id: actionsBtn
-            property bool hasActiveAction: {
+            iconSource: "icons/actions.png"
+            tooltipText: qsTr("Soundboard Actions (Push-To-Talk & Mute)")
+            isActive: {
                 if (typeof projectController !== "undefined" && projectController.actionsController && projectController.tabModel) {
+                    var rev = projectController.actionsController.revision;
                     var curTab = projectController.tabModel.tabNameAt(projectController.tabModel.currentIndex);
                     return projectController.actionsController.hasActionForTab(curTab);
                 }
                 return false;
             }
-            Layout.preferredHeight: 38
-            Layout.preferredWidth: 96
             onClicked: root.openActionsRequested()
-
-            background: Rectangle {
-                color: actionsBtn.hasActiveAction ? "#2F2344" : (actionsBtn.hovered ? "#353A42" : "#282C32")
-                radius: 6
-                border.color: actionsBtn.hasActiveAction ? "#8E2DE2" : (actionsBtn.hovered ? "#4E545F" : "#3A3E42")
-                border.width: actionsBtn.hasActiveAction ? 2 : 1
-            }
-
-            contentItem: RowLayout {
-                anchors.centerIn: parent
-                spacing: 6
-                Text {
-                    text: "⚡"
-                    font.pixelSize: 13
-                    color: actionsBtn.hasActiveAction ? "#A855F7" : "#CCCCCC"
-                }
-                Text {
-                    text: qsTr("Actions")
-                    color: actionsBtn.hasActiveAction ? "#FFFFFF" : "#CCCCCC"
-                    font.bold: actionsBtn.hasActiveAction
-                    font.pointSize: 9
-                }
-            }
-
-            ToolTip.visible: hovered
-            ToolTip.text: qsTr("Configure Push-To-Talk & Mute Actions for the active soundboard")
         }
 
         Rectangle {
@@ -380,15 +355,16 @@ Rectangle {
         id: aib
         property string iconSource
         property string tooltipText
+        property bool isActive: false
 
         Layout.preferredWidth: 44
         Layout.preferredHeight: 44
 
         background: Rectangle {
-            color: aib.pressed ? "#1E2022" : (aib.hovered ? "#3A3E42" : "#2E3236")
+            color: aib.pressed ? "#1E2022" : (aib.isActive ? "#2F2344" : (aib.hovered ? "#3A3E42" : "#2E3236"))
             radius: 6
-            border.color: "#3A3E42"
-            border.width: 1
+            border.color: aib.isActive ? "#8E2DE2" : (aib.hovered ? "#4E545F" : "#3A3E42")
+            border.width: aib.isActive ? 2 : 1
         }
 
         contentItem: Image {
@@ -399,7 +375,7 @@ Rectangle {
             width: 22
             height: 22
             fillMode: Image.PreserveAspectFit
-            opacity: aib.hovered ? 1.0 : 0.85
+            opacity: aib.hovered || aib.isActive ? 1.0 : 0.85
         }
 
         ToolTip.visible: hovered

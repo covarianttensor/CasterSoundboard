@@ -119,6 +119,7 @@ qt_add_qml_module(CasterSoundboard
     RESOURCES
         src/qml/icons/33_percent.png
         src/qml/icons/about.png
+        src/qml/icons/actions.png
         src/qml/icons/app.png
         src/qml/icons/audio_devices.png
         src/qml/icons/cog.png
