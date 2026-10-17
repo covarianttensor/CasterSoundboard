@@ -95,7 +95,6 @@ Dialog {
         profileCombo.currentIndex = selectedProfileIndex;
         var p = list[selectedProfileIndex];
         if (p) {
-            nameInput.text = p.name || "";
             bufferSlider.value = p.bufferMs || 150;
             if (p.mode === 1) modePttRadio.checked = true;
             else if (p.mode === 2) modeMuteRadio.checked = true;
@@ -129,7 +128,6 @@ Dialog {
         var modeVal = modePttRadio.checked ? 1 : (modeMuteRadio.checked ? 2 : 0);
 
         var data = {
-            "name": nameInput.text.trim(),
             "mode": modeVal,
             "pinnedTabName": pinned,
             "bufferMs": Math.round(bufferSlider.value)
@@ -262,29 +260,7 @@ Dialog {
             }
 
             Button {
-                text: qsTr("+ New")
-                Layout.preferredHeight: 34
-                onClicked: {
-                    root.saveCurrentProfile();
-                    var newIdx = projectController.actionsController.addProfile(qsTr("Action Profile %1").arg(profileCombo.count + 1));
-                    root.selectedProfileIndex = newIdx;
-                    root.refreshProfileUI();
-                }
-                background: Rectangle {
-                    color: parent.down ? "#7324B8" : (parent.hovered ? "#A855F7" : "#8E2DE2")
-                    radius: 6
-                }
-                contentItem: Text {
-                    text: parent.text
-                    color: "#FFFFFF"
-                    font.bold: true
-                    font.pointSize: 9
-                    horizontalAlignment: Text.AlignHCenter
-                    verticalAlignment: Text.AlignVCenter
-                }
-            }
-
-            Button {
+                id: deleteProfileBtn
                 text: qsTr("Delete")
                 enabled: profileCombo.count > 1
                 Layout.preferredHeight: 34
@@ -308,6 +284,28 @@ Dialog {
                     verticalAlignment: Text.AlignVCenter
                 }
             }
+
+            Button {
+                id: newProfileBtn
+                text: qsTr("+ New Profile")
+                Layout.preferredHeight: 34
+                onClicked: {
+                    root.saveCurrentProfile();
+                    newProfileDialog.openForNew();
+                }
+                background: Rectangle {
+                    color: parent.down ? "#7324B8" : (parent.hovered ? "#A855F7" : "#8E2DE2")
+                    radius: 6
+                }
+                contentItem: Text {
+                    text: parent.text
+                    color: "#FFFFFF"
+                    font.bold: true
+                    font.pointSize: 9
+                    horizontalAlignment: Text.AlignHCenter
+                    verticalAlignment: Text.AlignVCenter
+                }
+            }
         }
 
         // Configuration Card
@@ -324,37 +322,6 @@ Dialog {
                 anchors.fill: parent
                 anchors.margins: 16
                 spacing: 12
-
-                // Profile Name
-                RowLayout {
-                    Layout.fillWidth: true
-                    spacing: 10
-
-                    Text {
-                        text: qsTr("Name:")
-                        color: "#CCCCCC"
-                        font.pointSize: 10
-                        Layout.preferredWidth: 90
-                    }
-
-                    TextField {
-                        id: nameInput
-                        Layout.fillWidth: true
-                        Layout.preferredHeight: 34
-                        color: "#FFFFFF"
-                        selectByMouse: true
-                        font.pointSize: 10
-                        verticalAlignment: TextInput.AlignVCenter
-                        leftPadding: 10
-                        background: Rectangle {
-                            color: "#282C32"
-                            radius: 6
-                            border.color: nameInput.activeFocus ? "#8E2DE2" : "#3A3E42"
-                            border.width: 1
-                        }
-                        onEditingFinished: root.saveCurrentProfile()
-                    }
-                }
 
                 // Pinned Tab
                 RowLayout {
@@ -727,6 +694,130 @@ Dialog {
                     font.pointSize: 10
                     horizontalAlignment: Text.AlignHCenter
                     verticalAlignment: Text.AlignVCenter
+                }
+            }
+        }
+    }
+
+    // New Profile Modal Name Prompt Dialog
+    Dialog {
+        id: newProfileDialog
+        parent: Overlay.overlay
+        anchors.centerIn: parent
+        modal: true
+        closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
+        implicitWidth: 420
+        topPadding: 18
+        bottomPadding: 18
+        leftPadding: 20
+        rightPadding: 20
+
+        background: Rectangle {
+            color: "#222528"
+            radius: 8
+            border.color: "#3A3E42"
+            border.width: 1
+        }
+
+        function openForNew() {
+            var defaultNum = (projectController && projectController.actionsController)
+                             ? (projectController.actionsController.count + 1) : 1;
+            newProfileNameInput.text = qsTr("Action Profile %1").arg(defaultNum);
+            newProfileDialog.open();
+            newProfileNameInput.selectAll();
+            newProfileNameInput.forceActiveFocus();
+        }
+
+        function confirmCreate() {
+            var trimmed = newProfileNameInput.text.trim();
+            if (trimmed.length === 0) return;
+            if (projectController && projectController.actionsController) {
+                var newIdx = projectController.actionsController.addProfile(trimmed);
+                root.selectedProfileIndex = newIdx;
+                root.refreshProfileUI();
+            }
+            newProfileDialog.close();
+        }
+
+        contentItem: ColumnLayout {
+            spacing: 14
+
+            Text {
+                text: qsTr("Create New Action Profile")
+                color: "#FFFFFF"
+                font.bold: true
+                font.pointSize: 12
+            }
+
+            Text {
+                text: qsTr("Enter a name for the new profile:")
+                color: "#CCCCCC"
+                font.pointSize: 9.5
+            }
+
+            TextField {
+                id: newProfileNameInput
+                Layout.fillWidth: true
+                Layout.preferredHeight: 36
+                color: "#FFFFFF"
+                font.pointSize: 10
+                verticalAlignment: TextInput.AlignVCenter
+                leftPadding: 10
+                selectByMouse: true
+                background: Rectangle {
+                    color: "#282C32"
+                    radius: 6
+                    border.color: newProfileNameInput.activeFocus ? "#8E2DE2" : "#3A3E42"
+                    border.width: 1
+                }
+                Keys.onReturnPressed: newProfileDialog.confirmCreate()
+                Keys.onEnterPressed: newProfileDialog.confirmCreate()
+            }
+
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: 10
+
+                Item { Layout.fillWidth: true }
+
+                Button {
+                    text: qsTr("Cancel")
+                    Layout.preferredHeight: 34
+                    Layout.preferredWidth: 80
+                    onClicked: newProfileDialog.close()
+                    background: Rectangle {
+                        color: parent.hovered ? "#353A42" : "#282C32"
+                        radius: 6
+                        border.color: "#3A3E42"
+                        border.width: 1
+                    }
+                    contentItem: Text {
+                        text: parent.text
+                        color: "#CCCCCC"
+                        font.pointSize: 9
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                    }
+                }
+
+                Button {
+                    text: qsTr("Create")
+                    enabled: newProfileNameInput.text.trim().length > 0
+                    Layout.preferredHeight: 34
+                    Layout.preferredWidth: 90
+                    onClicked: newProfileDialog.confirmCreate()
+                    background: Rectangle {
+                        color: parent.enabled ? (parent.down ? "#7324B8" : (parent.hovered ? "#A855F7" : "#8E2DE2")) : "#222528"
+                        radius: 6
+                    }
+                    contentItem: Text {
+                        text: parent.text
+                        color: parent.enabled ? "#FFFFFF" : "#666666"
+                        font.bold: true
+                        font.pointSize: 9.5
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                    }
                 }
             }
         }
