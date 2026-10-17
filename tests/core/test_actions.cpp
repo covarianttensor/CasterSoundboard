@@ -229,6 +229,35 @@ private slots:
             QCOMPARE(spy.count(), 2);
         }
     }
+
+    void testPauseReleasesTransmission()
+    {
+        ActionsController controller;
+        int idx = controller.addProfile("PTT Board");
+        QVariantMap data = controller.getProfile(idx);
+        data["mode"] = static_cast<int>(Actions::ModePushToTalk);
+        data["pttKey"] = "KEY_V";
+        data["bufferMs"] = 0;
+        data["pinnedTabName"] = "Gaming";
+        controller.setProfile(idx, data);
+
+        SoundTileController tile;
+        tile.setStopCoordinator([&](SoundTileController *t) {
+            controller.coordinatePlaybackFinished(t);
+        });
+
+        controller.coordinatePlayback(&tile, "Gaming", [&]() {
+            // ready
+        });
+
+        QCOMPARE(controller.isTransmitting(), true);
+
+        // Manually pause the tile
+        tile.pause();
+
+        // Must have stopped transmitting!
+        QCOMPARE(controller.isTransmitting(), false);
+    }
 };
 
 QTEST_MAIN(TestActions)

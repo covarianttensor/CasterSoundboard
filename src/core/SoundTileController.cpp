@@ -410,6 +410,9 @@ void SoundTileController::playDirect()
 void SoundTileController::pause()
 {
     m_player->pause();
+    if (m_stopCoordinator) {
+        m_stopCoordinator(this);
+    }
 }
 
 void SoundTileController::stop()
@@ -468,8 +471,15 @@ void SoundTileController::onPlaybackStateChanged(QMediaPlayer::PlaybackState sta
     if (m_playbackState == state)
         return;
 
+    auto oldState = m_playbackState;
     m_playbackState = state;
     emit playbackStateChanged();
+
+    if (oldState == QMediaPlayer::PlayingState && state != QMediaPlayer::PlayingState) {
+        if (m_stopCoordinator) {
+            m_stopCoordinator(this);
+        }
+    }
 }
 
 void SoundTileController::onMediaStatusChanged(QMediaPlayer::MediaStatus status)
