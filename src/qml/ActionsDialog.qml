@@ -9,8 +9,8 @@ Dialog {
     anchors.centerIn: parent
     modal: true
     closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
-    implicitWidth: 540
-    implicitHeight: 620
+    implicitWidth: 580
+    implicitHeight: 640
     topPadding: 16
     bottomPadding: 16
     leftPadding: 20
@@ -194,6 +194,7 @@ Dialog {
             ComboBox {
                 id: profileCombo
                 Layout.fillWidth: true
+                Layout.preferredHeight: 34
                 model: projectController && projectController.actionsController ? projectController.actionsController.profilesList() : []
                 textRole: "name"
                 currentIndex: root.selectedProfileIndex
@@ -214,7 +215,9 @@ Dialog {
                     color: "#FFFFFF"
                     font.pointSize: 10
                     verticalAlignment: Text.AlignVCenter
-                    leftPadding: 8
+                    leftPadding: 10
+                    rightPadding: 24
+                    elide: Text.ElideRight
                 }
             }
 
@@ -275,10 +278,11 @@ Dialog {
             radius: 8
             border.color: "#2E3236"
             border.width: 1
+            clip: true
 
             ColumnLayout {
                 anchors.fill: parent
-                anchors.margins: 14
+                anchors.margins: 16
                 spacing: 12
 
                 // Profile Name
@@ -290,14 +294,18 @@ Dialog {
                         text: qsTr("Name:")
                         color: "#CCCCCC"
                         font.pointSize: 10
-                        Layout.preferredWidth: 100
+                        Layout.preferredWidth: 90
                     }
 
                     TextField {
                         id: nameInput
                         Layout.fillWidth: true
+                        Layout.preferredHeight: 34
                         color: "#FFFFFF"
                         selectByMouse: true
+                        font.pointSize: 10
+                        verticalAlignment: TextInput.AlignVCenter
+                        leftPadding: 10
                         background: Rectangle {
                             color: "#282C32"
                             radius: 6
@@ -317,12 +325,13 @@ Dialog {
                         text: qsTr("Pin to Tab:")
                         color: "#CCCCCC"
                         font.pointSize: 10
-                        Layout.preferredWidth: 100
+                        Layout.preferredWidth: 90
                     }
 
                     ComboBox {
                         id: tabCombo
                         Layout.fillWidth: true
+                        Layout.preferredHeight: 34
                         background: Rectangle {
                             color: "#282C32"
                             radius: 6
@@ -334,7 +343,9 @@ Dialog {
                             color: "#FFFFFF"
                             font.pointSize: 10
                             verticalAlignment: Text.AlignVCenter
-                            leftPadding: 8
+                            leftPadding: 10
+                            rightPadding: 24
+                            elide: Text.ElideRight
                         }
                         onActivated: root.saveCurrentProfile()
                     }
@@ -349,7 +360,7 @@ Dialog {
                         text: qsTr("Talk Mode:")
                         color: "#CCCCCC"
                         font.pointSize: 10
-                        Layout.preferredWidth: 100
+                        Layout.preferredWidth: 90
                     }
 
                     ButtonGroup { id: modeGroup }
@@ -413,14 +424,14 @@ Dialog {
                     Button {
                         id: keyCaptureBtn
                         Layout.fillWidth: true
-                        Layout.preferredHeight: 38
+                        Layout.preferredHeight: 36
                         focus: root.isCapturingKey
 
                         property var currentProf: (projectController && projectController.actionsController && root.selectedProfileIndex >= 0 && root.selectedProfileIndex < profileCombo.count)
                                                   ? projectController.actionsController.getProfile(root.selectedProfileIndex) : null
 
                         property string keyDisplay: {
-                            if (root.isCapturingKey) return qsTr("Press any key on keyboard…");
+                            if (root.isCapturingKey) return qsTr("Press any key…");
                             if (!currentProf) return "KEY_V";
                             return modePttRadio.checked ? (currentProf.pttKey || "KEY_V") : (currentProf.muteKey || "KEY_M");
                         }
@@ -480,8 +491,8 @@ Dialog {
                             ? projectController.actionsController.isTransmittingKey(currentKeyName)
                             : false
 
-                        Layout.preferredHeight: 38
-                        Layout.preferredWidth: 140
+                        Layout.preferredHeight: 36
+                        Layout.preferredWidth: 130
                         enabled: !root.isCapturingKey && (projectController && projectController.actionsController && projectController.actionsController.uinputAvailable)
 
                         background: Rectangle {
@@ -499,7 +510,7 @@ Dialog {
                                 font.pixelSize: 11
                             }
                             Text {
-                                text: testKeyBtn.isTesting ? qsTr("Holding Key…") : qsTr("Test Key (2s)")
+                                text: testKeyBtn.isTesting ? qsTr("Holding…") : qsTr("Test Key (2s)")
                                 color: testKeyBtn.isTesting ? "#A7F3D0" : (testKeyBtn.enabled ? "#FFFFFF" : "#666666")
                                 font.bold: true
                                 font.pointSize: 9
@@ -519,9 +530,11 @@ Dialog {
 
                 Text {
                     visible: !modeNoneRadio.checked
-                    text: qsTr("Tip: Click 'Test Key (2s)' and switch to Discord or your game to test keypress detection.")
+                    text: qsTr("Tip: Click 'Test Key (2s)' and switch to Discord or your game to verify keypress detection.")
                     color: "#7E8590"
                     font.pointSize: 8
+                    wrapMode: Text.WordWrap
+                    Layout.fillWidth: true
                     Layout.leftMargin: 98
                 }
 
@@ -561,6 +574,8 @@ Dialog {
                         text: qsTr("Lead-in delay before sound starts and tail delay before key release to prevent voice clipping.")
                         color: "#7E8590"
                         font.pointSize: 8
+                        wrapMode: Text.WordWrap
+                        Layout.fillWidth: true
                     }
                 }
 
