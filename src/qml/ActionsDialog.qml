@@ -44,6 +44,11 @@ Dialog {
         }
     }
 
+    onClosed: {
+        root.isCapturingKey = false;
+        root.saveCurrentProfile();
+    }
+
     function selectProfileForTab(tabName) {
         if (!projectController || !projectController.actionsController) return;
         var list = projectController.actionsController.profilesList();
@@ -87,6 +92,7 @@ Dialog {
         if (selectedProfileIndex >= list.length) {
             selectedProfileIndex = Math.max(0, list.length - 1);
         }
+        profileCombo.currentIndex = selectedProfileIndex;
         var p = list[selectedProfileIndex];
         if (p) {
             nameInput.text = p.name || "";
@@ -427,8 +433,13 @@ Dialog {
                         Layout.preferredHeight: 36
                         focus: root.isCapturingKey
 
-                        property var currentProf: (projectController && projectController.actionsController && root.selectedProfileIndex >= 0 && root.selectedProfileIndex < profileCombo.count)
-                                                  ? projectController.actionsController.getProfile(root.selectedProfileIndex) : null
+                        property var currentProf: {
+                            if (projectController && projectController.actionsController && root.selectedProfileIndex >= 0 && root.selectedProfileIndex < profileCombo.count) {
+                                var rev = projectController.actionsController.revision;
+                                return projectController.actionsController.getProfile(root.selectedProfileIndex);
+                            }
+                            return null;
+                        }
 
                         property string keyDisplay: {
                             if (root.isCapturingKey) return qsTr("Press any key…");
@@ -619,6 +630,14 @@ Dialog {
         // Bottom Action Row
         RowLayout {
             Layout.fillWidth: true
+
+            Text {
+                text: qsTr("💾 Saved to active project • Save project (Ctrl+S) to persist to disk")
+                color: "#7E8590"
+                font.pointSize: 8.5
+                Layout.alignment: Qt.AlignVCenter
+            }
+
             Item { Layout.fillWidth: true }
 
             Button {
