@@ -135,7 +135,7 @@ int main(int argc, char *argv[])
     QCommandLineOption screenshotOption(QStringList() << "s" << "screenshot", "Capture window screenshot to path and exit.", "path");
     QCommandLineOption drawerOption("open-drawer", "Open tile settings drawer on startup for testing.");
     QCommandLineOption drawerIndexOption("drawer-index", "Tile index to open in drawer on startup.", "index", "0");
-    QCommandLineOption viewOption("view", "Initial view index (0=Soundboards, 1=Audio, 2=OSC, 3=Preferences, 4=Documentation).", "index", "0");
+    QCommandLineOption viewOption("view", "Initial view index (0=Soundboards, 1=Audio, 2=OSC, 3=Preferences, 4=Documentation, 5=About).", "index", "0");
     QCommandLineOption autoStartOscOption("auto-start-osc", "Automatically start OSC server on startup.");
     QCommandLineOption fullscreenOption(QStringList() << "f" << "fullscreen", "Launch application in fullscreen mode.");
     QCommandLineOption widthOption("window-width", "Initial window width in pixels.", "width");

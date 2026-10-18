@@ -66,7 +66,8 @@ CasterSoundboard/
 │   │       ├── AudioRoutingView.qml       # Orthogonal schematic audio routing flow
 │   │       ├── OscView.qml                # Network OSC configuration
 │   │       ├── PreferencesView.qml        # Workspace settings & ducking attenuation
-│   │       └── DocumentationView.qml      # Embedded user & CLI guide
+│   │       ├── DocumentationView.qml      # Embedded user & CLI guide
+│   │       └── AboutView.qml              # App version, project metrics & system diagnostics
 │   └── web/                   # Static HTML/JS for local Web Remote control surface
 └── tests/                     # Automated unit test suite (C++ QtTest)
 ```
@@ -106,7 +107,7 @@ Caster Soundboard provides built-in CLI flags to capture screenshots without nee
 # Capture main soundboard view:
 ./build-cmake/bin/CasterSoundboard -s /tmp/screenshot_main.png
 
-# Capture specific view (0=Soundboard, 1=Audio, 2=OSC, 3=Settings, 4=Docs):
+# Capture specific view (0=Soundboard, 1=Audio, 2=OSC, 3=Settings, 4=Docs, 5=About):
 ./build-cmake/bin/CasterSoundboard --view 1 -s /tmp/screenshot_audio.png
 
 # Simulate active routing state for audio diagram verification:

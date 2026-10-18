@@ -619,6 +619,13 @@ ApplicationWindow {
                     Layout.fillWidth: true
                     Layout.fillHeight: true
                 }
+
+                Views.AboutView {
+                    id: aboutView
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    onOpenDocumentationRequested: sidebar.currentIndex = 4
+                }
             }
         }
     }

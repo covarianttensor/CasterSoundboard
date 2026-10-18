@@ -57,10 +57,18 @@ Rectangle {
 
         // App Documentation (floated to bottom above fullscreen toggle)
         NavButton {
-            iconSource: "icons/about.png"
+            iconSource: "icons/book.png"
             tooltipText: qsTr("Documentation & Terminal CLI Guide")
             isActive: root.currentIndex === 4
             onClicked: root.currentIndex = 4
+        }
+
+        // About & System Info
+        NavButton {
+            iconSource: "icons/about.png"
+            tooltipText: qsTr("About Caster Soundboard")
+            isActive: root.currentIndex === 5
+            onClicked: root.currentIndex = 5
         }
 
         // Fullscreen Toggle

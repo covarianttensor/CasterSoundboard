@@ -118,12 +118,14 @@ qt_add_qml_module(CasterSoundboard
         src/qml/views/OscView.qml
         src/qml/views/PreferencesView.qml
         src/qml/views/DocumentationView.qml
+        src/qml/views/AboutView.qml
     RESOURCES
         src/qml/icons/33_percent.png
         src/qml/icons/about.png
         src/qml/icons/actions.png
         src/qml/icons/app.png
         src/qml/icons/audio_devices.png
+        src/qml/icons/book.png
         src/qml/icons/cog.png
         src/qml/icons/colorPicker.png
         src/qml/icons/cue.png

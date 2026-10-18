@@ -80,7 +80,7 @@ Item {
                     Layout.fillWidth: true
 
                     Image {
-                        source: "../icons/about.png"
+                        source: "../icons/book.png"
                         Layout.preferredWidth: 42
                         Layout.preferredHeight: 42
                         sourceSize: Qt.size(42, 42)
@@ -310,11 +310,11 @@ Item {
                     // 2. --view <index>
                     CliCard {
                         optFlag: "--view <index>"
-                        optParams: qsTr("0 | 1 | 2 | 3 | 4")
+                        optParams: qsTr("0 | 1 | 2 | 3 | 4 | 5")
                         optBadge: qsTr("Navigation")
                         badgeColor: "#00B4D8"
-                        description: qsTr("Specifies the initial view to display on launch instead of the default soundboard grid:\n • 0 = Soundboards View (main tile grid)\n • 1 = Audio Devices & Virtual Mic Routing\n • 2 = Open Sound Control (OSC) Server\n • 3 = Preferences & Workspace Settings\n • 4 = Documentation & CLI Guide")
-                        exampleCommand: "./CasterSoundboard --view 4"
+                        description: qsTr("Specifies the initial view to display on launch instead of the default soundboard grid:\n • 0 = Soundboards View (main tile grid)\n • 1 = Audio Devices & Virtual Mic Routing\n • 2 = Open Sound Control (OSC) Server\n • 3 = Preferences & Workspace Settings\n • 4 = Documentation & CLI Guide\n • 5 = About & System Information")
+                        exampleCommand: "./CasterSoundboard --view 5"
                     }
 
                     // 3. --auto-start-osc
