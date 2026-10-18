@@ -265,6 +265,9 @@ private slots:
         QVERIFY(!doc2.isNull());
         QCOMPARE(doc2.object().value("isPttActive").toBool(), true);
         QCOMPARE(doc2.object().value("activeTransmittingKey").toString(), QString("KEY_V"));
+        QJsonArray txKeys = doc2.object().value("transmittingKeys").toArray();
+        QCOMPARE(txKeys.size(), 1);
+        QCOMPARE(txKeys.at(0).toString(), QString("KEY_V"));
 
         QJsonArray tabs = doc2.object().value("tabs").toArray();
         QVERIFY(!tabs.isEmpty());
@@ -280,6 +283,7 @@ private slots:
         QJsonDocument doc3 = QJsonDocument::fromJson(resp3.mid(jsonIdx3));
         QCOMPARE(doc3.object().value("isPttActive").toBool(), false);
         QCOMPARE(doc3.object().value("activeTransmittingKey").toString(), QString());
+        QCOMPARE(doc3.object().value("transmittingKeys").toArray().size(), 0);
 
         web.stopServer();
     }

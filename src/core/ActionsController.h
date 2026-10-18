@@ -39,6 +39,7 @@ public:
 
     bool isTransmitting() const;
     QString activeTransmittingKey() const;
+    Q_INVOKABLE QStringList activeTransmittingKeys() const;
     Q_INVOKABLE bool isTransmittingForTab(const QString &tabName) const;
     Q_INVOKABLE bool isTransmittingKey(const QString &key) const;
     Q_INVOKABLE void testTriggerKey(const QString &keyName, int durationMs = 2000);

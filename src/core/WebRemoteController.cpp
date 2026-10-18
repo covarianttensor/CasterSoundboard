@@ -628,6 +628,14 @@ QByteArray WebRemoteController::generateStateJson() const
     root["isPttActive"] = isPttActive;
     root["activeTransmittingKey"] = actions ? actions->activeTransmittingKey() : QString();
 
+    QJsonArray txKeys;
+    if (actions) {
+        for (const QString &k : actions->activeTransmittingKeys()) {
+            txKeys.append(k);
+        }
+    }
+    root["transmittingKeys"] = txKeys;
+
     auto *tabModel = m_projectController->tabModel();
     if (tabModel) {
         root["activeTabIndex"] = tabModel->currentIndex();

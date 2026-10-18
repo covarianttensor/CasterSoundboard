@@ -62,6 +62,15 @@ QString ActionsController::activeTransmittingKey() const
     return QString();
 }
 
+QStringList ActionsController::activeTransmittingKeys() const
+{
+    QStringList keys = m_sessions.keys();
+    if (!m_testKeyName.isEmpty() && !keys.contains(m_testKeyName)) {
+        keys.append(m_testKeyName);
+    }
+    return keys;
+}
+
 bool ActionsController::isTransmittingForTab(const QString &tabName) const
 {
     if (tabName.isEmpty())

@@ -492,6 +492,67 @@
       return rawKey;
     }
 
+    const optimisticTxKeys = new Set();
+
+    function getActionKeyFromBadge(badge) {
+      if (!badge) return '';
+      const colonIdx = badge.indexOf(':');
+      if (colonIdx !== -1) {
+        return badge.substring(colonIdx + 1).trim();
+      }
+      return '';
+    }
+
+    function recordOptimisticActionTrigger(tabIdx) {
+      if (!appState || !appState.tabs || !appState.tabs[tabIdx]) return;
+      const tab = appState.tabs[tabIdx];
+      const actionKey = getActionKeyFromBadge(tab.actionBadge);
+      if (actionKey) {
+        const lower = actionKey.toLowerCase();
+        optimisticTxKeys.add(lower);
+        setTimeout(() => {
+          optimisticTxKeys.delete(lower);
+        }, 1500);
+      }
+    }
+
+    function isEventKeyTransmitting(e) {
+      const eKey = (e.key || '').toLowerCase();
+      const eCode = (e.code || '').toLowerCase();
+
+      // 1. Check optimistic transmitting keys from recent clicks/triggers
+      if (optimisticTxKeys.has(eKey)) return true;
+      if (eCode.startsWith('key') && optimisticTxKeys.has(eCode.substring(3))) return true;
+      if (optimisticTxKeys.has('space') && (eKey === ' ' || eCode === 'space')) return true;
+
+      // 2. Check active transmitting keys reported by server
+      const txKeys = (appState && appState.transmittingKeys) ? appState.transmittingKeys :
+                     (appState && appState.activeTransmittingKey ? [appState.activeTransmittingKey] : []);
+
+      for (const rawKey of txKeys) {
+        if (!rawKey) continue;
+        const formatted = formatKey(rawKey).toLowerCase();
+        const codeSuffix = rawKey.startsWith('KEY_') ? rawKey.substring(4).toLowerCase() : rawKey.toLowerCase();
+
+        if (eKey === formatted || eKey === codeSuffix) return true;
+        if (eCode === ('key' + codeSuffix) || eCode === codeSuffix) return true;
+        if (formatted === 'space' && (eCode === 'space' || eKey === ' ')) return true;
+      }
+
+      // 3. Check if any currently transmitting tab has this action key
+      if (appState && appState.tabs) {
+        for (const tab of appState.tabs) {
+          if (tab.isTransmitting && tab.actionBadge) {
+            const actionKey = getActionKeyFromBadge(tab.actionBadge).toLowerCase();
+            if (actionKey && (eKey === actionKey || eCode === ('key' + actionKey))) return true;
+            if (actionKey === 'space' && (eKey === ' ' || eCode === 'space')) return true;
+          }
+        }
+      }
+
+      return false;
+    }
+
     // Dynamic black/white text contrast calculation
     function getContrastTextColor(hex) {
       if (!hex || !/^#[0-9A-Fa-f]{6}$/.test(hex)) return '#FFFFFF';
@@ -734,6 +795,7 @@
 
           btn.onclick = async () => {
             if (tile.hasFile) {
+              recordOptimisticActionTrigger(selectedTabIndex);
               await apiPost(`/api/toggle/${selectedTabIndex}/${tile.index}`);
             }
           };
@@ -822,6 +884,14 @@
       // Ignore if typing inside input
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
 
+      // Ignore OS key repeats (especially from virtual key injection holding keys down)
+      if (e.repeat) return;
+
+      // Ignore synthetic keystrokes matching actively transmitting PTT/Mute actions to prevent feedback loops
+      if (isEventKeyTransmitting(e)) {
+        return;
+      }
+
       const key = e.key;
 
       if (key === ' ' || e.code === 'Space') {
@@ -852,6 +922,7 @@
         for (const tile of tiles) {
           if (tile.hasFile && tile.hotkey && tile.hotkey.toLowerCase() === key.toLowerCase()) {
             e.preventDefault();
+            recordOptimisticActionTrigger(selectedTabIndex);
             apiPost(`/api/toggle/${selectedTabIndex}/${tile.index}`);
             return;
           }
