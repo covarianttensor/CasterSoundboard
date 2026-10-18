@@ -38,10 +38,7 @@ SoundboardProjectController::SoundboardProjectController(QObject *parent)
         for (int i = first; i <= last; ++i) {
             SoundboardGridModel *g = m_tabModel->gridModelAt(i);
             if (g) {
-                connect(g, &QAbstractItemModel::rowsInserted, this, [this]() {
-                    applyOutputDeviceToAllTiles();
-                    setupPttCoordination();
-                });
+                connectGridModel(g);
             }
         }
         applyOutputDeviceToAllTiles();
@@ -389,6 +386,52 @@ QAudioDevice SoundboardProjectController::currentAudioOutputDevice() const
     }
 
     return QMediaDevices::defaultAudioOutput();
+}
+
+void SoundboardProjectController::connectGridModel(SoundboardGridModel *grid)
+{
+    if (!grid)
+        return;
+
+    grid->disconnect(this);
+
+    connect(grid, &QAbstractItemModel::rowsInserted, this, [this]() {
+        applyOutputDeviceToAllTiles();
+        setupPttCoordination();
+        setDirty(true);
+    });
+
+    connect(grid, &QAbstractItemModel::rowsRemoved, this, [this]() {
+        setupPttCoordination();
+        setDirty(true);
+    });
+
+    connect(grid, &QAbstractItemModel::rowsMoved, this, [this]() {
+        setDirty(true);
+    });
+
+    connect(grid, &QAbstractItemModel::dataChanged, this, [this](const QModelIndex &, const QModelIndex &, const QList<int> &roles) {
+        bool isUserEdit = false;
+        if (roles.isEmpty()) {
+            isUserEdit = true;
+        } else {
+            for (int r : roles) {
+                if (r != SoundboardGridModel::PlaybackStateRole &&
+                    r != SoundboardGridModel::PositionMsRole &&
+                    r != SoundboardGridModel::DurationMsRole &&
+                    r != SoundboardGridModel::HasVideoRole &&
+                    r != SoundboardGridModel::TileRole &&
+                    r != SoundboardGridModel::IdRole) {
+                    isUserEdit = true;
+                    break;
+                }
+            }
+        }
+        if (isUserEdit) {
+            setupPttCoordination();
+            setDirty(true);
+        }
+    });
 }
 
 void SoundboardProjectController::applyOutputDeviceToAllTiles()

@@ -131,6 +131,7 @@ signals:
 
 private:
     void setDirty(bool dirty);
+    void connectGridModel(SoundboardGridModel *grid);
     void applyDuckingToAllTiles();
     void applyOutputDeviceToAllTiles();
     void setupPttCoordination();

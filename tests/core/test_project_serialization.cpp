@@ -255,6 +255,39 @@ private slots:
         project.toggleAudioDucking();
         QCOMPARE(project.isDuckingActive(), false);
     }
+
+    void testDirtyStateTracking()
+    {
+        QTemporaryDir tempDir;
+        QVERIFY(tempDir.isValid());
+        QString projectPath = tempDir.filePath("dirty_test.caster");
+
+        SoundboardProjectController project;
+        // Starts clean on new project
+        QCOMPARE(project.isDirty(), false);
+        QCOMPARE(project.filePath(), QString());
+
+        // Adding a tile marks dirty
+        auto *tile = project.tabModel()->gridModelAt(0)->appendTile();
+        QCOMPARE(project.isDirty(), true);
+
+        // Saving marks clean
+        QVERIFY(project.saveProject(projectPath));
+        QCOMPARE(project.isDirty(), false);
+        QCOMPARE(project.filePath(), projectPath);
+
+        // Modifying tile volume marks dirty
+        tile->setVolume(0.5);
+        QCOMPARE(project.isDirty(), true);
+
+        // Saving again marks clean
+        QVERIFY(project.saveProject(projectPath));
+        QCOMPARE(project.isDirty(), false);
+
+        // Removing tile marks dirty
+        project.tabModel()->gridModelAt(0)->removeTile(0);
+        QCOMPARE(project.isDirty(), true);
+    }
 };
 
 QTEST_MAIN(TestProjectSerialization)

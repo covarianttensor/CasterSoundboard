@@ -26,7 +26,13 @@ Item {
         lines.push("- **Core Architecture:** C++17 (Headless CasterCore static engine)");
         lines.push("- **OS Platform:** Linux (Wayland / X11)");
         lines.push("- **Active Project:** " + ((typeof projectController !== "undefined" && projectController.filePath.length > 0) ? projectController.filePath : "Unsaved Project (Memory)"));
-        lines.push("- **Project Status:** " + ((typeof projectController !== "undefined" && projectController.isDirty) ? "Modified *" : "Saved / Clean"));
+        var projStatus = "New Project (Clean)";
+        if (typeof projectController !== "undefined" && projectController.filePath.length > 0) {
+            projStatus = projectController.isDirty ? "Modified *" : "Saved / Clean";
+        } else if (typeof projectController !== "undefined" && projectController.isDirty) {
+            projStatus = "Unsaved Changes (Memory) *";
+        }
+        lines.push("- **Project Status:** " + projStatus);
         lines.push("- **Soundboard Tabs:** " + ((typeof projectController !== "undefined" && projectController.tabModel) ? projectController.tabModel.count : 0));
         lines.push("- **Total Sound Tiles:** " + calculateTotalTiles());
         lines.push("- **Tile Zoom Scale:** " + ((typeof projectController !== "undefined") ? Math.round(projectController.tileScale * 100) + "%" : "100%"));
@@ -320,26 +326,32 @@ Item {
                                 font.pointSize: 12
                             }
                             Item { Layout.fillWidth: true }
-                            // Dirty / Saved indicator
+                            // Project Persistence Status Badge (New, Saved, or Modified)
                             Rectangle {
-                                color: (typeof projectController !== "undefined" && projectController.isDirty) ? "#4A2B0F" : "#064E3B"
-                                border.color: (typeof projectController !== "undefined" && projectController.isDirty) ? "#F59E0B" : "#10B981"
+                                readonly property bool hasFile: typeof projectController !== "undefined" && projectController.filePath.length > 0
+                                readonly property bool isModified: typeof projectController !== "undefined" && projectController.isDirty
+
+                                color: isModified ? "#4A2B0F" : (hasFile ? "#064E3B" : "#1E293B")
+                                border.color: isModified ? "#F59E0B" : (hasFile ? "#10B981" : "#475569")
                                 border.width: 1
                                 radius: 4
                                 implicitWidth: projectStatusText.implicitWidth + 14
                                 implicitHeight: 22
+
                                 RowLayout {
                                     anchors.centerIn: parent
                                     spacing: 4
                                     Text {
-                                        text: (typeof projectController !== "undefined" && projectController.isDirty) ? "●" : "✓"
-                                        color: (typeof projectController !== "undefined" && projectController.isDirty) ? "#F59E0B" : "#10B981"
+                                        text: parent.parent.isModified ? "●" : (parent.parent.hasFile ? "✓" : "○")
+                                        color: parent.parent.isModified ? "#F59E0B" : (parent.parent.hasFile ? "#10B981" : "#94A3B8")
                                         font.pixelSize: 8
                                     }
                                     Text {
                                         id: projectStatusText
-                                        text: (typeof projectController !== "undefined" && projectController.isDirty) ? qsTr("Modified *") : qsTr("Saved")
-                                        color: (typeof projectController !== "undefined" && projectController.isDirty) ? "#FDE68A" : "#A7F3D0"
+                                        text: parent.parent.isModified
+                                              ? (parent.parent.hasFile ? qsTr("Modified *") : qsTr("Unsaved *"))
+                                              : (parent.parent.hasFile ? qsTr("Saved") : qsTr("New Project"))
+                                        color: parent.parent.isModified ? "#FDE68A" : (parent.parent.hasFile ? "#A7F3D0" : "#94A3B8")
                                         font.bold: true
                                         font.pointSize: 8.5
                                     }
