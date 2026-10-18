@@ -10,7 +10,7 @@ execute_process(
         -DSOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}
         -DHEADER_OUTPUT=${CASTER_GENERATED_DIR}/CasterVersion.h
         -DEXPLICIT_VERSION=${CASTER_VERSION}
-        -DFALLBACK_VERSION=2.1.0
+        -DFALLBACK_VERSION=2.1.1
         -DSEMVER_OUTPUT=${CASTER_GENERATED_DIR}/semver.txt
         -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/GenerateVersionHeader.cmake
 )
@@ -19,7 +19,7 @@ if(EXISTS "${CASTER_GENERATED_DIR}/semver.txt")
     file(READ "${CASTER_GENERATED_DIR}/semver.txt" PROJECT_VERSION_STRING)
     string(STRIP "${PROJECT_VERSION_STRING}" PROJECT_VERSION_STRING)
 else()
-    set(PROJECT_VERSION_STRING "2.1.0")
+    set(PROJECT_VERSION_STRING "2.1.1")
 endif()
 
 project(CasterSoundboard VERSION ${PROJECT_VERSION_STRING} LANGUAGES CXX)
@@ -30,7 +30,7 @@ add_custom_target(generate_version_header
         -DSOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}
         -DHEADER_OUTPUT=${CASTER_GENERATED_DIR}/CasterVersion.h
         -DEXPLICIT_VERSION=${CASTER_VERSION}
-        -DFALLBACK_VERSION=2.1.0
+        -DFALLBACK_VERSION=2.1.1
         -DSEMVER_OUTPUT=${CASTER_GENERATED_DIR}/semver.txt
         -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/GenerateVersionHeader.cmake
     BYPRODUCTS ${CASTER_GENERATED_DIR}/CasterVersion.h

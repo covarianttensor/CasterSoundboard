@@ -26,6 +26,11 @@
   <url type="bugtracker">https://github.com/covarianttensor/CasterSoundboard/issues</url>
   <content_rating type="oars-1.1" />
   <releases>
+    <release version="2.1.1" date="2026-10-18">
+      <description>
+        <p>Fixed PipeWire default source name collision on shared node names (#27), normalized XKB scan code offsets in PTT/Mute key capture (#28), prioritized key capture over active hotkeys (#28), and enhanced contrast of advanced audio settings checkboxes.</p>
+      </description>
+    </release>
     <release version="2.1.0" date="2026-10-18">
       <description>
         <p>Batch import directories directly into soundboards, clone tabs, manage PTT profiles with custom names, and customize all top action bar global shortcuts.</p>
