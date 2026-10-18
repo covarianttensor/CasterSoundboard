@@ -285,232 +285,308 @@ Item {
                 }
             }
 
-            // Global Action Shortcuts Setting (Panic / Stop All & Ducking)
+                // Global & Top Bar Action Shortcuts Setting
                 Rectangle {
                     Layout.fillWidth: true
-                    Layout.preferredHeight: 185
+                    implicitHeight: shortcutsCol.implicitHeight + 32
+                    Layout.preferredHeight: implicitHeight
                     color: "#222528"
                     radius: 8
                     border.color: "#33373B"
                     border.width: 1
 
+                    component ShortcutRow : RowLayout {
+                        id: sr
+                        property string iconSource: ""
+                        property string iconColor: "#2C353D"
+                        property string iconText: ""
+                        property string title: ""
+                        property string subtitle: ""
+                        property string hotkey: ""
+                        property string actionKey: ""
+                        signal clearRequested()
+
+                        Layout.fillWidth: true
+                        spacing: 12
+
+                        Rectangle {
+                            width: 28
+                            height: 28
+                            radius: 4
+                            color: sr.iconColor
+
+                            Image {
+                                anchors.centerIn: parent
+                                source: sr.iconSource
+                                sourceSize: Qt.size(16, 16)
+                                fillMode: Image.PreserveAspectFit
+                                visible: sr.iconSource.length > 0
+                            }
+
+                            Text {
+                                anchors.centerIn: parent
+                                text: sr.iconText
+                                font.pixelSize: 13
+                                visible: sr.iconText.length > 0
+                            }
+                        }
+
+                        ColumnLayout {
+                            Layout.fillWidth: true
+                            spacing: 2
+                            Text {
+                                text: sr.title
+                                color: "#FFFFFF"
+                                font.bold: true
+                                font.pointSize: 10
+                            }
+                            Text {
+                                text: sr.subtitle
+                                color: "#888888"
+                                font.pointSize: 8.5
+                            }
+                        }
+
+                        // Shortcut Badge
+                        Rectangle {
+                            Layout.preferredHeight: 30
+                            Layout.preferredWidth: Math.max(70, badgeText.implicitWidth + 20)
+                            radius: 6
+                            color: "#16181B"
+                            border.color: (sr.hotkey && sr.hotkey.length > 0) ? "#8E2DE2" : "#33373B"
+                            border.width: 1
+
+                            Text {
+                                id: badgeText
+                                anchors.centerIn: parent
+                                text: (sr.hotkey && sr.hotkey.length > 0) ? sr.hotkey : qsTr("None")
+                                color: (sr.hotkey && sr.hotkey.length > 0) ? "#FFFFFF" : "#777777"
+                                font.bold: (sr.hotkey && sr.hotkey.length > 0)
+                                font.pointSize: 9.5
+                            }
+                        }
+
+                        Button {
+                            text: qsTr("Change")
+                            Layout.preferredHeight: 32
+                            Layout.preferredWidth: 70
+                            background: Rectangle {
+                                color: parent.hovered ? "#9D3BF0" : "#8E2DE2"
+                                radius: 5
+                            }
+                            contentItem: Text {
+                                text: parent.text
+                                color: "#FFFFFF"
+                                font.bold: true
+                                font.pointSize: 9
+                                horizontalAlignment: Text.AlignHCenter
+                                verticalAlignment: Text.AlignVCenter
+                            }
+                            onClicked: root.actionHotkeyPromptRequested(sr.actionKey)
+                        }
+
+                        Button {
+                            text: qsTr("Clear")
+                            Layout.preferredHeight: 32
+                            Layout.preferredWidth: 60
+                            visible: sr.hotkey && sr.hotkey.length > 0
+                            background: Rectangle {
+                                color: parent.hovered ? "#3E1E22" : "#2A181A"
+                                radius: 5
+                                border.color: "#8B2635"
+                                border.width: 1
+                            }
+                            contentItem: Text {
+                                text: parent.text
+                                color: "#FF8A96"
+                                font.bold: true
+                                font.pointSize: 9
+                                horizontalAlignment: Text.AlignHCenter
+                                verticalAlignment: Text.AlignVCenter
+                            }
+                            onClicked: sr.clearRequested()
+                        }
+                    }
+
                     ColumnLayout {
+                        id: shortcutsCol
                         anchors.fill: parent
                         anchors.margins: 16
                         spacing: 12
 
                         Text {
-                            text: qsTr("Global Action Shortcuts")
+                            text: qsTr("Global & Top Bar Action Shortcuts")
                             color: "#FFFFFF"
                             font.bold: true
                             font.pointSize: 12
                         }
 
                         Text {
-                            text: qsTr("Assign custom keyboard shortcuts to instantly panic-stop all sounds or toggle audio ducking during production.")
+                            text: qsTr("Configure keyboard shortcuts for top bar actions, project management, soundboard tabs, and live production controls.")
                             color: "#AAAAAA"
                             font.pointSize: 9.5
                             wrapMode: Text.WordWrap
                             Layout.fillWidth: true
                         }
 
-                        // Stop All sounds row
-                        RowLayout {
-                            Layout.fillWidth: true
-                            spacing: 12
+                        // --- Production & Audio Controls ---
+                        Text {
+                            text: qsTr("Production & Audio Controls")
+                            color: "#C084FC"
+                            font.bold: true
+                            font.pointSize: 9.5
+                            Layout.topMargin: 4
+                        }
 
-                            Rectangle {
-                                width: 28
-                                height: 28
-                                radius: 4
-                                color: "#962D22"
-                                Image {
-                                    source: "../icons/stopAll.png"
-                                    anchors.centerIn: parent
-                                    sourceSize: Qt.size(16, 16)
-                                    fillMode: Image.PreserveAspectFit
-                                }
-                            }
-
-                            ColumnLayout {
-                                Layout.fillWidth: true
-                                spacing: 2
-                                Text {
-                                    text: qsTr("Stop All Sounds (Panic Button)")
-                                    color: "#FFFFFF"
-                                    font.bold: true
-                                    font.pointSize: 10
-                                }
-                                Text {
-                                    text: qsTr("Immediately halts playback of all active sounds on every tab.")
-                                    color: "#888888"
-                                    font.pointSize: 8.5
-                                }
-                            }
-
-                            // Shortcut Badge
-                            Rectangle {
-                                Layout.preferredHeight: 30
-                                Layout.preferredWidth: Math.max(70, stopAllText.implicitWidth + 20)
-                                radius: 6
-                                color: "#16181B"
-                                border.color: (typeof projectController !== "undefined" && projectController.stopAllHotkey.length > 0) ? "#8E2DE2" : "#33373B"
-                                border.width: 1
-
-                                Text {
-                                    id: stopAllText
-                                    anchors.centerIn: parent
-                                    text: (typeof projectController !== "undefined" && projectController.stopAllHotkey.length > 0)
-                                          ? projectController.stopAllHotkey : qsTr("None")
-                                    color: (typeof projectController !== "undefined" && projectController.stopAllHotkey.length > 0) ? "#FFFFFF" : "#777777"
-                                    font.bold: (typeof projectController !== "undefined" && projectController.stopAllHotkey.length > 0)
-                                    font.pointSize: 9.5
-                                }
-                            }
-
-                            Button {
-                                text: qsTr("Change")
-                                Layout.preferredHeight: 32
-                                Layout.preferredWidth: 70
-                                background: Rectangle {
-                                    color: parent.hovered ? "#9D3BF0" : "#8E2DE2"
-                                    radius: 5
-                                }
-                                contentItem: Text {
-                                    text: parent.text
-                                    color: "#FFFFFF"
-                                    font.bold: true
-                                    font.pointSize: 9
-                                    horizontalAlignment: Text.AlignHCenter
-                                    verticalAlignment: Text.AlignVCenter
-                                }
-                                onClicked: root.actionHotkeyPromptRequested("stopAll")
-                            }
-
-                            Button {
-                                text: qsTr("Clear")
-                                Layout.preferredHeight: 32
-                                Layout.preferredWidth: 60
-                                visible: typeof projectController !== "undefined" && projectController.stopAllHotkey.length > 0
-                                background: Rectangle {
-                                    color: parent.hovered ? "#3E1E22" : "#2A181A"
-                                    radius: 5
-                                    border.color: "#8B2635"
-                                    border.width: 1
-                                }
-                                contentItem: Text {
-                                    text: parent.text
-                                    color: "#FF8A96"
-                                    font.bold: true
-                                    font.pointSize: 9
-                                    horizontalAlignment: Text.AlignHCenter
-                                    verticalAlignment: Text.AlignVCenter
-                                }
-                                onClicked: {
-                                    if (typeof projectController !== "undefined") {
-                                        projectController.stopAllHotkey = "";
-                                    }
-                                }
+                        ShortcutRow {
+                            iconSource: "../icons/stopAll.png"
+                            iconColor: "#962D22"
+                            title: qsTr("Stop All Sounds (Panic Button)")
+                            subtitle: qsTr("Immediately halts playback of all active sounds on every tab.")
+                            hotkey: typeof projectController !== "undefined" ? projectController.stopAllHotkey : ""
+                            actionKey: "stopAll"
+                            onClearRequested: {
+                                if (typeof projectController !== "undefined") projectController.stopAllHotkey = "";
                             }
                         }
 
-                        // Ducking row
-                        RowLayout {
+                        ShortcutRow {
+                            iconSource: "../icons/duck.png"
+                            iconColor: "#F39C12"
+                            title: qsTr("Toggle Audio Ducking")
+                            subtitle: qsTr("Ducks playing sound volume down to the configured attenuation ratio.")
+                            hotkey: typeof projectController !== "undefined" ? projectController.duckingHotkey : ""
+                            actionKey: "ducking"
+                            onClearRequested: {
+                                if (typeof projectController !== "undefined") projectController.duckingHotkey = "";
+                            }
+                        }
+
+                        ShortcutRow {
+                            iconSource: "../icons/Key.png"
+                            iconColor: "#2C353D"
+                            title: qsTr("Toggle Hotkey Listening (Mute Mode)")
+                            subtitle: qsTr("Temporarily mutes/unmutes sound tile shortcuts while typing notes or chat.")
+                            hotkey: typeof projectController !== "undefined" ? projectController.muteHotkeysHotkey : ""
+                            actionKey: "muteHotkeys"
+                            onClearRequested: {
+                                if (typeof projectController !== "undefined") projectController.muteHotkeysHotkey = "";
+                            }
+                        }
+
+                        ShortcutRow {
+                            iconText: "🎙️"
+                            iconColor: "#2F2344"
+                            title: qsTr("Configure Push-to-Talk (PTT)")
+                            subtitle: qsTr("Opens the Push-to-Talk and microphone automation dialog.")
+                            hotkey: typeof projectController !== "undefined" ? projectController.pttDialogHotkey : ""
+                            actionKey: "pttDialog"
+                            onClearRequested: {
+                                if (typeof projectController !== "undefined") projectController.pttDialogHotkey = "";
+                            }
+                        }
+
+                        // --- Soundboard Tab Controls ---
+                        Rectangle {
                             Layout.fillWidth: true
-                            spacing: 12
+                            height: 1
+                            color: "#2C3035"
+                            Layout.topMargin: 4
+                            Layout.bottomMargin: 2
+                        }
 
-                            Rectangle {
-                                width: 28
-                                height: 28
-                                radius: 4
-                                color: "#F39C12"
-                                Image {
-                                    source: "../icons/duck.png"
-                                    anchors.centerIn: parent
-                                    sourceSize: Qt.size(16, 16)
-                                    fillMode: Image.PreserveAspectFit
-                                }
+                        Text {
+                            text: qsTr("Soundboard Tab Controls")
+                            color: "#C084FC"
+                            font.bold: true
+                            font.pointSize: 9.5
+                        }
+
+                        ShortcutRow {
+                            iconSource: "../icons/newTab.png"
+                            iconColor: "#2C353D"
+                            title: qsTr("Add Soundboard Tab")
+                            subtitle: qsTr("Creates a new soundboard bank tab in the current workspace.")
+                            hotkey: typeof projectController !== "undefined" ? projectController.newTabHotkey : ""
+                            actionKey: "newTab"
+                            onClearRequested: {
+                                if (typeof projectController !== "undefined") projectController.newTabHotkey = "";
                             }
+                        }
 
-                            ColumnLayout {
-                                Layout.fillWidth: true
-                                spacing: 2
-                                Text {
-                                    text: qsTr("Toggle Audio Ducking")
-                                    color: "#FFFFFF"
-                                    font.bold: true
-                                    font.pointSize: 10
-                                }
-                                Text {
-                                    text: qsTr("Ducks playing sound volume down to the configured attenuation ratio.")
-                                    color: "#888888"
-                                    font.pointSize: 8.5
-                                }
+                        ShortcutRow {
+                            iconSource: "../icons/import_directory.png"
+                            iconColor: "#2C2340"
+                            title: qsTr("Import Directory as Soundboard")
+                            subtitle: qsTr("Discovers audio files in a folder and creates a populated soundboard tab.")
+                            hotkey: typeof projectController !== "undefined" ? projectController.importDirectoryHotkey : ""
+                            actionKey: "importDirectory"
+                            onClearRequested: {
+                                if (typeof projectController !== "undefined") projectController.importDirectoryHotkey = "";
                             }
+                        }
 
-                            // Shortcut Badge
-                            Rectangle {
-                                Layout.preferredHeight: 30
-                                Layout.preferredWidth: Math.max(70, duckingText.implicitWidth + 20)
-                                radius: 6
-                                color: "#16181B"
-                                border.color: (typeof projectController !== "undefined" && projectController.duckingHotkey.length > 0) ? "#8E2DE2" : "#33373B"
-                                border.width: 1
-
-                                Text {
-                                    id: duckingText
-                                    anchors.centerIn: parent
-                                    text: (typeof projectController !== "undefined" && projectController.duckingHotkey.length > 0)
-                                          ? projectController.duckingHotkey : qsTr("None")
-                                    color: (typeof projectController !== "undefined" && projectController.duckingHotkey.length > 0) ? "#FFFFFF" : "#777777"
-                                    font.bold: (typeof projectController !== "undefined" && projectController.duckingHotkey.length > 0)
-                                    font.pointSize: 9.5
-                                }
+                        ShortcutRow {
+                            iconSource: "../icons/rename.png"
+                            iconColor: "#2C353D"
+                            title: qsTr("Rename Current Tab")
+                            subtitle: qsTr("Opens the prompt to rename the currently active soundboard tab.")
+                            hotkey: typeof projectController !== "undefined" ? projectController.renameTabHotkey : ""
+                            actionKey: "renameTab"
+                            onClearRequested: {
+                                if (typeof projectController !== "undefined") projectController.renameTabHotkey = "";
                             }
+                        }
 
-                            Button {
-                                text: qsTr("Change")
-                                Layout.preferredHeight: 32
-                                Layout.preferredWidth: 70
-                                background: Rectangle {
-                                    color: parent.hovered ? "#9D3BF0" : "#8E2DE2"
-                                    radius: 5
-                                }
-                                contentItem: Text {
-                                    text: parent.text
-                                    color: "#FFFFFF"
-                                    font.bold: true
-                                    font.pointSize: 9
-                                    horizontalAlignment: Text.AlignHCenter
-                                    verticalAlignment: Text.AlignVCenter
-                                }
-                                onClicked: root.actionHotkeyPromptRequested("ducking")
+                        // --- Project & File Controls ---
+                        Rectangle {
+                            Layout.fillWidth: true
+                            height: 1
+                            color: "#2C3035"
+                            Layout.topMargin: 4
+                            Layout.bottomMargin: 2
+                        }
+
+                        Text {
+                            text: qsTr("Project & File Controls")
+                            color: "#C084FC"
+                            font.bold: true
+                            font.pointSize: 9.5
+                        }
+
+                        ShortcutRow {
+                            iconSource: "../icons/open.png"
+                            iconColor: "#2C353D"
+                            title: qsTr("Open Project")
+                            subtitle: qsTr("Opens an existing .caster project file from disk.")
+                            hotkey: typeof projectController !== "undefined" ? projectController.openProjectHotkey : ""
+                            actionKey: "openProject"
+                            onClearRequested: {
+                                if (typeof projectController !== "undefined") projectController.openProjectHotkey = "";
                             }
+                        }
 
-                            Button {
-                                text: qsTr("Clear")
-                                Layout.preferredHeight: 32
-                                Layout.preferredWidth: 60
-                                visible: typeof projectController !== "undefined" && projectController.duckingHotkey.length > 0
-                                background: Rectangle {
-                                    color: parent.hovered ? "#3E1E22" : "#2A181A"
-                                    radius: 5
-                                    border.color: "#8B2635"
-                                    border.width: 1
-                                }
-                                contentItem: Text {
-                                    text: parent.text
-                                    color: "#FF8A96"
-                                    font.bold: true
-                                    font.pointSize: 9
-                                    horizontalAlignment: Text.AlignHCenter
-                                    verticalAlignment: Text.AlignVCenter
-                                }
-                                onClicked: {
-                                    if (typeof projectController !== "undefined") {
-                                        projectController.duckingHotkey = "";
-                                    }
-                                }
+                        ShortcutRow {
+                            iconSource: "../icons/save.png"
+                            iconColor: "#2C353D"
+                            title: qsTr("Save Project")
+                            subtitle: qsTr("Saves the active soundboard project to disk.")
+                            hotkey: typeof projectController !== "undefined" ? projectController.saveProjectHotkey : ""
+                            actionKey: "saveProject"
+                            onClearRequested: {
+                                if (typeof projectController !== "undefined") projectController.saveProjectHotkey = "";
+                            }
+                        }
+
+                        ShortcutRow {
+                            iconSource: "../icons/save_as.png"
+                            iconColor: "#2C353D"
+                            title: qsTr("Save Project As...")
+                            subtitle: qsTr("Saves the current soundboard project under a new file path.")
+                            hotkey: typeof projectController !== "undefined" ? projectController.saveAsProjectHotkey : ""
+                            actionKey: "saveAsProject"
+                            onClearRequested: {
+                                if (typeof projectController !== "undefined") projectController.saveAsProjectHotkey = "";
                             }
                         }
                     }

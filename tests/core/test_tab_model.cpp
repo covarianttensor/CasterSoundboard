@@ -1,5 +1,8 @@
 #include <QTest>
 #include <QSignalSpy>
+#include <QTemporaryDir>
+#include <QDir>
+#include <QFile>
 #include "SoundboardTabModel.h"
 #include "SoundboardGridModel.h"
 #include "SoundTileController.h"
@@ -227,6 +230,93 @@ private slots:
         // Invalid index
         QCOMPARE(tabs.cloneTab(-1), -1);
         QCOMPARE(tabs.cloneTab(99), -1);
+    }
+
+    void testImportDirectory()
+    {
+        QTemporaryDir tempDir;
+        QVERIFY(tempDir.isValid());
+
+        QDir rootDir(tempDir.path());
+        rootDir.mkdir("SFX");
+        rootDir.mkdir("Music");
+
+        auto touchFile = [](const QString &path) {
+            QFile f(path);
+            if (f.open(QIODevice::WriteOnly)) {
+                f.write("dummy audio content");
+                f.close();
+            }
+        };
+
+        // Create root files
+        touchFile(tempDir.filePath("track10.mp3"));
+        touchFile(tempDir.filePath("track2.wav"));
+        touchFile(tempDir.filePath("track1.ogg"));
+        touchFile(tempDir.filePath("readme.txt")); // Non-audio file should be ignored
+
+        // Create nested files
+        touchFile(tempDir.filePath("SFX/laser.wav"));
+        touchFile(tempDir.filePath("SFX/track1.wav")); // Duplicate base name across folders
+        touchFile(tempDir.filePath("Music/theme.flac"));
+
+        SoundboardTabModel tabs;
+
+        // Count checks
+        QCOMPARE(tabs.countPlayableFilesInDirectory(tempDir.path(), false), 3); // Root only (track1, track2, track10)
+        QCOMPARE(tabs.countPlayableFilesInDirectory(tempDir.path(), true), 6);  // Recursive (3 root + 2 SFX + 1 Music)
+
+        // Invalid directory
+        QCOMPARE(tabs.countPlayableFilesInDirectory("/path/does/not/exist", true), 0);
+        QCOMPARE(tabs.importDirectory("/path/does/not/exist", true), -1);
+
+        // Empty directory import
+        QTemporaryDir emptyDir;
+        QVERIFY(emptyDir.isValid());
+        QCOMPARE(tabs.importDirectory(emptyDir.path(), true), -1);
+        QCOMPARE(tabs.count(), 0);
+
+        // Non-recursive import
+        int idx1 = tabs.importDirectory(tempDir.path(), false, "Root Only Board",
+                                       SoundboardTabModel::RootFilesFirst,
+                                       SoundboardTabModel::FilenameOnly);
+        QCOMPARE(idx1, 0);
+        QCOMPARE(tabs.count(), 1);
+        QCOMPARE(tabs.currentIndex(), 0);
+        QCOMPARE(tabs.tabNameAt(0), QString("Root Only Board"));
+
+        SoundboardGridModel *grid1 = tabs.gridModelAt(0);
+        QVERIFY(grid1 != nullptr);
+        QCOMPARE(grid1->count(), 3);
+        // Verify natural numeric sort: track1, track2, track10 (not track1, track10, track2)
+        QCOMPARE(grid1->tileAt(0)->displayName(), QString("track1"));
+        QCOMPARE(grid1->tileAt(1)->displayName(), QString("track2"));
+        QCOMPARE(grid1->tileAt(2)->displayName(), QString("track10"));
+
+        // Recursive import with RootFilesFirst order & DisambiguateDuplicates naming
+        int idx2 = tabs.importDirectory(tempDir.path(), true, "Full Library",
+                                       SoundboardTabModel::RootFilesFirst,
+                                       SoundboardTabModel::DisambiguateDuplicates);
+        QCOMPARE(idx2, 1);
+        QCOMPARE(tabs.count(), 2);
+        QCOMPARE(tabs.currentIndex(), 1);
+
+        SoundboardGridModel *grid2 = tabs.gridModelAt(1);
+        QVERIFY(grid2 != nullptr);
+        QCOMPARE(grid2->count(), 6);
+
+        // First 3 should be root files in natural order:
+        QCOMPARE(grid2->tileAt(0)->displayName(), QString("track1"));
+        QCOMPARE(grid2->tileAt(1)->displayName(), QString("track2"));
+        QCOMPARE(grid2->tileAt(2)->displayName(), QString("track10"));
+
+        // Followed by nested files:
+        // Music/theme.flac (unique, so no prefix)
+        // SFX/laser.wav (unique, so no prefix)
+        // SFX/track1.wav (collides with root track1, so prefixed as "SFX / track1")
+        QCOMPARE(grid2->tileAt(3)->displayName(), QString("theme"));
+        QCOMPARE(grid2->tileAt(4)->displayName(), QString("laser"));
+        QCOMPARE(grid2->tileAt(5)->displayName(), QString("SFX / track1"));
     }
 };
 

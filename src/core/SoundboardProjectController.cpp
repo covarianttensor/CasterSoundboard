@@ -204,6 +204,78 @@ void SoundboardProjectController::setDuckingHotkey(const QString &hotkey)
     emit duckingHotkeyChanged();
 }
 
+void SoundboardProjectController::setOpenProjectHotkey(const QString &hotkey)
+{
+    if (m_openProjectHotkey == hotkey)
+        return;
+    m_openProjectHotkey = hotkey;
+    setDirty(true);
+    emit openProjectHotkeyChanged();
+}
+
+void SoundboardProjectController::setSaveProjectHotkey(const QString &hotkey)
+{
+    if (m_saveProjectHotkey == hotkey)
+        return;
+    m_saveProjectHotkey = hotkey;
+    setDirty(true);
+    emit saveProjectHotkeyChanged();
+}
+
+void SoundboardProjectController::setSaveAsProjectHotkey(const QString &hotkey)
+{
+    if (m_saveAsProjectHotkey == hotkey)
+        return;
+    m_saveAsProjectHotkey = hotkey;
+    setDirty(true);
+    emit saveAsProjectHotkeyChanged();
+}
+
+void SoundboardProjectController::setNewTabHotkey(const QString &hotkey)
+{
+    if (m_newTabHotkey == hotkey)
+        return;
+    m_newTabHotkey = hotkey;
+    setDirty(true);
+    emit newTabHotkeyChanged();
+}
+
+void SoundboardProjectController::setImportDirectoryHotkey(const QString &hotkey)
+{
+    if (m_importDirectoryHotkey == hotkey)
+        return;
+    m_importDirectoryHotkey = hotkey;
+    setDirty(true);
+    emit importDirectoryHotkeyChanged();
+}
+
+void SoundboardProjectController::setRenameTabHotkey(const QString &hotkey)
+{
+    if (m_renameTabHotkey == hotkey)
+        return;
+    m_renameTabHotkey = hotkey;
+    setDirty(true);
+    emit renameTabHotkeyChanged();
+}
+
+void SoundboardProjectController::setPttDialogHotkey(const QString &hotkey)
+{
+    if (m_pttDialogHotkey == hotkey)
+        return;
+    m_pttDialogHotkey = hotkey;
+    setDirty(true);
+    emit pttDialogHotkeyChanged();
+}
+
+void SoundboardProjectController::setMuteHotkeysHotkey(const QString &hotkey)
+{
+    if (m_muteHotkeysHotkey == hotkey)
+        return;
+    m_muteHotkeysHotkey = hotkey;
+    setDirty(true);
+    emit muteHotkeysHotkeyChanged();
+}
+
 void SoundboardProjectController::setDirty(bool dirty)
 {
     if (m_isDirty == dirty)
@@ -226,6 +298,14 @@ bool SoundboardProjectController::newProject()
     m_isMaximized = false;
     m_stopAllHotkey = "Space";
     m_duckingHotkey = "Ctrl+D";
+    m_openProjectHotkey = "Ctrl+O";
+    m_saveProjectHotkey = "Ctrl+S";
+    m_saveAsProjectHotkey = "Ctrl+Shift+S";
+    m_newTabHotkey = "Ctrl+N";
+    m_importDirectoryHotkey = "Ctrl+I";
+    m_renameTabHotkey = "F2";
+    m_pttDialogHotkey = "Ctrl+Shift+P";
+    m_muteHotkeysHotkey = "Ctrl+M";
 
     emit filePathChanged();
     emit isDirtyChanged();
@@ -234,6 +314,14 @@ bool SoundboardProjectController::newProject()
     emit isMaximizedChanged();
     emit stopAllHotkeyChanged();
     emit duckingHotkeyChanged();
+    emit openProjectHotkeyChanged();
+    emit saveProjectHotkeyChanged();
+    emit saveAsProjectHotkeyChanged();
+    emit newTabHotkeyChanged();
+    emit importDirectoryHotkeyChanged();
+    emit renameTabHotkeyChanged();
+    emit pttDialogHotkeyChanged();
+    emit muteHotkeysHotkeyChanged();
     return true;
 }
 
@@ -504,10 +592,18 @@ QJsonObject SoundboardProjectController::toJson() const
     // Hotkey settings
     root["hotkeyScope"] = m_hotkeyScope;
 
-    // Global action shortcuts
+    // Global and top bar action shortcuts
     QJsonObject shortcutsObj;
     shortcutsObj["stopAll"] = m_stopAllHotkey;
     shortcutsObj["ducking"] = m_duckingHotkey;
+    shortcutsObj["openProject"] = m_openProjectHotkey;
+    shortcutsObj["saveProject"] = m_saveProjectHotkey;
+    shortcutsObj["saveAsProject"] = m_saveAsProjectHotkey;
+    shortcutsObj["newTab"] = m_newTabHotkey;
+    shortcutsObj["importDirectory"] = m_importDirectoryHotkey;
+    shortcutsObj["renameTab"] = m_renameTabHotkey;
+    shortcutsObj["pttDialog"] = m_pttDialogHotkey;
+    shortcutsObj["muteHotkeys"] = m_muteHotkeysHotkey;
     root["shortcuts"] = shortcutsObj;
 
     // Push-to-Talk (PTT) profiles
@@ -554,9 +650,25 @@ bool SoundboardProjectController::fromJson(const QJsonObject &json)
         QJsonObject shortcuts = json["shortcuts"].toObject();
         setStopAllHotkey(shortcuts["stopAll"].toString("Space"));
         setDuckingHotkey(shortcuts["ducking"].toString("Ctrl+D"));
+        setOpenProjectHotkey(shortcuts.value("openProject").toString("Ctrl+O"));
+        setSaveProjectHotkey(shortcuts.value("saveProject").toString("Ctrl+S"));
+        setSaveAsProjectHotkey(shortcuts.value("saveAsProject").toString("Ctrl+Shift+S"));
+        setNewTabHotkey(shortcuts.value("newTab").toString("Ctrl+N"));
+        setImportDirectoryHotkey(shortcuts.value("importDirectory").toString("Ctrl+I"));
+        setRenameTabHotkey(shortcuts.value("renameTab").toString("F2"));
+        setPttDialogHotkey(shortcuts.value("pttDialog").toString("Ctrl+Shift+P"));
+        setMuteHotkeysHotkey(shortcuts.value("muteHotkeys").toString("Ctrl+M"));
     } else {
         setStopAllHotkey("Space");
         setDuckingHotkey("Ctrl+D");
+        setOpenProjectHotkey("Ctrl+O");
+        setSaveProjectHotkey("Ctrl+S");
+        setSaveAsProjectHotkey("Ctrl+Shift+S");
+        setNewTabHotkey("Ctrl+N");
+        setImportDirectoryHotkey("Ctrl+I");
+        setRenameTabHotkey("F2");
+        setPttDialogHotkey("Ctrl+Shift+P");
+        setMuteHotkeysHotkey("Ctrl+M");
     }
 
     if (json.contains("pttProfiles") && json["pttProfiles"].isArray()) {

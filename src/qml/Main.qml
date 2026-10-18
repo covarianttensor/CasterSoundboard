@@ -80,11 +80,33 @@ ApplicationWindow {
     }
 
     Shortcut {
-        sequence: "Ctrl+N"
+        sequence: (typeof projectController !== "undefined" && projectController.newTabHotkey && projectController.newTabHotkey.length > 0)
+                  ? projectController.newTabHotkey : ""
+        enabled: sequence.length > 0
         context: Qt.ApplicationShortcut
         onActivated: {
             if (projectController && projectController.tabModel) {
                 projectController.tabModel.addTab();
+            }
+        }
+    }
+
+    Shortcut {
+        sequence: (typeof projectController !== "undefined" && projectController.importDirectoryHotkey && projectController.importDirectoryHotkey.length > 0)
+                  ? projectController.importDirectoryHotkey : ""
+        enabled: sequence.length > 0
+        context: Qt.ApplicationShortcut
+        onActivated: importDirectoryDialog.openDialog()
+    }
+
+    Shortcut {
+        sequence: (typeof projectController !== "undefined" && projectController.renameTabHotkey && projectController.renameTabHotkey.length > 0)
+                  ? projectController.renameTabHotkey : ""
+        enabled: sequence.length > 0
+        context: Qt.ApplicationShortcut
+        onActivated: {
+            if (sidebar.currentIndex === 0) {
+                soundboardsView.requestRenameCurrentTab();
             }
         }
     }
@@ -100,13 +122,17 @@ ApplicationWindow {
     }
 
     Shortcut {
-        sequence: "Ctrl+O"
+        sequence: (typeof projectController !== "undefined" && projectController.openProjectHotkey && projectController.openProjectHotkey.length > 0)
+                  ? projectController.openProjectHotkey : ""
+        enabled: sequence.length > 0
         context: Qt.ApplicationShortcut
         onActivated: openDialog.open()
     }
 
     Shortcut {
-        sequence: "Ctrl+S"
+        sequence: (typeof projectController !== "undefined" && projectController.saveProjectHotkey && projectController.saveProjectHotkey.length > 0)
+                  ? projectController.saveProjectHotkey : ""
+        enabled: sequence.length > 0
         context: Qt.ApplicationShortcut
         onActivated: {
             if (projectController) {
@@ -120,9 +146,31 @@ ApplicationWindow {
     }
 
     Shortcut {
-        sequence: "Ctrl+Shift+S"
+        sequence: (typeof projectController !== "undefined" && projectController.saveAsProjectHotkey && projectController.saveAsProjectHotkey.length > 0)
+                  ? projectController.saveAsProjectHotkey : ""
+        enabled: sequence.length > 0
         context: Qt.ApplicationShortcut
         onActivated: saveAsDialog.open()
+    }
+
+    Shortcut {
+        sequence: (typeof projectController !== "undefined" && projectController.pttDialogHotkey && projectController.pttDialogHotkey.length > 0)
+                  ? projectController.pttDialogHotkey : ""
+        enabled: sequence.length > 0
+        context: Qt.ApplicationShortcut
+        onActivated: pttDialog.open()
+    }
+
+    Shortcut {
+        sequence: (typeof projectController !== "undefined" && projectController.muteHotkeysHotkey && projectController.muteHotkeysHotkey.length > 0)
+                  ? projectController.muteHotkeysHotkey : ""
+        enabled: sequence.length > 0
+        context: Qt.ApplicationShortcut
+        onActivated: {
+            if (typeof hotkeyManager !== "undefined") {
+                hotkeyManager.toggleMute();
+            }
+        }
     }
 
     Shortcut {
@@ -201,7 +249,7 @@ ApplicationWindow {
         leftPadding: 20
         rightPadding: 20
 
-        property string actionKey: "" // "stopAll" or "ducking"
+        property string actionKey: ""
         property string actionTitle: ""
         property string defaultKey: ""
         property string pendingSequence: ""
@@ -217,6 +265,38 @@ ApplicationWindow {
                 actionTitle = qsTr("Toggle Audio Ducking");
                 defaultKey = "Ctrl+D";
                 pendingSequence = (projectController && projectController.duckingHotkey) ? projectController.duckingHotkey : "Ctrl+D";
+            } else if (action === "openProject") {
+                actionTitle = qsTr("Open Project (.caster)");
+                defaultKey = "Ctrl+O";
+                pendingSequence = (projectController && projectController.openProjectHotkey) ? projectController.openProjectHotkey : "Ctrl+O";
+            } else if (action === "saveProject") {
+                actionTitle = qsTr("Save Project");
+                defaultKey = "Ctrl+S";
+                pendingSequence = (projectController && projectController.saveProjectHotkey) ? projectController.saveProjectHotkey : "Ctrl+S";
+            } else if (action === "saveAsProject") {
+                actionTitle = qsTr("Save Project As...");
+                defaultKey = "Ctrl+Shift+S";
+                pendingSequence = (projectController && projectController.saveAsProjectHotkey) ? projectController.saveAsProjectHotkey : "Ctrl+Shift+S";
+            } else if (action === "newTab") {
+                actionTitle = qsTr("Add Soundboard Tab");
+                defaultKey = "Ctrl+N";
+                pendingSequence = (projectController && projectController.newTabHotkey) ? projectController.newTabHotkey : "Ctrl+N";
+            } else if (action === "importDirectory") {
+                actionTitle = qsTr("Import Directory as Soundboard");
+                defaultKey = "Ctrl+I";
+                pendingSequence = (projectController && projectController.importDirectoryHotkey) ? projectController.importDirectoryHotkey : "Ctrl+I";
+            } else if (action === "renameTab") {
+                actionTitle = qsTr("Rename Current Tab");
+                defaultKey = "F2";
+                pendingSequence = (projectController && projectController.renameTabHotkey) ? projectController.renameTabHotkey : "F2";
+            } else if (action === "pttDialog") {
+                actionTitle = qsTr("Configure Push-to-Talk (PTT)");
+                defaultKey = "Ctrl+Shift+P";
+                pendingSequence = (projectController && projectController.pttDialogHotkey) ? projectController.pttDialogHotkey : "Ctrl+Shift+P";
+            } else if (action === "muteHotkeys") {
+                actionTitle = qsTr("Toggle Hotkey Mute (Active / Muted)");
+                defaultKey = "Ctrl+M";
+                pendingSequence = (projectController && projectController.muteHotkeysHotkey) ? projectController.muteHotkeysHotkey : "Ctrl+M";
             }
             pendingModifiers = "";
             open();
@@ -231,6 +311,22 @@ ApplicationWindow {
                 projectController.stopAllHotkey = pendingSequence;
             } else if (actionKey === "ducking") {
                 projectController.duckingHotkey = pendingSequence;
+            } else if (actionKey === "openProject") {
+                projectController.openProjectHotkey = pendingSequence;
+            } else if (actionKey === "saveProject") {
+                projectController.saveProjectHotkey = pendingSequence;
+            } else if (actionKey === "saveAsProject") {
+                projectController.saveAsProjectHotkey = pendingSequence;
+            } else if (actionKey === "newTab") {
+                projectController.newTabHotkey = pendingSequence;
+            } else if (actionKey === "importDirectory") {
+                projectController.importDirectoryHotkey = pendingSequence;
+            } else if (actionKey === "renameTab") {
+                projectController.renameTabHotkey = pendingSequence;
+            } else if (actionKey === "pttDialog") {
+                projectController.pttDialogHotkey = pendingSequence;
+            } else if (actionKey === "muteHotkeys") {
+                projectController.muteHotkeysHotkey = pendingSequence;
             }
             close();
         }
@@ -507,6 +603,11 @@ ApplicationWindow {
         id: legacyImportDialog
     }
 
+    // Directory Import Dialog (Issue #26)
+    ImportDirectoryDialog {
+        id: importDirectoryDialog
+    }
+
     // --- Main Shell Layout ---
     RowLayout {
         anchors.fill: parent
@@ -534,6 +635,7 @@ ApplicationWindow {
                         projectController.tabModel.addTab();
                     }
                 }
+                onImportDirectoryRequested: importDirectoryDialog.openDialog()
                 onOpenProjectRequested: openDialog.open()
                 onSaveProjectRequested: {
                     if (projectController) {
@@ -568,6 +670,7 @@ ApplicationWindow {
                 }
                 onChangeStopAllShortcutRequested: openActionHotkeyPrompt("stopAll")
                 onChangeDuckingShortcutRequested: openActionHotkeyPrompt("ducking")
+                onChangeShortcutRequested: (action) => openActionHotkeyPrompt(action)
                 onTileScaleValueChanged: {
                     if (projectController) {
                         projectController.tileScale = tileScaleValue;
@@ -586,6 +689,7 @@ ApplicationWindow {
                     id: soundboardsView
                     Layout.fillWidth: true
                     Layout.fillHeight: true
+                    onImportDirectoryRequested: importDirectoryDialog.openDialog()
                     onConfigureTabPttRequested: (index) => {
                         if (projectController && projectController.tabModel) {
                             pttDialog.openForTab(projectController.tabModel.tabNameAt(index));
@@ -694,6 +798,8 @@ ApplicationWindow {
             legacyImportDialog.openForFile("retro_sounds.caster");
         } else if (typeof openPttPromptOnStart !== "undefined" && openPttPromptOnStart) {
             pttDialog.open();
+        } else if (typeof openImportDirPromptOnStart !== "undefined" && openImportDirPromptOnStart) {
+            importDirectoryDialog.openDialog(typeof importDirInitialPath !== "undefined" ? importDirInitialPath : "");
         }
     }
 }

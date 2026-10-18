@@ -32,6 +32,14 @@ class SoundboardProjectController : public QObject
     Q_PROPERTY(int hotkeyScope READ hotkeyScope WRITE setHotkeyScope NOTIFY hotkeyScopeChanged)
     Q_PROPERTY(QString stopAllHotkey READ stopAllHotkey WRITE setStopAllHotkey NOTIFY stopAllHotkeyChanged)
     Q_PROPERTY(QString duckingHotkey READ duckingHotkey WRITE setDuckingHotkey NOTIFY duckingHotkeyChanged)
+    Q_PROPERTY(QString openProjectHotkey READ openProjectHotkey WRITE setOpenProjectHotkey NOTIFY openProjectHotkeyChanged)
+    Q_PROPERTY(QString saveProjectHotkey READ saveProjectHotkey WRITE setSaveProjectHotkey NOTIFY saveProjectHotkeyChanged)
+    Q_PROPERTY(QString saveAsProjectHotkey READ saveAsProjectHotkey WRITE setSaveAsProjectHotkey NOTIFY saveAsProjectHotkeyChanged)
+    Q_PROPERTY(QString newTabHotkey READ newTabHotkey WRITE setNewTabHotkey NOTIFY newTabHotkeyChanged)
+    Q_PROPERTY(QString importDirectoryHotkey READ importDirectoryHotkey WRITE setImportDirectoryHotkey NOTIFY importDirectoryHotkeyChanged)
+    Q_PROPERTY(QString renameTabHotkey READ renameTabHotkey WRITE setRenameTabHotkey NOTIFY renameTabHotkeyChanged)
+    Q_PROPERTY(QString pttDialogHotkey READ pttDialogHotkey WRITE setPttDialogHotkey NOTIFY pttDialogHotkeyChanged)
+    Q_PROPERTY(QString muteHotkeysHotkey READ muteHotkeysHotkey WRITE setMuteHotkeysHotkey NOTIFY muteHotkeysHotkeyChanged)
     Q_PROPERTY(PttController* pttController READ pttController CONSTANT)
     Q_PROPERTY(QString appVersion READ appVersion CONSTANT)
     Q_PROPERTY(bool isDevBuild READ isDevBuild CONSTANT)
@@ -91,6 +99,30 @@ public:
     QString duckingHotkey() const { return m_duckingHotkey; }
     void setDuckingHotkey(const QString &hotkey);
 
+    QString openProjectHotkey() const { return m_openProjectHotkey; }
+    void setOpenProjectHotkey(const QString &hotkey);
+
+    QString saveProjectHotkey() const { return m_saveProjectHotkey; }
+    void setSaveProjectHotkey(const QString &hotkey);
+
+    QString saveAsProjectHotkey() const { return m_saveAsProjectHotkey; }
+    void setSaveAsProjectHotkey(const QString &hotkey);
+
+    QString newTabHotkey() const { return m_newTabHotkey; }
+    void setNewTabHotkey(const QString &hotkey);
+
+    QString importDirectoryHotkey() const { return m_importDirectoryHotkey; }
+    void setImportDirectoryHotkey(const QString &hotkey);
+
+    QString renameTabHotkey() const { return m_renameTabHotkey; }
+    void setRenameTabHotkey(const QString &hotkey);
+
+    QString pttDialogHotkey() const { return m_pttDialogHotkey; }
+    void setPttDialogHotkey(const QString &hotkey);
+
+    QString muteHotkeysHotkey() const { return m_muteHotkeysHotkey; }
+    void setMuteHotkeysHotkey(const QString &hotkey);
+
     QStringList availableAudioOutputs() const;
     QAudioDevice currentAudioOutputDevice() const;
     Q_INVOKABLE void refreshAudioDevices();
@@ -125,6 +157,14 @@ signals:
     void hotkeyScopeChanged();
     void stopAllHotkeyChanged();
     void duckingHotkeyChanged();
+    void openProjectHotkeyChanged();
+    void saveProjectHotkeyChanged();
+    void saveAsProjectHotkeyChanged();
+    void newTabHotkeyChanged();
+    void importDirectoryHotkeyChanged();
+    void renameTabHotkeyChanged();
+    void pttDialogHotkeyChanged();
+    void muteHotkeysHotkeyChanged();
     void projectLoaded();
     void projectSaved();
     void errorOccurred(const QString &errorMessage);
@@ -155,6 +195,14 @@ private:
     int m_hotkeyScope{TabScoped};
     QString m_stopAllHotkey{"Space"};
     QString m_duckingHotkey{"Ctrl+D"};
+    QString m_openProjectHotkey{"Ctrl+O"};
+    QString m_saveProjectHotkey{"Ctrl+S"};
+    QString m_saveAsProjectHotkey{"Ctrl+Shift+S"};
+    QString m_newTabHotkey{"Ctrl+N"};
+    QString m_importDirectoryHotkey{"Ctrl+I"};
+    QString m_renameTabHotkey{"F2"};
+    QString m_pttDialogHotkey{"Ctrl+Shift+P"};
+    QString m_muteHotkeysHotkey{"Ctrl+M"};
 };
 
 #endif // SOUNDBOARDPROJECTCONTROLLER_H

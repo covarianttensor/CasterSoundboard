@@ -11,6 +11,7 @@ Item {
                               ? projectController.tabModel.currentGridModel : null
 
     signal configureTabPttRequested(int index)
+    signal importDirectoryRequested()
 
     ColumnLayout {
         anchors.fill: parent
@@ -25,6 +26,9 @@ Item {
                 if (projectController && projectController.tabModel) {
                     projectController.tabModel.addTab();
                 }
+            }
+            onImportDirectoryRequested: {
+                root.importDirectoryRequested();
             }
             onCloneTabRequested: (index) => {
                 if (projectController && projectController.tabModel) {
@@ -126,6 +130,42 @@ Item {
                                 root.currentGrid.appendTile();
                             }
                         }
+                    }
+                }
+
+                Rectangle {
+                    Layout.preferredWidth: 260
+                    Layout.preferredHeight: 38
+                    Layout.alignment: Qt.AlignHCenter
+                    radius: 8
+                    color: importBtnMouse.containsMouse ? "#2E333B" : "#1F2126"
+                    border.color: importBtnMouse.containsMouse ? "#8E2DE2" : "#3A3E42"
+                    border.width: 1
+
+                    RowLayout {
+                        anchors.centerIn: parent
+                        spacing: 8
+                        Image {
+                            source: "../icons/import_directory.png"
+                            sourceSize.width: 18
+                            sourceSize.height: 18
+                            Layout.preferredWidth: 18
+                            Layout.preferredHeight: 18
+                            fillMode: Image.PreserveAspectFit
+                        }
+                        Text {
+                            text: qsTr("Import Directory as Soundboard")
+                            color: "#CCCCCC"
+                            font.pointSize: 9.5
+                        }
+                    }
+
+                    MouseArea {
+                        id: importBtnMouse
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: root.importDirectoryRequested()
                     }
                 }
             }

@@ -8,6 +8,7 @@ Rectangle {
     property alias tileScaleValue: scaleSlider.value
 
     signal newTabRequested()
+    signal importDirectoryRequested()
     signal openProjectRequested()
     signal saveProjectRequested()
     signal saveAsProjectRequested()
@@ -18,6 +19,7 @@ Rectangle {
     signal toggleMuteHotkeysRequested()
     signal changeStopAllShortcutRequested()
     signal changeDuckingShortcutRequested()
+    signal changeShortcutRequested(string action)
 
     height: 60
     implicitHeight: 60
@@ -34,20 +36,59 @@ Rectangle {
         // --- Project / Profile File Controls ---
         ActionIconButton {
             iconSource: "icons/open.png"
-            tooltipText: qsTr("Open .caster Project (Ctrl+O)")
+            tooltipText: {
+                var hk = (typeof projectController !== "undefined" && projectController.openProjectHotkey.length > 0)
+                         ? " (" + projectController.openProjectHotkey + ")" : "";
+                return qsTr("Open .caster Project%1\nRight-click to configure shortcut").arg(hk);
+            }
+            actionKey: "openProject"
+            defaultKey: "Ctrl+O"
             onClicked: root.openProjectRequested()
+            onChangeShortcutRequested: root.changeShortcutRequested("openProject")
+            onResetShortcutRequested: {
+                if (typeof projectController !== "undefined") projectController.openProjectHotkey = "Ctrl+O";
+            }
+            onClearShortcutRequested: {
+                if (typeof projectController !== "undefined") projectController.openProjectHotkey = "";
+            }
         }
 
         ActionIconButton {
             iconSource: "icons/save.png"
-            tooltipText: qsTr("Save Project (Ctrl+S)")
+            tooltipText: {
+                var hk = (typeof projectController !== "undefined" && projectController.saveProjectHotkey.length > 0)
+                         ? " (" + projectController.saveProjectHotkey + ")" : "";
+                return qsTr("Save Project%1\nRight-click to configure shortcut").arg(hk);
+            }
+            actionKey: "saveProject"
+            defaultKey: "Ctrl+S"
             onClicked: root.saveProjectRequested()
+            onChangeShortcutRequested: root.changeShortcutRequested("saveProject")
+            onResetShortcutRequested: {
+                if (typeof projectController !== "undefined") projectController.saveProjectHotkey = "Ctrl+S";
+            }
+            onClearShortcutRequested: {
+                if (typeof projectController !== "undefined") projectController.saveProjectHotkey = "";
+            }
         }
 
         ActionIconButton {
             iconSource: "icons/save_as.png"
-            tooltipText: qsTr("Save Project As... (Ctrl+Shift+S)")
+            tooltipText: {
+                var hk = (typeof projectController !== "undefined" && projectController.saveAsProjectHotkey.length > 0)
+                         ? " (" + projectController.saveAsProjectHotkey + ")" : "";
+                return qsTr("Save Project As...%1\nRight-click to configure shortcut").arg(hk);
+            }
+            actionKey: "saveAsProject"
+            defaultKey: "Ctrl+Shift+S"
             onClicked: root.saveAsProjectRequested()
+            onChangeShortcutRequested: root.changeShortcutRequested("saveAsProject")
+            onResetShortcutRequested: {
+                if (typeof projectController !== "undefined") projectController.saveAsProjectHotkey = "Ctrl+Shift+S";
+            }
+            onClearShortcutRequested: {
+                if (typeof projectController !== "undefined") projectController.saveAsProjectHotkey = "";
+            }
         }
 
         Rectangle {
@@ -61,14 +102,59 @@ Rectangle {
         // --- Soundboard Tab Controls ---
         ActionIconButton {
             iconSource: "icons/newTab.png"
-            tooltipText: qsTr("Add Soundboard Tab (Ctrl+N)")
+            tooltipText: {
+                var hk = (typeof projectController !== "undefined" && projectController.newTabHotkey.length > 0)
+                         ? " (" + projectController.newTabHotkey + ")" : "";
+                return qsTr("Add Soundboard Tab%1\nRight-click to configure shortcut").arg(hk);
+            }
+            actionKey: "newTab"
+            defaultKey: "Ctrl+N"
             onClicked: root.newTabRequested()
+            onChangeShortcutRequested: root.changeShortcutRequested("newTab")
+            onResetShortcutRequested: {
+                if (typeof projectController !== "undefined") projectController.newTabHotkey = "Ctrl+N";
+            }
+            onClearShortcutRequested: {
+                if (typeof projectController !== "undefined") projectController.newTabHotkey = "";
+            }
+        }
+
+        ActionIconButton {
+            iconSource: "icons/import_directory.png"
+            tooltipText: {
+                var hk = (typeof projectController !== "undefined" && projectController.importDirectoryHotkey.length > 0)
+                         ? " (" + projectController.importDirectoryHotkey + ")" : "";
+                return qsTr("Import Directory as Soundboard...%1\nRight-click to configure shortcut").arg(hk);
+            }
+            actionKey: "importDirectory"
+            defaultKey: "Ctrl+I"
+            onClicked: root.importDirectoryRequested()
+            onChangeShortcutRequested: root.changeShortcutRequested("importDirectory")
+            onResetShortcutRequested: {
+                if (typeof projectController !== "undefined") projectController.importDirectoryHotkey = "Ctrl+I";
+            }
+            onClearShortcutRequested: {
+                if (typeof projectController !== "undefined") projectController.importDirectoryHotkey = "";
+            }
         }
 
         ActionIconButton {
             iconSource: "icons/rename.png"
-            tooltipText: qsTr("Rename Current Tab")
+            tooltipText: {
+                var hk = (typeof projectController !== "undefined" && projectController.renameTabHotkey.length > 0)
+                         ? " (" + projectController.renameTabHotkey + ")" : "";
+                return qsTr("Rename Current Tab%1\nRight-click to configure shortcut").arg(hk);
+            }
+            actionKey: "renameTab"
+            defaultKey: "F2"
             onClicked: root.renameTabRequested()
+            onChangeShortcutRequested: root.changeShortcutRequested("renameTab")
+            onResetShortcutRequested: {
+                if (typeof projectController !== "undefined") projectController.renameTabHotkey = "F2";
+            }
+            onClearShortcutRequested: {
+                if (typeof projectController !== "undefined") projectController.renameTabHotkey = "";
+            }
         }
 
         // Push-To-Talk (PTT) Button
@@ -155,10 +241,49 @@ Rectangle {
             }
 
             ToolTip.visible: hovered
-            ToolTip.text: isTransmitting
-                ? qsTr("Push-to-Talk - TRANSMITTING (%1)").arg(activeKey)
-                : (isAssigned ? qsTr("Push-to-Talk (PTT) Configured - Click to edit") : qsTr("Configure Push-to-Talk (PTT)"))
+            ToolTip.text: {
+                var hk = (typeof projectController !== "undefined" && projectController.pttDialogHotkey.length > 0)
+                         ? " (" + projectController.pttDialogHotkey + ")" : "";
+                var desc = isTransmitting
+                    ? qsTr("Push-to-Talk - TRANSMITTING (%1)").arg(activeKey)
+                    : (isAssigned ? qsTr("Push-to-Talk (PTT) Configured - Click to edit") : qsTr("Configure Push-to-Talk (PTT)"));
+                return desc + hk + "\n" + qsTr("Right-click to configure shortcut");
+            }
             ToolTip.delay: 300
+
+            MouseArea {
+                anchors.fill: parent
+                acceptedButtons: Qt.RightButton
+                onClicked: (mouse) => {
+                    if (mouse.button === Qt.RightButton) {
+                        pttContextMenu.popup();
+                    }
+                }
+            }
+
+            Menu {
+                id: pttContextMenu
+                MenuItem {
+                    text: qsTr("Change Shortcut...")
+                    onTriggered: root.changeShortcutRequested("pttDialog")
+                }
+                MenuItem {
+                    text: qsTr("Reset to Default (Ctrl+Shift+P)")
+                    onTriggered: {
+                        if (typeof projectController !== "undefined") {
+                            projectController.pttDialogHotkey = "Ctrl+Shift+P";
+                        }
+                    }
+                }
+                MenuItem {
+                    text: qsTr("Clear Shortcut")
+                    onTriggered: {
+                        if (typeof projectController !== "undefined") {
+                            projectController.pttDialogHotkey = "";
+                        }
+                    }
+                }
+            }
         }
 
         Rectangle {
@@ -268,7 +393,46 @@ Rectangle {
             }
 
             ToolTip.visible: hovered
-            ToolTip.text: qsTr("Toggle Hotkey Listening: Mute hotkeys while typing in notes or chat (Issue #76)")
+            ToolTip.text: {
+                var hk = (typeof projectController !== "undefined" && projectController.muteHotkeysHotkey.length > 0)
+                         ? " (" + projectController.muteHotkeysHotkey + ")" : "";
+                return qsTr("Toggle Hotkey Listening: Mute hotkeys while typing in notes or chat%1\nRight-click to configure shortcut").arg(hk);
+            }
+            ToolTip.delay: 300
+
+            MouseArea {
+                anchors.fill: parent
+                acceptedButtons: Qt.RightButton
+                onClicked: (mouse) => {
+                    if (mouse.button === Qt.RightButton) {
+                        muteHotkeysContextMenu.popup();
+                    }
+                }
+            }
+
+            Menu {
+                id: muteHotkeysContextMenu
+                MenuItem {
+                    text: qsTr("Change Shortcut...")
+                    onTriggered: root.changeShortcutRequested("muteHotkeys")
+                }
+                MenuItem {
+                    text: qsTr("Reset to Default (Ctrl+M)")
+                    onTriggered: {
+                        if (typeof projectController !== "undefined") {
+                            projectController.muteHotkeysHotkey = "Ctrl+M";
+                        }
+                    }
+                }
+                MenuItem {
+                    text: qsTr("Clear Shortcut")
+                    onTriggered: {
+                        if (typeof projectController !== "undefined") {
+                            projectController.muteHotkeysHotkey = "";
+                        }
+                    }
+                }
+            }
         }
 
         // Audio Ducking Toggle
@@ -431,6 +595,11 @@ Rectangle {
         property string tooltipText
         property bool isActive: false
         property bool isTransmittingActive: false
+        property string actionKey: ""
+        property string defaultKey: ""
+        signal changeShortcutRequested()
+        signal resetShortcutRequested()
+        signal clearShortcutRequested()
 
         Layout.preferredWidth: 44
         Layout.preferredHeight: 44
@@ -477,6 +646,33 @@ Rectangle {
         ToolTip.visible: hovered
         ToolTip.text: aib.tooltipText
         ToolTip.delay: 300
+
+        MouseArea {
+            anchors.fill: parent
+            acceptedButtons: Qt.RightButton
+            visible: aib.actionKey.length > 0
+            onClicked: (mouse) => {
+                if (mouse.button === Qt.RightButton) {
+                    actionContextMenu.popup();
+                }
+            }
+        }
+
+        Menu {
+            id: actionContextMenu
+            MenuItem {
+                text: qsTr("Change Shortcut...")
+                onTriggered: aib.changeShortcutRequested()
+            }
+            MenuItem {
+                text: qsTr("Reset to Default (%1)").arg(aib.defaultKey)
+                onTriggered: aib.resetShortcutRequested()
+            }
+            MenuItem {
+                text: qsTr("Clear Shortcut")
+                onTriggered: aib.clearShortcutRequested()
+            }
+        }
     }
 
     Connections {

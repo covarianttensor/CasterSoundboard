@@ -43,8 +43,27 @@ public:
     int currentIndex() const { return m_currentIndex; }
     SoundboardGridModel* currentGridModel() const;
 
+    enum ImportOrderMode {
+        RootFilesFirst = 0,
+        RelativePathOrder = 1
+    };
+    Q_ENUM(ImportOrderMode)
+
+    enum ImportNamingScheme {
+        FilenameOnly = 0,
+        FolderPrefix = 1,
+        DisambiguateDuplicates = 2
+    };
+    Q_ENUM(ImportNamingScheme)
+
     Q_INVOKABLE SoundboardGridModel* addTab(const QString &name = QString());
     Q_INVOKABLE int cloneTab(int index, const QString &customName = QString());
+    Q_INVOKABLE int countPlayableFilesInDirectory(const QString &dirPath, bool recursive = true) const;
+    Q_INVOKABLE int importDirectory(const QString &dirPath,
+                                   bool recursive = true,
+                                   const QString &customName = QString(),
+                                   int orderMode = 0,
+                                   int namingScheme = 2);
     Q_INVOKABLE bool removeTab(int index);
     Q_INVOKABLE bool renameTab(int index, const QString &name);
     Q_INVOKABLE bool setTabHotkey(int index, const QString &hotkey);

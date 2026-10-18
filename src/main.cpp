@@ -154,6 +154,7 @@ int main(int argc, char *argv[])
     QCommandLineOption testFocusVirtOption("test-focus-virt", "Focus virtual mic text field on startup for visual verification.");
     QCommandLineOption legacyImportPromptOption("open-legacy-import-prompt", "Open legacy import prompt dialog on startup for testing.");
     QCommandLineOption pttPromptOption("open-ptt-prompt", "Open PTT dialog on startup for testing.");
+    QCommandLineOption importDirPromptOption("open-import-dir-prompt", "Open directory import dialog on startup for testing.", "path");
     QCommandLineOption autoStartMcpOption("auto-start-mcp", "Automatically start Model Context Protocol (MCP) AI server on startup.");
     QCommandLineOption mcpPortOption("mcp-port", "Inbound TCP port for MCP server (defaults to 5055).", "port", "5055");
     QCommandLineOption mcpStdioOption("mcp-stdio", "Run MCP server in stdio mode (JSON-RPC 2.0 over stdin/stdout) for AI assistants.");
@@ -186,6 +187,7 @@ int main(int argc, char *argv[])
     parser.addOption(testFocusVirtOption);
     parser.addOption(legacyImportPromptOption);
     parser.addOption(pttPromptOption);
+    parser.addOption(importDirPromptOption);
     parser.addPositionalArgument("project", "Project file (.caster) to open on launch.", "[project]");
     parser.process(app);
 
@@ -330,6 +332,8 @@ int main(int argc, char *argv[])
     engine.rootContext()->setContextProperty("legacyStartupFile", legacyStartupFile);
     engine.rootContext()->setContextProperty("openLegacyImportPromptOnStart", parser.isSet(legacyImportPromptOption));
     engine.rootContext()->setContextProperty("openPttPromptOnStart", parser.isSet(pttPromptOption));
+    engine.rootContext()->setContextProperty("openImportDirPromptOnStart", parser.isSet(importDirPromptOption));
+    engine.rootContext()->setContextProperty("importDirInitialPath", parser.value(importDirPromptOption));
 
     // Install application-wide hotkey event filter
     GlobalHotkeyFilter hotkeyFilter(&hotkeyManager, &app);

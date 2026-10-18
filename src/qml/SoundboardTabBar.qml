@@ -8,6 +8,7 @@ Rectangle {
     property var tabModel: null
     property int currentIndex: tabModel ? tabModel.currentIndex : 0
     signal addTabRequested()
+    signal importDirectoryRequested()
     signal cloneTabRequested(int index)
     signal closeTabRequested(int index)
     signal renameTabRequested(int index)
@@ -313,6 +314,11 @@ Rectangle {
                         MenuItem {
                             text: qsTr("Clone Soundboard")
                             onTriggered: root.cloneTabRequested(tabItem.index)
+                        }
+
+                        MenuItem {
+                            text: qsTr("Import Directory as Soundboard...")
+                            onTriggered: root.importDirectoryRequested()
                         }
 
                         MenuItem {

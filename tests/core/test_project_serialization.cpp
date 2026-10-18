@@ -26,6 +26,14 @@ private slots:
         QCOMPARE(project.hotkeyScope(), static_cast<int>(SoundboardProjectController::TabScoped));
         QCOMPARE(project.stopAllHotkey(), QString("Space"));
         QCOMPARE(project.duckingHotkey(), QString("Ctrl+D"));
+        QCOMPARE(project.openProjectHotkey(), QString("Ctrl+O"));
+        QCOMPARE(project.saveProjectHotkey(), QString("Ctrl+S"));
+        QCOMPARE(project.saveAsProjectHotkey(), QString("Ctrl+Shift+S"));
+        QCOMPARE(project.newTabHotkey(), QString("Ctrl+N"));
+        QCOMPARE(project.importDirectoryHotkey(), QString("Ctrl+I"));
+        QCOMPARE(project.renameTabHotkey(), QString("F2"));
+        QCOMPARE(project.pttDialogHotkey(), QString("Ctrl+Shift+P"));
+        QCOMPARE(project.muteHotkeysHotkey(), QString("Ctrl+M"));
         QCOMPARE(project.tabModel()->count(), 1);
     }
 
@@ -48,6 +56,14 @@ private slots:
         p1.setHotkeyScope(SoundboardProjectController::Global);
         p1.setStopAllHotkey("F12");
         p1.setDuckingHotkey("Ctrl+Alt+D");
+        p1.setOpenProjectHotkey("Ctrl+Alt+O");
+        p1.setSaveProjectHotkey("Ctrl+Alt+S");
+        p1.setSaveAsProjectHotkey("Ctrl+Alt+Shift+S");
+        p1.setNewTabHotkey("Ctrl+T");
+        p1.setImportDirectoryHotkey("Ctrl+Shift+I");
+        p1.setRenameTabHotkey("F6");
+        p1.setPttDialogHotkey("F8");
+        p1.setMuteHotkeysHotkey("Ctrl+Shift+M");
 
         // Tab 1: Jingles
         p1.tabModel()->renameTab(0, "Jingles");
@@ -97,6 +113,14 @@ private slots:
         QCOMPARE(p2.hotkeyScope(), static_cast<int>(SoundboardProjectController::Global));
         QCOMPARE(p2.stopAllHotkey(), QString("F12"));
         QCOMPARE(p2.duckingHotkey(), QString("Ctrl+Alt+D"));
+        QCOMPARE(p2.openProjectHotkey(), QString("Ctrl+Alt+O"));
+        QCOMPARE(p2.saveProjectHotkey(), QString("Ctrl+Alt+S"));
+        QCOMPARE(p2.saveAsProjectHotkey(), QString("Ctrl+Alt+Shift+S"));
+        QCOMPARE(p2.newTabHotkey(), QString("Ctrl+T"));
+        QCOMPARE(p2.importDirectoryHotkey(), QString("Ctrl+Shift+I"));
+        QCOMPARE(p2.renameTabHotkey(), QString("F6"));
+        QCOMPARE(p2.pttDialogHotkey(), QString("F8"));
+        QCOMPARE(p2.muteHotkeysHotkey(), QString("Ctrl+Shift+M"));
 
         // Verify tabs
         QCOMPARE(p2.tabModel()->count(), 2);

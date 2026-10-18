@@ -1,7 +1,33 @@
 #include "SoundboardTabModel.h"
 #include "SoundboardGridModel.h"
+#include "SoundTileController.h"
 #include <QUuid>
 #include <QSet>
+#include <QDir>
+#include <QDirIterator>
+#include <QCollator>
+#include <QUrl>
+#include <QHash>
+#include <algorithm>
+
+namespace {
+static const QStringList kSupportedMediaFilters = {
+    "*.wav", "*.mp3", "*.ogg", "*.flac", "*.aac", "*.m4a", "*.opus",
+    "*.mp4", "*.mkv", "*.webm", "*.avi"
+};
+
+static QString cleanPathFromUrl(const QString &rawPath)
+{
+    QString path = rawPath.trimmed();
+    if (path.startsWith("file://")) {
+        path = QUrl(rawPath).toLocalFile();
+        if (path.isEmpty()) {
+            path = rawPath.mid(7);
+        }
+    }
+    return QDir::cleanPath(path);
+}
+}
 
 SoundboardTabModel::SoundboardTabModel(QObject *parent)
     : QAbstractListModel(parent)
@@ -174,6 +200,152 @@ int SoundboardTabModel::cloneTab(int index, const QString &customName)
     emit currentGridModelChanged();
 
     return insertIndex;
+}
+
+int SoundboardTabModel::countPlayableFilesInDirectory(const QString &dirPath, bool recursive) const
+{
+    QString clean = cleanPathFromUrl(dirPath);
+    if (clean.isEmpty() || !QDir(clean).exists())
+        return 0;
+
+    int count = 0;
+    if (recursive) {
+        QDirIterator it(clean, kSupportedMediaFilters, QDir::Files | QDir::Readable,
+                        QDirIterator::Subdirectories | QDirIterator::FollowSymlinks);
+        while (it.hasNext()) {
+            it.next();
+            count++;
+        }
+    } else {
+        QDir dir(clean);
+        count = dir.entryList(kSupportedMediaFilters, QDir::Files | QDir::Readable).size();
+    }
+    return count;
+}
+
+int SoundboardTabModel::importDirectory(const QString &dirPath,
+                                       bool recursive,
+                                       const QString &customName,
+                                       int orderMode,
+                                       int namingScheme)
+{
+    QString clean = cleanPathFromUrl(dirPath);
+    if (clean.isEmpty() || !QDir(clean).exists())
+        return -1;
+
+    QDir rootDir(clean);
+    QString rootCanonical = rootDir.canonicalPath();
+
+    QFileInfoList foundFiles;
+    if (recursive) {
+        QDirIterator it(clean, kSupportedMediaFilters, QDir::Files | QDir::Readable,
+                        QDirIterator::Subdirectories | QDirIterator::FollowSymlinks);
+        while (it.hasNext()) {
+            it.next();
+            foundFiles.append(it.fileInfo());
+        }
+    } else {
+        foundFiles = rootDir.entryInfoList(kSupportedMediaFilters, QDir::Files | QDir::Readable);
+    }
+
+    if (foundFiles.isEmpty())
+        return -1;
+
+    QCollator collator;
+    collator.setNumericMode(true);
+    collator.setCaseSensitivity(Qt::CaseInsensitive);
+
+    // Sorting according to orderMode
+    if (orderMode == 0) { // RootFilesFirst
+        QFileInfoList rootFiles;
+        QFileInfoList nestedFiles;
+        for (const auto &fi : foundFiles) {
+            if (fi.dir().canonicalPath() == rootCanonical) {
+                rootFiles.append(fi);
+            } else {
+                nestedFiles.append(fi);
+            }
+        }
+
+        std::sort(rootFiles.begin(), rootFiles.end(), [&collator](const QFileInfo &a, const QFileInfo &b) {
+            return collator.compare(a.fileName(), b.fileName()) < 0;
+        });
+
+        std::sort(nestedFiles.begin(), nestedFiles.end(), [&collator, &rootDir](const QFileInfo &a, const QFileInfo &b) {
+            QString relA = rootDir.relativeFilePath(a.absoluteFilePath());
+            QString relB = rootDir.relativeFilePath(b.absoluteFilePath());
+            return collator.compare(relA, relB) < 0;
+        });
+
+        foundFiles = rootFiles;
+        foundFiles.append(nestedFiles);
+    } else { // RelativePathOrder
+        std::sort(foundFiles.begin(), foundFiles.end(), [&collator, &rootDir](const QFileInfo &a, const QFileInfo &b) {
+            QString relA = rootDir.relativeFilePath(a.absoluteFilePath());
+            QString relB = rootDir.relativeFilePath(b.absoluteFilePath());
+            return collator.compare(relA, relB) < 0;
+        });
+    }
+
+    // Determine soundboard tab name
+    QString finalTabName = customName.trimmed();
+    if (finalTabName.isEmpty()) {
+        finalTabName = rootDir.dirName();
+        if (finalTabName.isEmpty()) {
+            finalTabName = tr("Imported Soundboard");
+        }
+    }
+
+    // Ensure tab name uniqueness
+    QSet<QString> existingNames;
+    for (const auto &t : m_tabs) {
+        existingNames.insert(t.name);
+    }
+    QString candidateName = finalTabName;
+    int copyNum = 2;
+    while (existingNames.contains(candidateName)) {
+        candidateName = QString("%1 (%2)").arg(finalTabName).arg(copyNum++);
+    }
+    finalTabName = candidateName;
+
+    // Track duplicate base names if namingScheme == DisambiguateDuplicates (2)
+    QHash<QString, int> nameCounts;
+    if (namingScheme == 2) {
+        for (const auto &fi : foundFiles) {
+            nameCounts[fi.completeBaseName()]++;
+        }
+    }
+
+    // Create the new soundboard tab
+    SoundboardGridModel *newGrid = addTab(finalTabName);
+    if (!newGrid)
+        return -1;
+
+    for (const auto &fi : foundFiles) {
+        QString displayName = fi.completeBaseName();
+        bool isNested = (fi.dir().canonicalPath() != rootCanonical);
+
+        if (isNested) {
+            QString relDir = rootDir.relativeFilePath(fi.dir().absolutePath());
+            if (namingScheme == 1) { // FolderPrefix
+                displayName = QString("%1 / %2").arg(relDir, fi.completeBaseName());
+            } else if (namingScheme == 2) { // DisambiguateDuplicates
+                if (nameCounts.value(fi.completeBaseName(), 0) > 1) {
+                    displayName = QString("%1 / %2").arg(relDir, fi.completeBaseName());
+                }
+            }
+        }
+
+        SoundTileController *tile = newGrid->appendTile();
+        if (tile) {
+            tile->setFilePath(fi.absoluteFilePath());
+            tile->setDisplayName(displayName);
+        }
+    }
+
+    int newIndex = m_tabs.size() - 1;
+    setCurrentIndex(newIndex);
+    return newIndex;
 }
 
 bool SoundboardTabModel::removeTab(int index)

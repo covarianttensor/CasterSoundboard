@@ -146,6 +146,7 @@ qt_add_qml_module(CasterSoundboard
         src/qml/SoundTileDrawer.qml
         src/qml/PttDialog.qml
         src/qml/LegacyImportDialog.qml
+        src/qml/ImportDirectoryDialog.qml
         src/qml/views/SoundboardsView.qml
         src/qml/views/AudioRoutingView.qml
         src/qml/views/OscView.qml
@@ -167,6 +168,7 @@ qt_add_qml_module(CasterSoundboard
         src/qml/icons/Key.png
         src/qml/icons/loop.png
         src/qml/icons/newTab.png
+        src/qml/icons/import_directory.png
         src/qml/icons/no_loop.png
         src/qml/icons/notes.png
         src/qml/icons/openMusic.png
