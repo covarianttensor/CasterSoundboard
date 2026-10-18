@@ -32,3 +32,4 @@ modules:
       - type: git
         url: https://github.com/covarianttensor/CasterSoundboard.git
         tag: v2.1.1
+        commit: c16b9c017d4bfaf943418841b8d1c7acf86b9174
