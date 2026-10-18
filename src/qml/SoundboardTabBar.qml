@@ -11,7 +11,7 @@ Rectangle {
     signal closeTabRequested(int index)
     signal renameTabRequested(int index)
     signal setTabHotkeyRequested(int index)
-    signal configureTabActionsRequested(int index)
+    signal configureTabPttRequested(int index)
 
     height: 48
     implicitHeight: 48
@@ -44,20 +44,20 @@ Rectangle {
 
                     property bool isActive: root.currentIndex === index
                     property string effectiveHotkey: (hotkey && hotkey.length > 0) ? hotkey : (index < 9 ? ("Alt+" + (index + 1)) : "")
-                    property string actionBadgeText: {
-                        if (typeof projectController === "undefined" || !projectController.actionsController) return "";
-                        var rev = projectController.actionsController.revision;
-                        return projectController.actionsController.activeBadgeForTab(tabItem.name);
+                    property string pttBadgeText: {
+                        if (typeof projectController === "undefined" || !projectController.pttController) return "";
+                        var rev = projectController.pttController.revision;
+                        return projectController.pttController.activeBadgeForTab(tabItem.name);
                     }
-                    property bool hasActionBadge: actionBadgeText.length > 0
+                    property bool hasPttBadge: pttBadgeText.length > 0
                     readonly property bool isTransmitting: {
-                        if (typeof projectController === "undefined" || !projectController.actionsController) return false;
-                        var tx = projectController.actionsController.isTransmitting;
+                        if (typeof projectController === "undefined" || !projectController.pttController) return false;
+                        var tx = projectController.pttController.isTransmitting;
                         if (!tx) return false;
-                        return projectController.actionsController.isTransmittingForTab(tabItem.name);
+                        return projectController.pttController.isTransmittingForTab(tabItem.name);
                     }
 
-                    implicitWidth: Math.max(140, tabLabel.implicitWidth + (hasActionBadge ? (actionBadge.implicitWidth + 8) : 0) + (effectiveHotkey.length > 0 ? (hotkeyBadge.implicitWidth + 10) : 0) + (showCloseBtn ? 48 : 24))
+                    implicitWidth: Math.max(140, tabLabel.implicitWidth + (hasPttBadge ? (pttBadge.implicitWidth + 8) : 0) + (effectiveHotkey.length > 0 ? (hotkeyBadge.implicitWidth + 10) : 0) + (showCloseBtn ? 48 : 24))
                     implicitHeight: 38
                     radius: 6
                     color: isActive ? "#2D3035" : (tabMouse.containsMouse ? "#24272B" : "#1E2023")
@@ -90,7 +90,7 @@ Rectangle {
                     MouseArea {
                         id: tabMouse
                         anchors.fill: parent
-                        anchors.rightMargin: (tabItem.showCloseBtn ? 32 : 0) + (tabItem.effectiveHotkey.length > 0 ? (hotkeyBadge.width + 8) : 0) + (tabItem.hasActionBadge ? (actionBadge.width + 8) : 0)
+                        anchors.rightMargin: (tabItem.showCloseBtn ? 32 : 0) + (tabItem.effectiveHotkey.length > 0 ? (hotkeyBadge.width + 8) : 0) + (tabItem.hasPttBadge ? (pttBadge.width + 8) : 0)
                         hoverEnabled: true
                         cursorShape: Qt.PointingHandCursor
                         acceptedButtons: Qt.LeftButton | Qt.RightButton
@@ -124,11 +124,11 @@ Rectangle {
                             verticalAlignment: Text.AlignVCenter
                         }
 
-                        // Action Indicator Badge (PTT / Mute) with live transmitting state and glow
+                        // PTT Indicator Badge (Push-to-Talk / Mic Mute) with live transmitting state and glow
                         Rectangle {
-                            id: actionBadge
-                            visible: tabItem.hasActionBadge
-                            implicitWidth: actionBadgeLayout.implicitWidth + 14
+                            id: pttBadge
+                            visible: tabItem.hasPttBadge
+                            implicitWidth: pttBadgeLayout.implicitWidth + 14
                             implicitHeight: 22
                             Layout.preferredWidth: implicitWidth
                             Layout.preferredHeight: 22
@@ -170,7 +170,7 @@ Rectangle {
                                 opacity: 0.4
 
                                 SequentialAnimation on opacity {
-                                    running: actionBadge.visible && !tabItem.isTransmitting
+                                    running: pttBadge.visible && !tabItem.isTransmitting
                                     loops: Animation.Infinite
                                     NumberAnimation { from: 0.2; to: 0.85; duration: 1000; easing.type: Easing.InOutQuad }
                                     NumberAnimation { from: 0.85; to: 0.2; duration: 1000; easing.type: Easing.InOutQuad }
@@ -178,20 +178,20 @@ Rectangle {
                             }
 
                             RowLayout {
-                                id: actionBadgeLayout
+                                id: pttBadgeLayout
                                 anchors.centerIn: parent
                                 spacing: 4
 
                                 Text {
-                                    text: tabItem.isTransmitting ? "🟢" : "⚡"
+                                    text: tabItem.isTransmitting ? "🟢" : "🎙️"
                                     font.pixelSize: tabItem.isTransmitting ? 9 : 9
                                     color: tabItem.isTransmitting ? "#2ECC71" : "#D946EF"
                                 }
 
                                 Text {
                                     text: tabItem.isTransmitting 
-                                          ? qsTr("TRANSMITTING (%1)").arg(tabItem.actionBadgeText.replace("PTT: ", "").replace("Mute: ", "")) 
-                                          : tabItem.actionBadgeText
+                                          ? qsTr("TRANSMITTING (%1)").arg(tabItem.pttBadgeText.replace("PTT: ", "").replace("Mute: ", "")) 
+                                          : tabItem.pttBadgeText
                                     color: tabItem.isTransmitting ? "#FFFFFF" : "#F0ABFC"
                                     font.pointSize: 8
                                     font.bold: true
@@ -199,15 +199,15 @@ Rectangle {
                             }
 
                             MouseArea {
-                                id: actionBadgeMouse
+                                id: pttBadgeMouse
                                 anchors.fill: parent
                                 hoverEnabled: true
                                 cursorShape: Qt.PointingHandCursor
-                                onClicked: root.configureTabActionsRequested(tabItem.index)
+                                onClicked: root.configureTabPttRequested(tabItem.index)
                                 ToolTip.visible: containsMouse
                                 ToolTip.text: tabItem.isTransmitting
-                                    ? qsTr("PTT key is currently held down! (%1)").arg(tabItem.actionBadgeText)
-                                    : qsTr("Action: %1 (Click to configure Tab Actions)").arg(tabItem.actionBadgeText)
+                                    ? qsTr("PTT key is currently held down! (%1)").arg(tabItem.pttBadgeText)
+                                    : qsTr("PTT: %1 (Click to configure Tab PTT)").arg(tabItem.pttBadgeText)
                             }
                         }
 
@@ -298,8 +298,8 @@ Rectangle {
                         }
 
                         MenuItem {
-                            text: qsTr("Configure Tab Actions…")
-                            onTriggered: root.configureTabActionsRequested(tabItem.index)
+                            text: qsTr("Configure Tab PTT…")
+                            onTriggered: root.configureTabPttRequested(tabItem.index)
                         }
 
                         MenuSeparator {}

@@ -47,6 +47,7 @@ CasterSoundboard/
 │   │   ├── SoundboardTabModel.*           # Multi-tab data model
 │   │   ├── SoundboardGridModel.*          # Sound tile grid container
 │   │   ├── SoundTileController.*          # Media playback, volume, looping & cue points
+│   │   ├── PttController.*                # Push-to-Talk (PTT) & mic automation manager
 │   │   ├── AudioRoutingController.*       # High-level QML-to-audio-backend bridge
 │   │   ├── HotkeyManager.*                # Keyboard shortcut dispatcher & Bank Mode
 │   │   ├── WebRemoteController.*          # Local HTTP/AJAX web remote control server
@@ -59,6 +60,7 @@ CasterSoundboard/
 │   │   ├── SoundboardTabBar.qml           # Sound bank tabs with hotkey indicators
 │   │   ├── SoundTile.qml                  # Media tile component with waveform sweep
 │   │   ├── SoundTileDrawer.qml            # Tile settings dialog with cue waveform editor
+│   │   ├── PttDialog.qml                  # Push-to-Talk (PTT) & mic automation dialog
 │   │   └── views/
 │   │       ├── SoundboardsView.qml        # Resizable sound tile grid view
 │   │       ├── AudioRoutingView.qml       # Orthogonal schematic audio routing flow

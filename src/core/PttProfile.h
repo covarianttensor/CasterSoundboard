@@ -1,11 +1,11 @@
-#ifndef ACTIONPROFILE_H
-#define ACTIONPROFILE_H
+#ifndef PTTPROFILE_H
+#define PTTPROFILE_H
 
 #include <QString>
 #include <QJsonObject>
 #include <QMetaType>
 
-namespace Actions {
+namespace Ptt {
 
 enum TalkMode {
     ModeNone = 0,
@@ -69,8 +69,8 @@ struct Profile {
     }
 };
 
-} // namespace Actions
+} // namespace Ptt
 
-Q_DECLARE_METATYPE(Actions::Profile)
+Q_DECLARE_METATYPE(Ptt::Profile)
 
-#endif // ACTIONPROFILE_H
+#endif // PTTPROFILE_H

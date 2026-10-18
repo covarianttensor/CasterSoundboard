@@ -286,11 +286,11 @@ Rectangle {
             Rectangle {
                 id: pttLiveBadge
                 readonly property bool isTransmittingThisTab: {
-                    if (tile && tile.playbackState === 1 && typeof projectController !== "undefined" && projectController.actionsController && projectController.tabModel) {
-                        var tx = projectController.actionsController.isTransmitting;
+                    if (tile && tile.playbackState === 1 && typeof projectController !== "undefined" && projectController.pttController && projectController.tabModel) {
+                        var tx = projectController.pttController.isTransmitting;
                         if (!tx) return false;
                         var curTab = projectController.tabModel.tabNameAt(projectController.tabModel.currentIndex);
-                        return projectController.actionsController.isTransmittingForTab(curTab);
+                        return projectController.pttController.isTransmittingForTab(curTab);
                     }
                     return false;
                 }

@@ -1,5 +1,5 @@
-#ifndef ACTIONSCONTROLLER_H
-#define ACTIONSCONTROLLER_H
+#ifndef PTTCONTROLLER_H
+#define PTTCONTROLLER_H
 
 #include <QObject>
 #include <QList>
@@ -11,12 +11,12 @@
 #include <QJsonArray>
 #include <functional>
 
-#include "ActionProfile.h"
+#include "PttProfile.h"
 
 class UInputChannel;
 class SoundTileController;
 
-class ActionsController : public QObject
+class PttController : public QObject
 {
     Q_OBJECT
 
@@ -29,8 +29,8 @@ class ActionsController : public QObject
     Q_PROPERTY(QString activeTransmittingKey READ activeTransmittingKey NOTIFY transmissionChanged)
 
 public:
-    explicit ActionsController(QObject *parent = nullptr);
-    ~ActionsController() override;
+    explicit PttController(QObject *parent = nullptr);
+    ~PttController() override;
 
     int count() const { return m_profiles.size(); }
     int revision() const { return m_revision; }
@@ -51,10 +51,10 @@ public:
     Q_INVOKABLE bool removeProfile(int index);
 
     Q_INVOKABLE QString activeBadgeForTab(const QString &tabName) const;
-    Q_INVOKABLE bool hasActionForTab(const QString &tabName) const;
+    Q_INVOKABLE bool hasPttForTab(const QString &tabName) const;
     Q_INVOKABLE QString keyNameFromEvent(int qtKey, quint32 nativeScanCode = 0) const;
 
-    Actions::Profile profileForTab(const QString &tabName) const;
+    Ptt::Profile profileForTab(const QString &tabName) const;
 
     // Playback Coordination
     void coordinatePlayback(SoundTileController *tile, const QString &tabName, std::function<void()> onReadyToPlay);
@@ -73,14 +73,14 @@ signals:
     void profilesChanged();
     void uinputStatusChanged();
     void transmissionChanged();
-    void actionStarted(const QString &profileName, const QString &key, int mode);
-    void actionEnded(const QString &profileName, const QString &key);
+    void pttStarted(const QString &profileName, const QString &key, int mode);
+    void pttEnded(const QString &profileName, const QString &key);
 
 private:
     struct Session {
         QString keyName;
         QString tabName;
-        Actions::TalkMode mode;
+        Ptt::TalkMode mode;
         int bufferMs;
         QSet<SoundTileController*> activeTiles;
         QTimer *leadInTimer = nullptr;
@@ -89,7 +89,7 @@ private:
         QList<std::function<void()>> pendingCallbacks;
     };
 
-    QList<Actions::Profile> m_profiles;
+    QList<Ptt::Profile> m_profiles;
     UInputChannel *m_uinput = nullptr;
     QMap<QString, Session*> m_sessions; // keyName -> Session
     QMap<SoundTileController*, QString> m_tileToKey;
@@ -100,4 +100,4 @@ private:
     void cleanupSession(Session *s);
 };
 
-#endif // ACTIONSCONTROLLER_H
+#endif // PTTCONTROLLER_H

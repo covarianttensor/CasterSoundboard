@@ -11,7 +11,7 @@
 #include "SoundboardTabModel.h"
 #include "SoundboardGridModel.h"
 #include "SoundTileController.h"
-#include "ActionsController.h"
+#include "PttController.h"
 
 class TestWebRemote : public QObject
 {
@@ -244,18 +244,18 @@ private slots:
         QVERIFY(!doc1.isNull());
         QCOMPARE(doc1.object().value("isPttActive").toBool(), false);
 
-        // 2. Configure Action profile with PTT pinned to Tab 0
-        ActionsController *actions = project.actionsController();
-        QVERIFY(actions != nullptr);
-        int profIdx = actions->addProfile("PTT Profile");
-        QVariantMap profData = actions->getProfile(profIdx);
+        // 2. Configure PTT profile pinned to Tab 0
+        PttController *ptt = project.pttController();
+        QVERIFY(ptt != nullptr);
+        int profIdx = ptt->addProfile("PTT Profile");
+        QVariantMap profData = ptt->getProfile(profIdx);
         profData["pinnedTabName"] = "Sound Set 1";
         profData["pttKey"] = "KEY_V";
-        actions->setProfile(profIdx, profData);
+        ptt->setProfile(profIdx, profData);
 
         // 3. Trigger test transmission on KEY_V
-        actions->testTriggerKey("KEY_V", 2000);
-        QVERIFY(actions->isTransmitting());
+        ptt->testTriggerKey("KEY_V", 2000);
+        QVERIFY(ptt->isTransmitting());
 
         // 4. Fetch state and verify PTT active
         QByteArray resp2 = sendHttpRequest(15052, "GET", "/api/state", authHeaders);
@@ -275,8 +275,8 @@ private slots:
         QCOMPARE(tabs.at(0).toObject().value("actionBadge").toString(), QString("PTT: V"));
 
         // 5. Stop transmission
-        actions->stopAll();
-        QVERIFY(!actions->isTransmitting());
+        ptt->stopAll();
+        QVERIFY(!ptt->isTransmitting());
 
         QByteArray resp3 = sendHttpRequest(15052, "GET", "/api/state", authHeaders);
         int jsonIdx3 = resp3.indexOf("\r\n\r\n") + 4;

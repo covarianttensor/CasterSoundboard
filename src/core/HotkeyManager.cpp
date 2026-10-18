@@ -3,7 +3,7 @@
 #include "SoundboardProjectController.h"
 #include "SoundboardTabModel.h"
 #include "SoundboardGridModel.h"
-#include "ActionsController.h"
+#include "PttController.h"
 #include <QInputDevice>
 
 HotkeyManager::HotkeyManager(QObject *parent)
@@ -229,11 +229,11 @@ bool HotkeyManager::handleKeyEvent(QKeyEvent *event)
     }
 
     // 0b. Ignore incoming keystroke if it matches an actively transmitting PTT/Mute action
-    if (m_monitoredProject && m_monitoredProject->actionsController()) {
-        ActionsController *actions = m_monitoredProject->actionsController();
-        if (actions->isTransmitting()) {
-            QString keyName = actions->keyNameFromEvent(key, event->nativeScanCode());
-            if (!keyName.isEmpty() && actions->isTransmittingKey(keyName)) {
+    if (m_monitoredProject && m_monitoredProject->pttController()) {
+        PttController *ptt = m_monitoredProject->pttController();
+        if (ptt->isTransmitting()) {
+            QString keyName = ptt->keyNameFromEvent(key, event->nativeScanCode());
+            if (!keyName.isEmpty() && ptt->isTransmittingKey(keyName)) {
                 return false;
             }
         }

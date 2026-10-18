@@ -4,7 +4,7 @@
 #include "SoundboardTabModel.h"
 #include "SoundboardGridModel.h"
 #include "SoundTileController.h"
-#include "ActionsController.h"
+#include "PttController.h"
 
 #include <QSettings>
 #include <QDebug>
@@ -582,9 +582,9 @@ QJsonObject McpServerController::toolGetState(const QJsonObject &/*args*/)
     state["duckingVolumeRatio"] = m_projectController->duckingVolumeRatio();
 
     // PTT info
-    auto *actions = m_projectController->actionsController();
-    state["isPttActive"] = actions ? actions->isTransmitting() : false;
-    state["activeTransmittingKey"] = actions ? actions->activeTransmittingKey() : QString();
+    auto *ptt = m_projectController->pttController();
+    state["isPttActive"] = ptt ? ptt->isTransmitting() : false;
+    state["activeTransmittingKey"] = ptt ? ptt->activeTransmittingKey() : QString();
 
     // Tabs & Sound tiles
     auto *tabModel = m_projectController->tabModel();
@@ -602,9 +602,10 @@ QJsonObject McpServerController::toolGetState(const QJsonObject &/*args*/)
             tabObj["name"] = tabName;
             tabObj["id"] = tabId;
             tabObj["hotkey"] = tabHotkey;
-            const bool tabTransmitting = actions ? actions->isTransmittingForTab(tabName) : false;
+            const bool tabTransmitting = ptt ? ptt->isTransmittingForTab(tabName) : false;
             tabObj["isTransmitting"] = tabTransmitting;
-            tabObj["actionBadge"] = actions ? actions->activeBadgeForTab(tabName) : QString();
+            tabObj["actionBadge"] = ptt ? ptt->activeBadgeForTab(tabName) : QString();
+            tabObj["pttBadge"] = ptt ? ptt->activeBadgeForTab(tabName) : QString();
 
             auto *grid = tabModel->gridModelAt(i);
             QJsonArray tilesArr;
@@ -713,9 +714,9 @@ QJsonObject McpServerController::toolTriggerSound(const QJsonObject &args)
         newState = "Paused";
     }
 
-    auto *actions = m_projectController->actionsController();
-    const bool isTx = actions && actions->isTransmitting();
-    const QString txKey = isTx ? actions->activeTransmittingKey() : QString();
+    auto *ptt = m_projectController->pttController();
+    const bool isTx = ptt && ptt->isTransmitting();
+    const QString txKey = isTx ? ptt->activeTransmittingKey() : QString();
 
     QString msg = QString("Triggered sound '%1' (Tab %2: '%3', Slot %4).\n• Current State: %5\n• Push-to-Talk: %6")
         .arg(targetTile->displayName())

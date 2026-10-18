@@ -116,6 +116,17 @@
             ]
         }
     ],
+    "pttProfiles": [
+        {
+            "bufferMs": 150,
+            "id": "ptt-1",
+            "mode": 1,
+            "muteKey": "KEY_M",
+            "name": "Discord Voice",
+            "pinnedTabName": "Main Show",
+            "pttKey": "KEY_F24"
+        }
+    ],
     "window": {
         "fullScreen": false,
         "height": 800,

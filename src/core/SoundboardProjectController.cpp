@@ -2,7 +2,7 @@
 #include "SoundboardTabModel.h"
 #include "SoundboardGridModel.h"
 #include "SoundTileController.h"
-#include "ActionsController.h"
+#include "PttController.h"
 #include "LegacyProjectImporter.h"
 
 #include <QFile>
@@ -17,11 +17,11 @@ SoundboardProjectController::SoundboardProjectController(QObject *parent)
     : QObject(parent)
 {
     m_tabModel = new SoundboardTabModel(this);
-    m_actionsController = new ActionsController(this);
+    m_pttController = new PttController(this);
     m_mediaDevices = new QMediaDevices(this);
 
-    connect(m_actionsController, &ActionsController::profilesChanged, this, [this]() {
-        setupActionsCoordination();
+    connect(m_pttController, &PttController::profilesChanged, this, [this]() {
+        setupPttCoordination();
         setDirty(true);
     });
 
@@ -30,7 +30,7 @@ SoundboardProjectController::SoundboardProjectController(QObject *parent)
         emit availableAudioOutputsChanged();
     });
     connect(m_tabModel, &QAbstractItemModel::dataChanged, this, [this]() {
-        setupActionsCoordination();
+        setupPttCoordination();
         setDirty(true);
     });
     connect(m_tabModel, &QAbstractItemModel::rowsInserted, this, [this](const QModelIndex &, int first, int last) {
@@ -39,25 +39,25 @@ SoundboardProjectController::SoundboardProjectController(QObject *parent)
             if (g) {
                 connect(g, &QAbstractItemModel::rowsInserted, this, [this]() {
                     applyOutputDeviceToAllTiles();
-                    setupActionsCoordination();
+                    setupPttCoordination();
                 });
             }
         }
         applyOutputDeviceToAllTiles();
-        setupActionsCoordination();
+        setupPttCoordination();
         setDirty(true);
     });
     connect(m_tabModel, &QAbstractItemModel::rowsRemoved, this, [this]() {
-        setupActionsCoordination();
+        setupPttCoordination();
         setDirty(true);
     });
     connect(m_tabModel, &QAbstractItemModel::rowsMoved, this, [this]() {
-        setupActionsCoordination();
+        setupPttCoordination();
         setDirty(true);
     });
     connect(m_tabModel, &SoundboardTabModel::currentGridModelChanged, this, [this]() {
         applyOutputDeviceToAllTiles();
-        setupActionsCoordination();
+        setupPttCoordination();
     });
     newProject();
 }
@@ -326,8 +326,8 @@ bool SoundboardProjectController::save()
 
 void SoundboardProjectController::stopAllSounds()
 {
-    if (m_actionsController) {
-        m_actionsController->stopAll();
+    if (m_pttController) {
+        m_pttController->stopAll();
     }
     for (int t = 0; t < m_tabModel->count(); ++t) {
         SoundboardGridModel *grid = m_tabModel->gridModelAt(t);
@@ -406,7 +406,7 @@ void SoundboardProjectController::applyOutputDeviceToAllTiles()
     }
 }
 
-void SoundboardProjectController::setupActionsCoordination()
+void SoundboardProjectController::setupPttCoordination()
 {
     for (int t = 0; t < m_tabModel->count(); ++t) {
         const QString tabName = m_tabModel->tabNameAt(t);
@@ -415,15 +415,15 @@ void SoundboardProjectController::setupActionsCoordination()
         for (SoundTileController *tile : grid->tiles()) {
             if (!tile) continue;
             tile->setPlaybackCoordinator([this, tabName](SoundTileController *tile, std::function<void()> onReady) {
-                if (m_actionsController) {
-                    m_actionsController->coordinatePlayback(tile, tabName, onReady);
+                if (m_pttController) {
+                    m_pttController->coordinatePlayback(tile, tabName, onReady);
                 } else if (onReady) {
                     onReady();
                 }
             });
             tile->setStopCoordinator([this](SoundTileController *tile) {
-                if (m_actionsController) {
-                    m_actionsController->coordinatePlaybackFinished(tile);
+                if (m_pttController) {
+                    m_pttController->coordinatePlaybackFinished(tile);
                 }
             });
         }
@@ -463,9 +463,9 @@ QJsonObject SoundboardProjectController::toJson() const
     shortcutsObj["ducking"] = m_duckingHotkey;
     root["shortcuts"] = shortcutsObj;
 
-    // Action profiles (Issue #24)
-    if (m_actionsController) {
-        root["actions"] = m_actionsController->toJson();
+    // Push-to-Talk (PTT) profiles
+    if (m_pttController) {
+        root["pttProfiles"] = m_pttController->toJson();
     }
 
     // Tabs & sounds
@@ -512,12 +512,12 @@ bool SoundboardProjectController::fromJson(const QJsonObject &json)
         setDuckingHotkey("Ctrl+D");
     }
 
-    if (json.contains("actions") && json["actions"].isArray()) {
-        if (m_actionsController) {
-            m_actionsController->fromJson(json["actions"].toArray());
+    if (json.contains("pttProfiles") && json["pttProfiles"].isArray()) {
+        if (m_pttController) {
+            m_pttController->fromJson(json["pttProfiles"].toArray());
         }
-    } else if (m_actionsController) {
-        m_actionsController->fromJson(QJsonArray());
+    } else if (m_pttController) {
+        m_pttController->fromJson(QJsonArray());
     }
 
     if (json.contains("tabs") && json["tabs"].isArray()) {
@@ -530,7 +530,7 @@ bool SoundboardProjectController::fromJson(const QJsonObject &json)
 
     applyOutputDeviceToAllTiles();
     applyDuckingToAllTiles();
-    setupActionsCoordination();
+    setupPttCoordination();
 
     return true;
 }

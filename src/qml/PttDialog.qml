@@ -50,8 +50,8 @@ Dialog {
     }
 
     function selectProfileForTab(tabName) {
-        if (!projectController || !projectController.actionsController) return;
-        var list = projectController.actionsController.profilesList();
+        if (!projectController || !projectController.pttController) return;
+        var list = projectController.pttController.profilesList();
         for (var i = 0; i < list.length; ++i) {
             if (list[i].pinnedTabName === tabName) {
                 root.selectedProfileIndex = i;
@@ -68,26 +68,26 @@ Dialog {
             }
         }
         if (unpinnedIdx !== -1) {
-            var pData = projectController.actionsController.getProfile(unpinnedIdx);
+            var pData = projectController.pttController.getProfile(unpinnedIdx);
             pData["pinnedTabName"] = tabName;
-            projectController.actionsController.setProfile(unpinnedIdx, pData);
+            projectController.pttController.setProfile(unpinnedIdx, pData);
             root.selectedProfileIndex = unpinnedIdx;
         } else {
-            var createdIdx = projectController.actionsController.addProfile(tabName + " PTT");
-            var createdData = projectController.actionsController.getProfile(createdIdx);
+            var createdIdx = projectController.pttController.addProfile(tabName + " PTT");
+            var createdData = projectController.pttController.getProfile(createdIdx);
             createdData["pinnedTabName"] = tabName;
-            projectController.actionsController.setProfile(createdIdx, createdData);
+            projectController.pttController.setProfile(createdIdx, createdData);
             root.selectedProfileIndex = createdIdx;
         }
         refreshProfileUI();
     }
 
     function refreshProfileUI() {
-        if (!projectController || !projectController.actionsController) return;
-        var list = projectController.actionsController.profilesList();
+        if (!projectController || !projectController.pttController) return;
+        var list = projectController.pttController.profilesList();
         if (list.length === 0) {
-            projectController.actionsController.addProfile(qsTr("Default PTT"));
-            list = projectController.actionsController.profilesList();
+            projectController.pttController.addProfile(qsTr("Default PTT"));
+            list = projectController.pttController.profilesList();
         }
         if (selectedProfileIndex >= list.length) {
             selectedProfileIndex = Math.max(0, list.length - 1);
@@ -120,8 +120,8 @@ Dialog {
     }
 
     function saveCurrentProfile() {
-        if (!projectController || !projectController.actionsController) return;
-        var list = projectController.actionsController.profilesList();
+        if (!projectController || !projectController.pttController) return;
+        var list = projectController.pttController.profilesList();
         if (selectedProfileIndex < 0 || selectedProfileIndex >= list.length) return;
 
         var pinned = tabCombo.currentIndex === 0 ? "" : tabCombo.currentText;
@@ -132,7 +132,7 @@ Dialog {
             "pinnedTabName": pinned,
             "bufferMs": Math.round(bufferSlider.value)
         };
-        projectController.actionsController.setProfile(selectedProfileIndex, data);
+        projectController.pttController.setProfile(selectedProfileIndex, data);
     }
 
     contentItem: ColumnLayout {
@@ -143,7 +143,7 @@ Dialog {
             Layout.fillWidth: true
 
             Text {
-                text: qsTr("⚡ Soundboard Actions (PTT & Mute)")
+                text: qsTr("🎙️ Push-to-Talk (PTT) & Mic Automation")
                 color: "#FFFFFF"
                 font.bold: true
                 font.pointSize: 13
@@ -170,7 +170,7 @@ Dialog {
         }
 
         Text {
-            text: qsTr("Automatically keys up Push-To-Talk or toggles Mute in games/Discord when sounds play. Actions are pinned per soundboard tab.")
+            text: qsTr("Automatically keys up Push-To-Talk or toggles Mute in Discord or games when sounds play. Configured per soundboard tab.")
             color: "#AAAAAA"
             font.pointSize: 9
             wrapMode: Text.Wrap
@@ -189,7 +189,7 @@ Dialog {
             spacing: 8
 
             Text {
-                text: qsTr("Profile:")
+                text: qsTr("PTT Profile:")
                 color: "#CCCCCC"
                 font.bold: true
                 font.pointSize: 10
@@ -199,7 +199,7 @@ Dialog {
                 id: profileCombo
                 Layout.fillWidth: true
                 Layout.preferredHeight: 34
-                model: (projectController && projectController.actionsController) ? projectController.actionsController.profiles : []
+                model: (projectController && projectController.pttController) ? projectController.pttController.profiles : []
                 textRole: "name"
                 currentIndex: root.selectedProfileIndex
                 onActivated: (index) => {
@@ -265,7 +265,7 @@ Dialog {
                 enabled: profileCombo.count > 1
                 Layout.preferredHeight: 34
                 onClicked: {
-                    projectController.actionsController.removeProfile(root.selectedProfileIndex);
+                    projectController.pttController.removeProfile(root.selectedProfileIndex);
                     root.selectedProfileIndex = Math.max(0, root.selectedProfileIndex - 1);
                     root.refreshProfileUI();
                 }
@@ -287,7 +287,7 @@ Dialog {
 
             Button {
                 id: newProfileBtn
-                text: qsTr("+ New Profile")
+                text: qsTr("+ New PTT Profile")
                 Layout.preferredHeight: 34
                 onClicked: {
                     root.saveCurrentProfile();
@@ -408,7 +408,7 @@ Dialog {
 
                     RadioButton {
                         id: modePttRadio
-                        text: qsTr("Push-To-Talk")
+                        text: qsTr("Push-To-Talk (Hold Key)")
                         ButtonGroup.group: modeGroup
                         contentItem: Text {
                             text: parent.text
@@ -422,7 +422,7 @@ Dialog {
 
                     RadioButton {
                         id: modeMuteRadio
-                        text: qsTr("Mute Toggle")
+                        text: qsTr("Mic Mute Toggle")
                         ButtonGroup.group: modeGroup
                         contentItem: Text {
                             text: parent.text
@@ -436,7 +436,7 @@ Dialog {
 
                     RadioButton {
                         id: modeNoneRadio
-                        text: qsTr("None")
+                        text: qsTr("Disabled")
                         ButtonGroup.group: modeGroup
                         contentItem: Text {
                             text: parent.text
@@ -469,9 +469,9 @@ Dialog {
                         focus: root.isCapturingKey
 
                         property var currentProf: {
-                            if (projectController && projectController.actionsController && root.selectedProfileIndex >= 0 && root.selectedProfileIndex < profileCombo.count) {
-                                var rev = projectController.actionsController.revision;
-                                return projectController.actionsController.getProfile(root.selectedProfileIndex);
+                            if (projectController && projectController.pttController && root.selectedProfileIndex >= 0 && root.selectedProfileIndex < profileCombo.count) {
+                                var rev = projectController.pttController.revision;
+                                return projectController.pttController.getProfile(root.selectedProfileIndex);
                             }
                             return null;
                         }
@@ -511,13 +511,13 @@ Dialog {
                         }
 
                         Keys.onPressed: (event) => {
-                            if (root.isCapturingKey && projectController && projectController.actionsController) {
-                                var codeName = projectController.actionsController.keyNameFromEvent(event.key, event.nativeScanCode);
+                            if (root.isCapturingKey && projectController && projectController.pttController) {
+                                var codeName = projectController.pttController.keyNameFromEvent(event.key, event.nativeScanCode);
                                 if (codeName && codeName.length > 0) {
                                     var data = {};
                                     if (modePttRadio.checked) data["pttKey"] = codeName;
                                     else data["muteKey"] = codeName;
-                                    projectController.actionsController.setProfile(root.selectedProfileIndex, data);
+                                    projectController.pttController.setProfile(root.selectedProfileIndex, data);
                                     root.isCapturingKey = false;
                                     event.accepted = true;
                                     root.refreshProfileUI();
@@ -533,13 +533,13 @@ Dialog {
                             if (!keyCaptureBtn.currentProf) return "KEY_V";
                             return modePttRadio.checked ? (keyCaptureBtn.currentProf.pttKey || "KEY_V") : (keyCaptureBtn.currentProf.muteKey || "KEY_M");
                         }
-                        property bool isTesting: (typeof projectController !== "undefined" && projectController.actionsController)
-                            ? projectController.actionsController.isTransmittingKey(currentKeyName)
+                        property bool isTesting: (typeof projectController !== "undefined" && projectController.pttController)
+                            ? projectController.pttController.isTransmittingKey(currentKeyName)
                             : false
 
                         Layout.preferredHeight: 36
                         Layout.preferredWidth: 130
-                        enabled: !root.isCapturingKey && (projectController && projectController.actionsController && projectController.actionsController.uinputAvailable)
+                        enabled: !root.isCapturingKey && (projectController && projectController.pttController && projectController.pttController.uinputAvailable)
 
                         background: Rectangle {
                             color: testKeyBtn.isTesting ? "#064E3B" : (testKeyBtn.pressed ? "#1E2022" : (testKeyBtn.hovered ? "#353A42" : "#282C32"))
@@ -552,7 +552,7 @@ Dialog {
                             anchors.centerIn: parent
                             spacing: 6
                             Text {
-                                text: testKeyBtn.isTesting ? "🟢" : "⚡"
+                                text: testKeyBtn.isTesting ? "🟢" : "🎙️"
                                 font.pixelSize: 11
                             }
                             Text {
@@ -564,8 +564,8 @@ Dialog {
                         }
 
                         onClicked: {
-                            if (projectController && projectController.actionsController) {
-                                projectController.actionsController.testTriggerKey(currentKeyName, 2000);
+                            if (projectController && projectController.pttController) {
+                                projectController.pttController.testTriggerKey(currentKeyName, 2000);
                             }
                         }
 
@@ -632,8 +632,8 @@ Dialog {
                     Layout.fillWidth: true
                     Layout.preferredHeight: 38
                     radius: 6
-                    color: (projectController && projectController.actionsController && projectController.actionsController.uinputAvailable) ? "#16281E" : "#281E16"
-                    border.color: (projectController && projectController.actionsController && projectController.actionsController.uinputAvailable) ? "#2ECC71" : "#F39C12"
+                    color: (projectController && projectController.pttController && projectController.pttController.uinputAvailable) ? "#16281E" : "#281E16"
+                    border.color: (projectController && projectController.pttController && projectController.pttController.uinputAvailable) ? "#2ECC71" : "#F39C12"
                     border.width: 1
 
                     RowLayout {
@@ -643,16 +643,16 @@ Dialog {
                         spacing: 8
 
                         Text {
-                            text: (projectController && projectController.actionsController && projectController.actionsController.uinputAvailable) ? "✔" : "⚠"
-                            color: (projectController && projectController.actionsController && projectController.actionsController.uinputAvailable) ? "#2ECC71" : "#F39C12"
+                            text: (projectController && projectController.pttController && projectController.pttController.uinputAvailable) ? "✔" : "⚠"
+                            color: (projectController && projectController.pttController && projectController.pttController.uinputAvailable) ? "#2ECC71" : "#F39C12"
                             font.bold: true
                         }
 
                         Text {
-                            text: (projectController && projectController.actionsController && projectController.actionsController.uinputAvailable)
-                                  ? qsTr("Linux uinput virtual keyboard ready for in-game PTT.")
+                            text: (projectController && projectController.pttController && projectController.pttController.uinputAvailable)
+                                  ? qsTr("Linux uinput virtual keyboard ready for Push-to-Talk.")
                                   : qsTr("uinput device not accessible. Key injection requires user access to /dev/uinput.")
-                            color: (projectController && projectController.actionsController && projectController.actionsController.uinputAvailable) ? "#2ECC71" : "#F39C12"
+                            color: (projectController && projectController.pttController && projectController.pttController.uinputAvailable) ? "#2ECC71" : "#F39C12"
                             font.pointSize: 8
                             Layout.fillWidth: true
                             elide: Text.ElideRight
@@ -720,9 +720,9 @@ Dialog {
         }
 
         function openForNew() {
-            var defaultNum = (projectController && projectController.actionsController)
-                             ? (projectController.actionsController.count + 1) : 1;
-            newProfileNameInput.text = qsTr("Action Profile %1").arg(defaultNum);
+            var defaultNum = (projectController && projectController.pttController)
+                             ? (projectController.pttController.count + 1) : 1;
+            newProfileNameInput.text = qsTr("PTT Profile %1").arg(defaultNum);
             newProfileDialog.open();
             newProfileNameInput.selectAll();
             newProfileNameInput.forceActiveFocus();
@@ -731,8 +731,8 @@ Dialog {
         function confirmCreate() {
             var trimmed = newProfileNameInput.text.trim();
             if (trimmed.length === 0) return;
-            if (projectController && projectController.actionsController) {
-                var newIdx = projectController.actionsController.addProfile(trimmed);
+            if (projectController && projectController.pttController) {
+                var newIdx = projectController.pttController.addProfile(trimmed);
                 root.selectedProfileIndex = newIdx;
                 root.refreshProfileUI();
             }
@@ -743,7 +743,7 @@ Dialog {
             spacing: 14
 
             Text {
-                text: qsTr("Create New Action Profile")
+                text: qsTr("Create New PTT Profile")
                 color: "#FFFFFF"
                 font.bold: true
                 font.pointSize: 12

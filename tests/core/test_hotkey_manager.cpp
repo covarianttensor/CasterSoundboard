@@ -4,7 +4,7 @@
 #include "SoundTileController.h"
 #include "SoundboardProjectController.h"
 #include "SoundboardGridModel.h"
-#include "ActionsController.h"
+#include "PttController.h"
 
 class TestHotkeyManager : public QObject
 {
@@ -266,16 +266,16 @@ private slots:
         QCOMPARE(triggerSpy.count(), 1);
 
         // Active transmission suppresses hotkey re-trigger
-        ActionsController *actions = project.actionsController();
-        QVERIFY(actions != nullptr);
-        actions->testTriggerKey("KEY_V", 1000);
-        QVERIFY(actions->isTransmittingKey("KEY_V"));
+        PttController *ptt = project.pttController();
+        QVERIFY(ptt != nullptr);
+        ptt->testTriggerKey("KEY_V", 1000);
+        QVERIFY(ptt->isTransmittingKey("KEY_V"));
 
         QVERIFY(!manager.handleKeyEvent(&keyV));
         QCOMPARE(triggerSpy.count(), 1);
 
-        actions->stopAll();
-        QVERIFY(!actions->isTransmitting());
+        ptt->stopAll();
+        QVERIFY(!ptt->isTransmitting());
 
         QVERIFY(manager.handleKeyEvent(&keyV));
         QCOMPARE(triggerSpy.count(), 2);

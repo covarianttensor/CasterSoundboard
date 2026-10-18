@@ -497,6 +497,16 @@ Item {
                         exampleCommand: "./CasterSoundboard --open-action-hotkey-prompt stopAll"
                     }
 
+                    // 13. --open-ptt-prompt
+                    CliCard {
+                        optFlag: "--open-ptt-prompt"
+                        optParams: qsTr("Flag (no arguments)")
+                        optBadge: qsTr("Dialogs")
+                        badgeColor: "#9B59B6"
+                        description: qsTr("Opens the Push-to-Talk (PTT) & Mic Automation configuration dialog on launch.")
+                        exampleCommand: "./CasterSoundboard --open-ptt-prompt"
+                    }
+
                     // 13. --open-delete-tab-prompt
                     CliCard {
                         optFlag: "--open-delete-tab-prompt"
@@ -759,7 +769,7 @@ Item {
                             }
 
                             Text {
-                                text: qsTr("• <b>Direct Soundboard Playback Output:</b> Choose the target audio device directly from the Top Action Bar dropdown, Preferences, or the Audio Devices view. Route soundboard playback straight to any physical speaker/headphone or external DAC.\n• <b>Virtual Audio Routing & Mic Loopback:</b> Click 'Apply Routing' in Audio Devices to seamlessly bridge soundboard audio with your physical microphone into a virtual microphone sink (e.g. <i>Caster Soundboard Mic</i>). This allows games, streaming apps (OBS), and VoIP apps (Discord, Zoom) to receive your voice and sound effects simultaneously.\n• <b>Discord & Voice Chat Setup (Critical):</b>\n  1. <i>Input Device:</i> In Discord <i>Settings → Voice & Video</i>, explicitly set <b>Input Device</b> to <b>Caster Soundboard Mic</b>.\n  2. <i>Noise Suppression (Krisp):</i> Set to <b>None / Off</b>. Discord's Krisp AI cancels out non-vocal audio (music, explosions, jingles), making soundboard playback silent to others!\n  3. <i>Echo Cancellation:</i> Turn off <i>Echo Cancellation</i> and <i>Advanced Voice Activity</i> if sound clips cut out prematurely.\n• <b>Independent Tile Gain:</b> Each tile supports dedicated volume trimming and custom cue points to balance levels across disparate audio files.")
+                                text: qsTr("• <b>Direct Soundboard Playback Output:</b> Choose the target audio device directly from the Top Action Bar dropdown, Preferences, or the Audio Devices view. Route soundboard playback straight to any physical speaker/headphone or external DAC.\n• <b>Virtual Audio Routing & Mic Loopback:</b> Click 'Apply Routing' in Audio Devices to seamlessly bridge soundboard audio with your physical microphone into a virtual microphone sink (e.g. <i>Caster Soundboard Mic</i>). This allows games, streaming apps (OBS), and VoIP apps (Discord, Zoom) to receive your voice and sound effects simultaneously.\n• <b>Push-to-Talk (PTT) Automation:</b> Automatically press your Discord or in-game PTT key (e.g. F24, V) or toggle mic mute whenever sounds play in designated soundboard tabs, complete with customizable lead-in and tail buffer delays to eliminate audio clipping.\n• <b>Discord & Voice Chat Setup (Critical):</b>\n  1. <i>Input Device:</i> In Discord <i>Settings → Voice & Video</i>, explicitly set <b>Input Device</b> to <b>Caster Soundboard Mic</b>.\n  2. <i>Noise Suppression (Krisp):</i> Set to <b>None / Off</b>. Discord's Krisp AI cancels out non-vocal audio (music, explosions, jingles), making soundboard playback silent to others!\n  3. <i>Echo Cancellation:</i> Turn off <i>Echo Cancellation</i> and <i>Advanced Voice Activity</i> if sound clips cut out prematurely.\n• <b>Independent Tile Gain:</b> Each tile supports dedicated volume trimming and custom cue points to balance levels across disparate audio files.")
                                 color: "#CCCCCC"
                                 font.pointSize: 9
                                 textFormat: Text.RichText

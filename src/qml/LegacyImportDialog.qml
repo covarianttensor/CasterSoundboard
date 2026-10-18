@@ -130,9 +130,9 @@ Dialog {
 
             RowLayout {
                 spacing: 8
-                Text { text: "⚡"; font.pixelSize: 13 }
+                Text { text: "🎙️"; font.pixelSize: 13 }
                 Text {
-                    text: qsTr("<b>Actions:</b> Push-To-Talk and Mute controls imported into the Actions manager and pinned to this soundboard.")
+                    text: qsTr("<b>PTT:</b> Push-To-Talk and Mute controls imported into the PTT manager and pinned to this soundboard.")
                     color: "#D1D5DB"
                     font.pointSize: 9
                     wrapMode: Text.WordWrap

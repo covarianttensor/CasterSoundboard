@@ -22,6 +22,8 @@ public:
         QJsonObject projectJson;
         bool hasActions = false;
         int importedActionsCount = 0;
+        bool hasPttProfiles = false;
+        int importedPttProfilesCount = 0;
     };
 
     /**

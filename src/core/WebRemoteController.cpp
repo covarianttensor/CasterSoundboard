@@ -3,7 +3,7 @@
 #include "SoundboardTabModel.h"
 #include "SoundboardGridModel.h"
 #include "SoundTileController.h"
-#include "ActionsController.h"
+#include "PttController.h"
 
 #include <QFile>
 #include <QFileInfo>
@@ -43,8 +43,8 @@ void WebRemoteController::setProjectController(SoundboardProjectController *proj
         if (m_projectController->tabModel()) {
             disconnect(m_projectController->tabModel(), nullptr, this, nullptr);
         }
-        if (m_projectController->actionsController()) {
-            disconnect(m_projectController->actionsController(), nullptr, this, nullptr);
+        if (m_projectController->pttController()) {
+            disconnect(m_projectController->pttController(), nullptr, this, nullptr);
         }
     }
 
@@ -64,10 +64,10 @@ void WebRemoteController::setProjectController(SoundboardProjectController *proj
         connect(m_projectController, &SoundboardProjectController::duckingVolumeRatioChanged,
                 this, &WebRemoteController::broadcastState);
 
-        if (m_projectController->actionsController()) {
-            connect(m_projectController->actionsController(), &ActionsController::transmissionChanged,
+        if (m_projectController->pttController()) {
+            connect(m_projectController->pttController(), &PttController::transmissionChanged,
                     this, &WebRemoteController::broadcastState);
-            connect(m_projectController->actionsController(), &ActionsController::profilesChanged,
+            connect(m_projectController->pttController(), &PttController::profilesChanged,
                     this, &WebRemoteController::broadcastState);
         }
 
@@ -623,14 +623,14 @@ QByteArray WebRemoteController::generateStateJson() const
     root["duckingVolumeRatio"] = m_projectController->duckingVolumeRatio();
     root["masterVolume"] = m_projectController->masterVolume();
 
-    ActionsController *actions = m_projectController->actionsController();
-    const bool isPttActive = actions && actions->isTransmitting();
+    PttController *ptt = m_projectController->pttController();
+    const bool isPttActive = ptt && ptt->isTransmitting();
     root["isPttActive"] = isPttActive;
-    root["activeTransmittingKey"] = actions ? actions->activeTransmittingKey() : QString();
+    root["activeTransmittingKey"] = ptt ? ptt->activeTransmittingKey() : QString();
 
     QJsonArray txKeys;
-    if (actions) {
-        for (const QString &k : actions->activeTransmittingKeys()) {
+    if (ptt) {
+        for (const QString &k : ptt->activeTransmittingKeys()) {
             txKeys.append(k);
         }
     }
@@ -649,9 +649,10 @@ QByteArray WebRemoteController::generateStateJson() const
             tabObj["name"] = tabName;
             tabObj["hotkey"] = tabModel->tabHotkeyAt(t);
 
-            const bool tabTransmitting = actions ? actions->isTransmittingForTab(tabName) : false;
+            const bool tabTransmitting = ptt ? ptt->isTransmittingForTab(tabName) : false;
             tabObj["isTransmitting"] = tabTransmitting;
-            tabObj["actionBadge"] = actions ? actions->activeBadgeForTab(tabName) : QString();
+            tabObj["actionBadge"] = ptt ? ptt->activeBadgeForTab(tabName) : QString();
+            tabObj["pttBadge"] = ptt ? ptt->activeBadgeForTab(tabName) : QString();
 
             QJsonArray tilesArr;
             auto *grid = tabModel->gridModelAt(t);

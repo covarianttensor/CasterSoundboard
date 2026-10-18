@@ -1,5 +1,5 @@
 #include "LegacyProjectImporter.h"
-#include "ActionProfile.h"
+#include "PttProfile.h"
 
 #include <QFile>
 #include <QDataStream>
@@ -122,10 +122,10 @@ LegacyProjectImporter::ImportResult LegacyProjectImporter::importLegacyProject(c
                     return result;
                 }
 
-                Actions::Profile prof;
+                Ptt::Profile prof;
                 prof.id = QUuid::createUuid().toString(QUuid::WithoutBraces);
-                prof.name = actionName.isEmpty() ? QString("Imported Action %1").arg(i + 1) : actionName;
-                prof.mode = static_cast<Actions::TalkMode>(qBound(0, mode, 2));
+                prof.name = actionName.isEmpty() ? QString("Imported PTT %1").arg(i + 1) : actionName;
+                prof.mode = static_cast<Ptt::TalkMode>(qBound(0, mode, 2));
                 prof.pttKey = key.isEmpty() ? QString("KEY_V") : key;
                 prof.muteKey = muteKey.isEmpty() ? QString("KEY_M") : muteKey;
                 prof.bufferMs = buffer > 0 ? buffer : 150;
@@ -136,6 +136,8 @@ LegacyProjectImporter::ImportResult LegacyProjectImporter::importLegacyProject(c
             }
             result.hasActions = (count > 0);
             result.importedActionsCount = count;
+            result.hasPttProfiles = (count > 0);
+            result.importedPttProfilesCount = count;
             actionsRead = true;
         } else {
             result.errorMessage = "Unknown or unsupported extension block in legacy project.";
@@ -161,7 +163,7 @@ LegacyProjectImporter::ImportResult LegacyProjectImporter::importLegacyProject(c
     };
 
     if (!actionsArray.isEmpty()) {
-        root["actions"] = actionsArray;
+        root["pttProfiles"] = actionsArray;
     }
 
     result.projectJson = root;

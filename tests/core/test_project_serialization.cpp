@@ -5,7 +5,7 @@
 #include "SoundboardTabModel.h"
 #include "SoundboardGridModel.h"
 #include "SoundTileController.h"
-#include "ActionsController.h"
+#include "PttController.h"
 
 class TestProjectSerialization : public QObject
 {
@@ -238,10 +238,10 @@ private slots:
         SoundboardProjectController project;
         QVERIFY(project.loadProject(path));
         QCOMPARE(project.tabModel()->tabNameAt(0), QString("Gaming Board"));
-        QVERIFY(project.actionsController() != nullptr);
-        QCOMPARE(project.actionsController()->count(), 1);
-        QVERIFY(project.actionsController()->hasActionForTab("Gaming Board"));
-        QCOMPARE(project.actionsController()->activeBadgeForTab("Gaming Board"), QString("PTT: V"));
+        QVERIFY(project.pttController() != nullptr);
+        QCOMPARE(project.pttController()->count(), 1);
+        QVERIFY(project.pttController()->hasPttForTab("Gaming Board"));
+        QCOMPARE(project.pttController()->activeBadgeForTab("Gaming Board"), QString("PTT: V"));
     }
 
     void testDuckingToggle()

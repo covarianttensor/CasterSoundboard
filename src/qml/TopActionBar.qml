@@ -12,7 +12,7 @@ Rectangle {
     signal saveProjectRequested()
     signal saveAsProjectRequested()
     signal renameTabRequested()
-    signal openActionsRequested()
+    signal openPttRequested()
     signal stopAllRequested()
     signal toggleDuckingRequested()
     signal toggleMuteHotkeysRequested()
@@ -71,35 +71,94 @@ Rectangle {
             onClicked: root.renameTabRequested()
         }
 
-        // Actions (Push-To-Talk / Mute) Button (Issue #24)
-        ActionIconButton {
-            id: actionsBtn
-            iconSource: "icons/actions.png"
+        // Push-To-Talk (PTT) Button
+        Button {
+            id: pttBtn
             readonly property bool isTransmitting: {
-                if (typeof projectController !== "undefined" && projectController.actionsController) {
-                    return projectController.actionsController.isTransmitting;
+                if (typeof projectController !== "undefined" && projectController.pttController) {
+                    return projectController.pttController.isTransmitting;
                 }
                 return false;
             }
             readonly property string activeKey: {
-                if (typeof projectController !== "undefined" && projectController.actionsController) {
-                    return projectController.actionsController.activeTransmittingKey;
+                if (typeof projectController !== "undefined" && projectController.pttController) {
+                    return projectController.pttController.activeTransmittingKey;
                 }
                 return "";
             }
-            tooltipText: isTransmitting
-                ? qsTr("Soundboard Actions - TRANSMITTING (%1)").arg(activeKey)
-                : qsTr("Soundboard Actions (Push-To-Talk & Mute)")
-            isActive: {
-                if (typeof projectController !== "undefined" && projectController.actionsController && projectController.tabModel) {
-                    var rev = projectController.actionsController.revision;
+            readonly property bool isAssigned: {
+                if (typeof projectController !== "undefined" && projectController.pttController && projectController.tabModel) {
+                    var rev = projectController.pttController.revision;
                     var curTab = projectController.tabModel.tabNameAt(projectController.tabModel.currentIndex);
-                    return projectController.actionsController.hasActionForTab(curTab);
+                    return projectController.pttController.hasPttForTab(curTab);
                 }
                 return false;
             }
-            isTransmittingActive: isTransmitting
-            onClicked: root.openActionsRequested()
+
+            Layout.preferredWidth: 44
+            Layout.preferredHeight: 44
+            onClicked: root.openPttRequested()
+
+            background: Rectangle {
+                color: pttBtn.pressed 
+                       ? "#1E2022" 
+                       : (pttBtn.isTransmitting ? "#064E3B" : (pttBtn.isAssigned ? "#2F2344" : (pttBtn.hovered ? "#3A3E42" : "#2E3236")))
+                radius: 6
+                border.color: pttBtn.isTransmitting 
+                              ? "#10B981" 
+                              : (pttBtn.isAssigned ? "#8E2DE2" : (pttBtn.hovered ? "#4E545F" : "#3A3E42"))
+                border.width: (pttBtn.isTransmitting || pttBtn.isAssigned) ? 2 : 1
+
+                // Pulsing glow border when transmitting
+                Rectangle {
+                    anchors.fill: parent
+                    radius: 6
+                    color: "transparent"
+                    border.color: "#34D399"
+                    border.width: 2
+                    visible: pttBtn.isTransmitting
+
+                    SequentialAnimation on opacity {
+                        running: pttBtn.isTransmitting
+                        loops: Animation.Infinite
+                        NumberAnimation { from: 0.3; to: 1.0; duration: 400; easing.type: Easing.InOutQuad }
+                        NumberAnimation { from: 1.0; to: 0.3; duration: 400; easing.type: Easing.InOutQuad }
+                    }
+                }
+            }
+
+            contentItem: ColumnLayout {
+                anchors.centerIn: parent
+                spacing: 1
+
+                RowLayout {
+                    Layout.alignment: Qt.AlignHCenter
+                    spacing: 2
+                    Text {
+                        text: pttBtn.isTransmitting ? "🟢" : "🎙️"
+                        font.pixelSize: 8
+                        Layout.alignment: Qt.AlignVCenter
+                    }
+                }
+
+                Text {
+                    text: "PTT"
+                    color: pttBtn.isTransmitting 
+                           ? "#34D399" 
+                           : (pttBtn.isAssigned ? "#C084FC" : (pttBtn.hovered ? "#FFFFFF" : "#CCCCCC"))
+                    font.bold: true
+                    font.pointSize: 9
+                    font.letterSpacing: 0.5
+                    horizontalAlignment: Text.AlignHCenter
+                    Layout.alignment: Qt.AlignHCenter
+                }
+            }
+
+            ToolTip.visible: hovered
+            ToolTip.text: isTransmitting
+                ? qsTr("Push-to-Talk - TRANSMITTING (%1)").arg(activeKey)
+                : (isAssigned ? qsTr("Push-to-Talk (PTT) Configured - Click to edit") : qsTr("Configure Push-to-Talk (PTT)"))
+            ToolTip.delay: 300
         }
 
         Rectangle {

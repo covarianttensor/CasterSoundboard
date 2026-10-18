@@ -767,7 +767,7 @@
           if (isTx) {
             actionBadgeHtml = `<span class="tab-action-badge transmitting">🟢 PTT</span>`;
           } else if (tab.actionBadge) {
-            actionBadgeHtml = `<span class="tab-action-badge">⚡ ${escapeHtml(tab.actionBadge)}</span>`;
+            actionBadgeHtml = `<span class="tab-action-badge">🎙️ ${escapeHtml(tab.actionBadge)}</span>`;
           }
 
           pill.innerHTML = `<span>${escapeHtml(tab.name || ('Tab ' + (idx + 1)))}</span>` +

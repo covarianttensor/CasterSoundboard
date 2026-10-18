@@ -497,9 +497,9 @@ ApplicationWindow {
         }
     }
 
-    // Soundboard Actions Dialog (Push-To-Talk & Mute) (Issue #24)
-    ActionsDialog {
-        id: actionsDialog
+    // Push-to-Talk (PTT) Automation Dialog (Issue #24)
+    PttDialog {
+        id: pttDialog
     }
 
     // Legacy Profile Import Dialog (Issue #23)
@@ -550,7 +550,7 @@ ApplicationWindow {
                         soundboardsView.requestRenameCurrentTab();
                     }
                 }
-                onOpenActionsRequested: actionsDialog.open()
+                onOpenPttRequested: pttDialog.open()
                 onStopAllRequested: {
                     if (projectController) {
                         projectController.stopAllSounds();
@@ -586,11 +586,11 @@ ApplicationWindow {
                     id: soundboardsView
                     Layout.fillWidth: true
                     Layout.fillHeight: true
-                    onConfigureTabActionsRequested: (index) => {
+                    onConfigureTabPttRequested: (index) => {
                         if (projectController && projectController.tabModel) {
-                            actionsDialog.openForTab(projectController.tabModel.tabNameAt(index));
+                            pttDialog.openForTab(projectController.tabModel.tabNameAt(index));
                         } else {
-                            actionsDialog.open();
+                            pttDialog.open();
                         }
                     }
                 }
@@ -685,6 +685,8 @@ ApplicationWindow {
             legacyImportDialog.openForFile(legacyStartupFile);
         } else if (typeof openLegacyImportPromptOnStart !== "undefined" && openLegacyImportPromptOnStart) {
             legacyImportDialog.openForFile("retro_sounds.caster");
+        } else if (typeof openPttPromptOnStart !== "undefined" && openPttPromptOnStart) {
+            pttDialog.open();
         }
     }
 }

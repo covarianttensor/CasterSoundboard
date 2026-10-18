@@ -1,4 +1,4 @@
-#include "ActionsController.h"
+#include "PttController.h"
 #include "UInputChannel.h"
 #include "SoundTileController.h"
 
@@ -21,39 +21,39 @@ QString formatKeyBadge(const QString &rawKey) {
 }
 }
 
-ActionsController::ActionsController(QObject *parent)
+PttController::PttController(QObject *parent)
     : QObject(parent)
     , m_uinput(new UInputChannel(this))
 {
 }
 
-ActionsController::~ActionsController()
+PttController::~PttController()
 {
     stopAll();
 }
 
-void ActionsController::notifyProfilesChanged()
+void PttController::notifyProfilesChanged()
 {
     ++m_revision;
     emit profilesChanged();
 }
 
-bool ActionsController::isUInputAvailable() const
+bool PttController::isUInputAvailable() const
 {
     return m_uinput && m_uinput->isAvailable();
 }
 
-QString ActionsController::uinputStatusMessage() const
+QString PttController::uinputStatusMessage() const
 {
     return m_uinput ? m_uinput->statusMessage() : QString();
 }
 
-bool ActionsController::isTransmitting() const
+bool PttController::isTransmitting() const
 {
     return !m_sessions.isEmpty() || !m_testKeyName.isEmpty();
 }
 
-QString ActionsController::activeTransmittingKey() const
+QString PttController::activeTransmittingKey() const
 {
     if (!m_testKeyName.isEmpty())
         return m_testKeyName;
@@ -62,7 +62,7 @@ QString ActionsController::activeTransmittingKey() const
     return QString();
 }
 
-QStringList ActionsController::activeTransmittingKeys() const
+QStringList PttController::activeTransmittingKeys() const
 {
     QStringList keys = m_sessions.keys();
     if (!m_testKeyName.isEmpty() && !keys.contains(m_testKeyName)) {
@@ -71,13 +71,13 @@ QStringList ActionsController::activeTransmittingKeys() const
     return keys;
 }
 
-bool ActionsController::isTransmittingForTab(const QString &tabName) const
+bool PttController::isTransmittingForTab(const QString &tabName) const
 {
     if (tabName.isEmpty())
         return false;
 
-    Actions::Profile prof = profileForTab(tabName);
-    if (prof.mode == Actions::ModeNone || !prof.isValid())
+    Ptt::Profile prof = profileForTab(tabName);
+    if (prof.mode == Ptt::ModeNone || !prof.isValid())
         return false;
 
     const QString activeKey = prof.activeKey();
@@ -93,14 +93,14 @@ bool ActionsController::isTransmittingForTab(const QString &tabName) const
     return m_sessions.contains(activeKey);
 }
 
-bool ActionsController::isTransmittingKey(const QString &key) const
+bool PttController::isTransmittingKey(const QString &key) const
 {
     if (key.isEmpty())
         return false;
     return m_sessions.contains(key) || m_testKeyName == key;
 }
 
-void ActionsController::testTriggerKey(const QString &keyName, int durationMs)
+void PttController::testTriggerKey(const QString &keyName, int durationMs)
 {
     if (keyName.isEmpty() || !m_uinput || !m_uinput->isAvailable())
         return;
@@ -135,7 +135,7 @@ void ActionsController::testTriggerKey(const QString &keyName, int durationMs)
     m_testTimer->start(qMax(100, durationMs));
 }
 
-QVariantList ActionsController::profilesList() const
+QVariantList PttController::profilesList() const
 {
     QVariantList list;
     for (int i = 0; i < m_profiles.size(); ++i) {
@@ -144,7 +144,7 @@ QVariantList ActionsController::profilesList() const
     return list;
 }
 
-QVariantMap ActionsController::getProfile(int index) const
+QVariantMap PttController::getProfile(int index) const
 {
     QVariantMap map;
     if (index < 0 || index >= m_profiles.size())
@@ -162,14 +162,14 @@ QVariantMap ActionsController::getProfile(int index) const
     return map;
 }
 
-void ActionsController::setProfile(int index, const QVariantMap &data)
+void PttController::setProfile(int index, const QVariantMap &data)
 {
     if (index < 0 || index >= m_profiles.size())
         return;
 
     auto &p = m_profiles[index];
     if (data.contains("name")) p.name = data["name"].toString();
-    if (data.contains("mode")) p.mode = static_cast<Actions::TalkMode>(data["mode"].toInt());
+    if (data.contains("mode")) p.mode = static_cast<Ptt::TalkMode>(data["mode"].toInt());
     if (data.contains("pinnedTabName")) p.pinnedTabName = data["pinnedTabName"].toString();
     if (data.contains("pttKey")) p.pttKey = data["pttKey"].toString();
     if (data.contains("muteKey")) p.muteKey = data["muteKey"].toString();
@@ -178,12 +178,12 @@ void ActionsController::setProfile(int index, const QVariantMap &data)
     notifyProfilesChanged();
 }
 
-int ActionsController::addProfile(const QString &name)
+int PttController::addProfile(const QString &name)
 {
-    Actions::Profile p;
+    Ptt::Profile p;
     p.id = QUuid::createUuid().toString(QUuid::WithoutBraces);
-    p.name = name.isEmpty() ? tr("New Action %1").arg(m_profiles.size() + 1) : name;
-    p.mode = Actions::ModePushToTalk;
+    p.name = name.isEmpty() ? tr("New PTT Profile %1").arg(m_profiles.size() + 1) : name;
+    p.mode = Ptt::ModePushToTalk;
     p.pttKey = "KEY_V";
     p.muteKey = "KEY_M";
     p.bufferMs = 150;
@@ -193,7 +193,7 @@ int ActionsController::addProfile(const QString &name)
     return m_profiles.size() - 1;
 }
 
-bool ActionsController::removeProfile(int index)
+bool PttController::removeProfile(int index)
 {
     if (index < 0 || index >= m_profiles.size())
         return false;
@@ -203,16 +203,16 @@ bool ActionsController::removeProfile(int index)
     return true;
 }
 
-QString ActionsController::activeBadgeForTab(const QString &tabName) const
+QString PttController::activeBadgeForTab(const QString &tabName) const
 {
     if (tabName.isEmpty())
         return QString();
 
     for (const auto &p : m_profiles) {
-        if (p.pinnedTabName == tabName && p.mode != Actions::ModeNone) {
-            if (p.mode == Actions::ModePushToTalk) {
+        if (p.pinnedTabName == tabName && p.mode != Ptt::ModeNone) {
+            if (p.mode == Ptt::ModePushToTalk) {
                 return QString("PTT: %1").arg(formatKeyBadge(p.pttKey));
-            } else if (p.mode == Actions::ModeMuteToggle) {
+            } else if (p.mode == Ptt::ModeMuteToggle) {
                 return QString("Mute: %1").arg(formatKeyBadge(p.muteKey));
             }
         }
@@ -220,29 +220,29 @@ QString ActionsController::activeBadgeForTab(const QString &tabName) const
     return QString();
 }
 
-bool ActionsController::hasActionForTab(const QString &tabName) const
+bool PttController::hasPttForTab(const QString &tabName) const
 {
     return !activeBadgeForTab(tabName).isEmpty();
 }
 
-QString ActionsController::keyNameFromEvent(int qtKey, quint32 nativeScanCode) const
+QString PttController::keyNameFromEvent(int qtKey, quint32 nativeScanCode) const
 {
     return UInputChannel::nameFromQtKey(qtKey, nativeScanCode);
 }
 
-Actions::Profile ActionsController::profileForTab(const QString &tabName) const
+Ptt::Profile PttController::profileForTab(const QString &tabName) const
 {
     if (tabName.isEmpty())
-        return Actions::Profile();
+        return Ptt::Profile();
 
     for (const auto &p : m_profiles) {
         if (p.pinnedTabName == tabName)
             return p;
     }
-    return Actions::Profile();
+    return Ptt::Profile();
 }
 
-void ActionsController::handleTabRenamed(const QString &oldName, const QString &newName)
+void PttController::handleTabRenamed(const QString &oldName, const QString &newName)
 {
     bool changed = false;
     for (auto &p : m_profiles) {
@@ -255,7 +255,7 @@ void ActionsController::handleTabRenamed(const QString &oldName, const QString &
         notifyProfilesChanged();
 }
 
-void ActionsController::handleTabRemoved(const QString &tabName)
+void PttController::handleTabRemoved(const QString &tabName)
 {
     bool changed = false;
     for (auto &p : m_profiles) {
@@ -268,15 +268,15 @@ void ActionsController::handleTabRemoved(const QString &tabName)
         notifyProfilesChanged();
 }
 
-void ActionsController::coordinatePlayback(SoundTileController *tile, const QString &tabName, std::function<void()> onReadyToPlay)
+void PttController::coordinatePlayback(SoundTileController *tile, const QString &tabName, std::function<void()> onReadyToPlay)
 {
     if (!tile) {
         if (onReadyToPlay) onReadyToPlay();
         return;
     }
 
-    Actions::Profile prof = profileForTab(tabName);
-    if (prof.mode == Actions::ModeNone || !prof.isValid()) {
+    Ptt::Profile prof = profileForTab(tabName);
+    if (prof.mode == Ptt::ModeNone || !prof.isValid()) {
         if (onReadyToPlay) onReadyToPlay();
         return;
     }
@@ -313,12 +313,12 @@ void ActionsController::coordinatePlayback(SoundTileController *tile, const QStr
     }
 
     // Session opening phase
-    if (prof.mode == Actions::ModePushToTalk) {
+    if (prof.mode == Ptt::ModePushToTalk) {
         m_uinput->sendKeyDown(key);
-    } else if (prof.mode == Actions::ModeMuteToggle) {
+    } else if (prof.mode == Ptt::ModeMuteToggle) {
         m_uinput->sendKeyTap(key, 80);
     }
-    emit actionStarted(prof.name, key, static_cast<int>(prof.mode));
+    emit pttStarted(prof.name, key, static_cast<int>(prof.mode));
     emit transmissionChanged();
 
     if (prof.bufferMs <= 0) {
@@ -347,7 +347,7 @@ void ActionsController::coordinatePlayback(SoundTileController *tile, const QStr
     }
 }
 
-void ActionsController::coordinatePlaybackFinished(SoundTileController *tile)
+void PttController::coordinatePlaybackFinished(SoundTileController *tile)
 {
     if (!tile || !m_tileToKey.contains(tile))
         return;
@@ -379,7 +379,7 @@ void ActionsController::coordinatePlaybackFinished(SoundTileController *tile)
     }
 }
 
-void ActionsController::cleanupSession(Session *s)
+void PttController::cleanupSession(Session *s)
 {
     if (!s)
         return;
@@ -395,20 +395,20 @@ void ActionsController::cleanupSession(Session *s)
         s->tailTimer = nullptr;
     }
 
-    if (s->mode == Actions::ModePushToTalk) {
+    if (s->mode == Ptt::ModePushToTalk) {
         m_uinput->sendKeyUp(s->keyName);
-    } else if (s->mode == Actions::ModeMuteToggle) {
+    } else if (s->mode == Ptt::ModeMuteToggle) {
         m_uinput->sendKeyTap(s->keyName, 80);
     }
 
-    emit actionEnded(s->keyName, s->keyName);
+    emit pttEnded(s->keyName, s->keyName);
 
     m_sessions.remove(s->keyName);
     delete s;
     emit transmissionChanged();
 }
 
-void ActionsController::stopAll()
+void PttController::stopAll()
 {
     if (m_testTimer) {
         m_testTimer->stop();
@@ -430,9 +430,9 @@ void ActionsController::stopAll()
             s->tailTimer->stop();
             s->tailTimer->deleteLater();
         }
-        if (s->mode == Actions::ModePushToTalk) {
+        if (s->mode == Ptt::ModePushToTalk) {
             m_uinput->sendKeyUp(s->keyName);
-        } else if (s->mode == Actions::ModeMuteToggle) {
+        } else if (s->mode == Ptt::ModeMuteToggle) {
             m_uinput->sendKeyTap(s->keyName, 80);
         }
         delete s;
@@ -442,7 +442,7 @@ void ActionsController::stopAll()
     emit transmissionChanged();
 }
 
-QJsonArray ActionsController::toJson() const
+QJsonArray PttController::toJson() const
 {
     QJsonArray array;
     for (const auto &p : m_profiles) {
@@ -451,13 +451,13 @@ QJsonArray ActionsController::toJson() const
     return array;
 }
 
-void ActionsController::fromJson(const QJsonArray &array)
+void PttController::fromJson(const QJsonArray &array)
 {
     stopAll();
     m_profiles.clear();
     for (const auto &val : array) {
         if (val.isObject()) {
-            m_profiles.append(Actions::Profile::fromJson(val.toObject()));
+            m_profiles.append(Ptt::Profile::fromJson(val.toObject()));
         }
     }
     notifyProfilesChanged();
