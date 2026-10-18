@@ -6,7 +6,7 @@ Item {
     id: root
 
     property string searchQuery: ""
-    property string activeCategory: "all" // "all", "cli", "shortcuts", "osc", "audio"
+    property string activeCategory: "all" // "all", "cli", "shortcuts", "osc", "audio", "ptt", "web", "mcp"
     property string copyToastText: ""
 
     Timer {
@@ -215,6 +215,10 @@ Item {
                         FilterPill {
                             label: qsTr("Audio")
                             catId: "audio"
+                        }
+                        FilterPill {
+                            label: qsTr("Push-to-Talk")
+                            catId: "ptt"
                         }
                         FilterPill {
                             label: qsTr("Web Remote")
@@ -491,9 +495,9 @@ Item {
                     CliCard {
                         optFlag: "--open-action-hotkey-prompt <action>"
                         optParams: qsTr("'stopAll' | 'ducking'")
-                        optBadge: qsTr("Dialogs")
+                        optBadge: qsTr("Emergency Hotkeys")
                         badgeColor: "#9B59B6"
-                        description: qsTr("Opens the global action shortcut assignment dialog for either the Stop All Sounds panic button or the Audio Ducking toggle.")
+                        description: qsTr("Opens the global emergency shortcut assignment dialog for either the Stop All Sounds panic button or the Audio Ducking toggle (separate from Push-to-Talk automation).")
                         exampleCommand: "./CasterSoundboard --open-action-hotkey-prompt stopAll"
                     }
 
@@ -501,13 +505,13 @@ Item {
                     CliCard {
                         optFlag: "--open-ptt-prompt"
                         optParams: qsTr("Flag (no arguments)")
-                        optBadge: qsTr("Dialogs")
-                        badgeColor: "#9B59B6"
-                        description: qsTr("Opens the Push-to-Talk (PTT) & Mic Automation configuration dialog on launch.")
+                        optBadge: qsTr("Push-to-Talk")
+                        badgeColor: "#3B82F6"
+                        description: qsTr("Opens the Push-to-Talk (PTT) & Mic Automation configuration dialog on launch. Configure Discord PTT keys, lead-in/tail buffers, and tab assignments.")
                         exampleCommand: "./CasterSoundboard --open-ptt-prompt"
                     }
 
-                    // 13. --open-delete-tab-prompt
+                    // 14. --open-delete-tab-prompt
                     CliCard {
                         optFlag: "--open-delete-tab-prompt"
                         optParams: qsTr("Flag (no arguments)")
@@ -649,6 +653,7 @@ Item {
                             ShortcutRow { key: "Ctrl+T"; action: qsTr("Add a new soundboard tab") }
                             ShortcutRow { key: "Ctrl+W"; action: qsTr("Delete / close the current soundboard tab") }
                             ShortcutRow { key: "1 - 9"; action: qsTr("Quick-switch to Tab 1–9 (Mode B) or trigger global sound tile hotkeys (Mode A)") }
+                            ShortcutRow { key: "🎙️ PTT (Top Bar)"; action: qsTr("Open Push-to-Talk & Mic Automation dialog (or right-click any sound tab)") }
                         }
                     }
                 }
@@ -769,7 +774,73 @@ Item {
                             }
 
                             Text {
-                                text: qsTr("• <b>Direct Soundboard Playback Output:</b> Choose the target audio device directly from the Top Action Bar dropdown, Preferences, or the Audio Devices view. Route soundboard playback straight to any physical speaker/headphone or external DAC.\n• <b>Virtual Audio Routing & Mic Loopback:</b> Click 'Apply Routing' in Audio Devices to seamlessly bridge soundboard audio with your physical microphone into a virtual microphone sink (e.g. <i>Caster Soundboard Mic</i>). This allows games, streaming apps (OBS), and VoIP apps (Discord, Zoom) to receive your voice and sound effects simultaneously.\n• <b>Push-to-Talk (PTT) Automation:</b> Automatically press your Discord or in-game PTT key (e.g. F24, V) or toggle mic mute whenever sounds play in designated soundboard tabs, complete with customizable lead-in and tail buffer delays to eliminate audio clipping.\n• <b>Discord & Voice Chat Setup (Critical):</b>\n  1. <i>Input Device:</i> In Discord <i>Settings → Voice & Video</i>, explicitly set <b>Input Device</b> to <b>Caster Soundboard Mic</b>.\n  2. <i>Noise Suppression (Krisp):</i> Set to <b>None / Off</b>. Discord's Krisp AI cancels out non-vocal audio (music, explosions, jingles), making soundboard playback silent to others!\n  3. <i>Echo Cancellation:</i> Turn off <i>Echo Cancellation</i> and <i>Advanced Voice Activity</i> if sound clips cut out prematurely.\n• <b>Independent Tile Gain:</b> Each tile supports dedicated volume trimming and custom cue points to balance levels across disparate audio files.")
+                                text: qsTr("• <b>Direct Soundboard Playback Output:</b> Choose the target audio device directly from Preferences or the Audio Devices view. Route soundboard playback straight to any physical speaker/headphone or external DAC.\n• <b>Virtual Audio Routing & Mic Loopback:</b> Click 'Apply Routing' in Audio Devices to seamlessly bridge soundboard audio with your physical microphone into a virtual microphone sink (e.g. <i>Caster Soundboard Mic</i>). This allows games, streaming apps (OBS), and VoIP apps (Discord, Zoom) to receive your voice and sound effects simultaneously.\n• <b>Push-to-Talk (PTT) Automation:</b> Automatically press your Discord or in-game PTT key (e.g. F24, V) or toggle mic mute whenever sounds play in designated soundboard tabs, complete with customizable lead-in and tail buffer delays to eliminate audio clipping.\n• <b>Discord & Voice Chat Setup (Critical):</b>\n  1. <i>Input Device:</i> In Discord <i>Settings → Voice & Video</i>, explicitly set <b>Input Device</b> to <b>Caster Soundboard Mic</b>.\n  2. <i>Noise Suppression (Krisp):</i> Set to <b>None / Off</b>. Discord's Krisp AI cancels out non-vocal audio (music, explosions, jingles), making soundboard playback silent to others!\n  3. <i>Echo Cancellation:</i> Turn off <i>Echo Cancellation</i> and <i>Advanced Voice Activity</i> if sound clips cut out prematurely.\n• <b>Independent Tile Gain:</b> Each tile supports dedicated volume trimming and custom cue points to balance levels across disparate audio files.")
+                                color: "#CCCCCC"
+                                font.pointSize: 9
+                                textFormat: Text.RichText
+                                wrapMode: Text.WordWrap
+                                Layout.fillWidth: true
+                                lineHeight: 1.25
+                            }
+                        }
+                    }
+                }
+
+                // ========================================================
+                // SECTION: Push-to-Talk (PTT) & Mic Automation
+                // ========================================================
+                ColumnLayout {
+                    id: pttSection
+                    Layout.fillWidth: true
+                    spacing: 14
+                    visible: (root.activeCategory === "all" || root.activeCategory === "ptt")
+
+                    RowLayout {
+                        spacing: 8
+                        Rectangle {
+                            width: 4
+                            height: 20
+                            radius: 2
+                            color: "#3B82F6"
+                        }
+                        Text {
+                            text: qsTr("Push-to-Talk (PTT) & Mic Automation")
+                            color: "#FFFFFF"
+                            font.bold: true
+                            font.pointSize: 14
+                        }
+                        Rectangle {
+                            Layout.fillWidth: true
+                            height: 1
+                            color: "#2C3035"
+                        }
+                    }
+
+                    Rectangle {
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: pttDocCol.implicitHeight + 24
+                        radius: 8
+                        color: "#222528"
+                        border.color: "#33373B"
+                        border.width: 1
+
+                        ColumnLayout {
+                            id: pttDocCol
+                            anchors.fill: parent
+                            anchors.margins: 16
+                            spacing: 12
+
+                            Text {
+                                text: qsTr("Caster Soundboard includes a kernel-level <b>Push-to-Talk (PTT) & Mic Automation</b> system that automatically keys up Discord, TeamSpeak, OBS, or in-game voice chat whenever sounds play on designated tabs. <i>(Note: Formerly referred to as 'Actions' in legacy profiles, now fully standardized as Push-to-Talk / PTT)</i>:")
+                                color: "#AAAAAA"
+                                font.pointSize: 9
+                                textFormat: Text.RichText
+                                wrapMode: Text.WordWrap
+                                Layout.fillWidth: true
+                            }
+
+                            Text {
+                                text: qsTr("• <b>Opening PTT Configuration:</b> Click the <b>🎙️ PTT</b> button on the top toolbar or right-click any soundboard tab to open the PTT profile configuration dialog.\n• <b>Per-Tab PTT Profiles:</b> Each soundboard tab can have its own PTT profile, or tabs can share profiles. Tabs with PTT configured display an idle key indicator (e.g. <code>🎙️ PTT: KEY_V</code>) and glow with a pulsing green halo (<code>🟢 TRANSMITTING</code>) whenever audio playback is active.\n• <b>Key Holding vs. Mute Toggle:</b>\n  1. <i>Push-to-Talk Mode:</i> Emulates holding down a key (e.g. <code>KEY_V</code>, <code>KEY_F24</code>) for the full duration of sound playback.\n  2. <i>Mute Toggle Mode:</i> Emulates tapping a mute key (e.g. <code>KEY_M</code>) to unmute before playing, and tapping it again after playback finishes to re-mute.\n  3. <i>Disabled (None):</i> Disables key automation for the tab while keeping audio playback intact.\n• <b>Audio Buffer Delays (Anti-Clipping):</b>\n  1. <i>Lead-In Buffer Delay:</i> Holds playback for a configurable duration (0–500 ms) after keying up PTT. This gives Discord and games time to open the voice channel, completely preventing clipped sound intros.\n  2. <i>Tail Buffer Delay:</i> Keeps the PTT key held down for a configurable duration (0–1000 ms) after the sound ends to ensure room reverberations and speech tails are not cut short.\n• <b>Linux <code>/dev/uinput</code> Virtual Keyboard:</b> Caster Soundboard uses the Linux kernel <code>uinput</code> subsystem to inject virtual keyboard events at the hardware level. This ensures 100% reliable detection across full-screen Wayland/X11 games and Flatpak applications without needing window focus.\n  • <i>Permissions Setup:</i> Ensure your Linux user is a member of the <code>input</code> group:<br/>  <code>sudo usermod -aG input $USER</code> (then log out and back in), or verify your distro's udev permissions for <code>/dev/uinput</code>.\n• <b>Web Remote & MCP Synchronization:</b> Connected mobile Web Remote surfaces and MCP AI agents automatically reflect real-time PTT transmission states and can safely trigger panic stop-all to release held keys.")
                                 color: "#CCCCCC"
                                 font.pointSize: 9
                                 textFormat: Text.RichText

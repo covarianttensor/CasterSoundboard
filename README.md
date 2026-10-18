@@ -50,8 +50,9 @@ It features integrated **virtual microphone audio routing**, enabling you to pip
 - **Virtual Microphone (PipeWire / PulseAudio)**: Merges your hardware microphone with soundboard clips into a first-class virtual audio input recognized by Discord, OBS, Zoom, and WebRTC browsers.
 - **Waveform Sweeper & Cue Editing**: Visual audio waveform rendering with dual interactive drag handles for non-destructive intro/outro cue trimming and loop playback.
 - **Sound Banks & Flexible Hotkeys**: Support for multiple tabs with customizable hotkey scopes (**Bank Mode** to reuse keys across tabs, or **Global Mode** to trigger sounds anywhere).
+- **Push-to-Talk (PTT) & Mic Automation**: Kernel-level `/dev/uinput` virtual keyboard automation that automatically keys up Discord, OBS, or in-game PTT (or toggles mic mute) during sound playback with customizable pre/post delay buffers.
 - **Audio Ducking**: Automatically attenuates soundboard playback volume with assignable shortcuts (`Ctrl+D`) so host commentary cuts through cleanly.
-- **Panic Button**: Instant stop-all shortcut (`Space`) to silence all active audio channels immediately.
+- **Panic Button**: Instant stop-all shortcut (`Space`) to silence all active audio channels immediately and release any active PTT transmissions.
 - **Web Remote Control Surface**: Built-in HTTP server (`port 5052`) providing a touch-friendly web remote accessible from any smartphone, tablet, or secondary display on your local network.
 - **Model Context Protocol (MCP)**: Native JSON-RPC 2.0 MCP server (`port 5055` / stdio) allowing AI assistants (Claude Desktop, Antigravity, Cursor) to inspect soundboard state, trigger clips, manage live audio ducking, and adjust volumes.
 - **Open Sound Control (OSC)**: Two-way OSC UDP server (`port 8000`) compatible with TouchOSC (includes bundled layouts in [`TouchOSC-Layouts/`](TouchOSC-Layouts/)).
