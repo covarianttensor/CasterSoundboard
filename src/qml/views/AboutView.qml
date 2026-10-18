@@ -37,6 +37,7 @@ Item {
         lines.push("- **Web Remote Server:** " + ((typeof webRemoteController !== "undefined" && webRemoteController.isRunning) ? ("Online (Port " + webRemoteController.port + ")") : "Stopped"));
         lines.push("- **Model Context Protocol (MCP):** " + ((typeof mcpServerController !== "undefined" && mcpServerController.isRunning) ? ("Online (Port " + mcpServerController.port + ")") : "Stopped"));
         lines.push("- **Open Sound Control (OSC):** " + ((typeof oscController !== "undefined" && oscController.isRunning) ? ("Listening (Port " + oscController.inboundPort + ")") : "Stopped"));
+        lines.push("- **Bug Tracker & Feature Requests:** https://github.com/covarianttensor/CasterSoundboard/issues");
         return lines.join("\n");
     }
 
@@ -51,6 +52,15 @@ Item {
             contentHeight: contentCol.implicitHeight + 40
             clip: true
             flickableDirection: Flickable.VerticalFlick
+
+            Timer {
+                interval: 50
+                running: typeof scrollBottomOnStart !== "undefined" && scrollBottomOnStart
+                repeat: false
+                onTriggered: {
+                    aboutFlickable.contentY = Math.max(0, aboutFlickable.contentHeight - aboutFlickable.height);
+                }
+            }
 
             // Touch-Friendly Vertical ScrollBar
             ScrollBar.vertical: ScrollBar {
@@ -570,7 +580,100 @@ Item {
                     }
                 }
 
-                // 5. Open Source Community & Documentation Jump Card
+                // 5. Bug Reports & Feature Requests Card
+                Rectangle {
+                    Layout.fillWidth: true
+                    implicitHeight: feedbackCardCol.implicitHeight + 28
+                    color: "#222528"
+                    radius: 10
+                    border.color: "#33373B"
+                    border.width: 1
+
+                    RowLayout {
+                        id: feedbackCardCol
+                        anchors.fill: parent
+                        anchors.margins: 16
+                        spacing: 16
+
+                        Text {
+                            text: "🐛"
+                            font.pixelSize: 24
+                        }
+
+                        ColumnLayout {
+                            Layout.fillWidth: true
+                            spacing: 3
+
+                            RowLayout {
+                                spacing: 8
+                                Text {
+                                    text: qsTr("Bug Reports & Feature Requests")
+                                    color: "#FFFFFF"
+                                    font.bold: true
+                                    font.pointSize: 11
+                                }
+                                Rectangle {
+                                    color: "#1E293B"
+                                    border.color: "#3B82F6"
+                                    border.width: 1
+                                    radius: 4
+                                    implicitWidth: issuesBadgeText.implicitWidth + 10
+                                    implicitHeight: 18
+                                    Text {
+                                        id: issuesBadgeText
+                                        anchors.centerIn: parent
+                                        text: "GitHub Issues"
+                                        color: "#93C5FD"
+                                        font.bold: true
+                                        font.pointSize: 7.5
+                                    }
+                                }
+                            }
+
+                            Text {
+                                text: qsTr("Encountered an audio glitch, crash, or have an idea for a new feature? You can report bugs or submit feature requests on our GitHub tracker:")
+                                color: "#A0A7B4"
+                                font.pointSize: 9
+                                wrapMode: Text.WordWrap
+                                Layout.fillWidth: true
+                            }
+
+                            Text {
+                                text: "https://github.com/covarianttensor/CasterSoundboard/issues"
+                                color: "#00D2FF"
+                                font.family: "Monospace"
+                                font.pointSize: 8.5
+                                elide: Text.ElideRight
+                                Layout.fillWidth: true
+                            }
+                        }
+
+                        Button {
+                            id: openIssuesBtn
+                            implicitHeight: 34
+                            background: Rectangle {
+                                color: openIssuesBtn.hovered ? "#2563EB" : "#1D4ED8"
+                                radius: 6
+                                border.color: "#3B82F6"
+                                border.width: 1
+                            }
+                            contentItem: RowLayout {
+                                spacing: 6
+                                anchors.centerIn: parent
+                                Text { text: "🚀"; font.pixelSize: 11 }
+                                Text {
+                                    text: qsTr("Open GitHub Issues")
+                                    color: "#FFFFFF"
+                                    font.bold: true
+                                    font.pointSize: 9
+                                }
+                            }
+                            onClicked: Qt.openUrlExternally("https://github.com/covarianttensor/CasterSoundboard/issues")
+                        }
+                    }
+                }
+
+                // 6. Open Source Community & Documentation Jump Card
                 Rectangle {
                     Layout.fillWidth: true
                     implicitHeight: communityCardCol.implicitHeight + 28
