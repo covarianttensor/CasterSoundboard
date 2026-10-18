@@ -795,6 +795,7 @@ Item {
                     spacing: 14
                     visible: (root.activeCategory === "all" || root.activeCategory === "ptt")
 
+                    // Section Title
                     RowLayout {
                         spacing: 8
                         Rectangle {
@@ -816,37 +817,454 @@ Item {
                         }
                     }
 
+                    // 1. Overview & 3-Step Quick Start
                     Rectangle {
                         Layout.fillWidth: true
-                        Layout.preferredHeight: pttDocCol.implicitHeight + 24
+                        Layout.preferredHeight: pttQuickStartCol.implicitHeight + 28
                         radius: 8
                         color: "#222528"
                         border.color: "#33373B"
                         border.width: 1
 
                         ColumnLayout {
-                            id: pttDocCol
+                            id: pttQuickStartCol
+                            anchors.fill: parent
+                            anchors.margins: 16
+                            spacing: 14
+
+                            RowLayout {
+                                spacing: 8
+                                Text { text: "🎙️"; font.pixelSize: 18 }
+                                ColumnLayout {
+                                    spacing: 2
+                                    Text {
+                                        text: qsTr("Auto-Key Voice Chat During Sound Playback")
+                                        color: "#FFFFFF"
+                                        font.bold: true
+                                        font.pointSize: 11
+                                    }
+                                    Text {
+                                        text: qsTr("Automatically keys up Discord, TeamSpeak, OBS, or in-game voice chat while sound tiles play.")
+                                        color: "#9AA0A6"
+                                        font.pointSize: 8.5
+                                    }
+                                }
+                            }
+
+                            // 3-Step Cards
+                            RowLayout {
+                                Layout.fillWidth: true
+                                spacing: 10
+
+                                // Step 1
+                                Rectangle {
+                                    Layout.fillWidth: true
+                                    Layout.preferredHeight: 74
+                                    radius: 6
+                                    color: "#181A1D"
+                                    border.color: "#2C3036"
+                                    border.width: 1
+
+                                    RowLayout {
+                                        anchors.fill: parent
+                                        anchors.margins: 10
+                                        spacing: 10
+
+                                        Rectangle {
+                                            width: 24
+                                            height: 24
+                                            radius: 12
+                                            color: "#1E3A8A"
+                                            border.color: "#3B82F6"
+                                            border.width: 1
+                                            Text {
+                                                anchors.centerIn: parent
+                                                text: "1"
+                                                color: "#93C5FD"
+                                                font.bold: true
+                                                font.pointSize: 9
+                                            }
+                                        }
+                                        ColumnLayout {
+                                            Layout.fillWidth: true
+                                            spacing: 2
+                                            Text {
+                                                text: qsTr("Capture Key")
+                                                color: "#FFFFFF"
+                                                font.bold: true
+                                                font.pointSize: 9
+                                            }
+                                            Text {
+                                                text: qsTr("Click 🎙️ PTT in top bar and press your key (e.g. V or F24).")
+                                                color: "#8E95A0"
+                                                font.pointSize: 8
+                                                wrapMode: Text.WordWrap
+                                                Layout.fillWidth: true
+                                            }
+                                        }
+                                    }
+                                }
+
+                                // Step 2
+                                Rectangle {
+                                    Layout.fillWidth: true
+                                    Layout.preferredHeight: 74
+                                    radius: 6
+                                    color: "#181A1D"
+                                    border.color: "#2C3036"
+                                    border.width: 1
+
+                                    RowLayout {
+                                        anchors.fill: parent
+                                        anchors.margins: 10
+                                        spacing: 10
+
+                                        Rectangle {
+                                            width: 24
+                                            height: 24
+                                            radius: 12
+                                            color: "#1E3A8A"
+                                            border.color: "#3B82F6"
+                                            border.width: 1
+                                            Text {
+                                                anchors.centerIn: parent
+                                                text: "2"
+                                                color: "#93C5FD"
+                                                font.bold: true
+                                                font.pointSize: 9
+                                            }
+                                        }
+                                        ColumnLayout {
+                                            Layout.fillWidth: true
+                                            spacing: 2
+                                            Text {
+                                                text: qsTr("Assign to Tab")
+                                                color: "#FFFFFF"
+                                                font.bold: true
+                                                font.pointSize: 9
+                                            }
+                                            Text {
+                                                text: qsTr("Link profile to a tab. The tab displays 🎙️ PTT: KEY.")
+                                                color: "#8E95A0"
+                                                font.pointSize: 8
+                                                wrapMode: Text.WordWrap
+                                                Layout.fillWidth: true
+                                            }
+                                        }
+                                    }
+                                }
+
+                                // Step 3
+                                Rectangle {
+                                    Layout.fillWidth: true
+                                    Layout.preferredHeight: 74
+                                    radius: 6
+                                    color: "#181A1D"
+                                    border.color: "#2C3036"
+                                    border.width: 1
+
+                                    RowLayout {
+                                        anchors.fill: parent
+                                        anchors.margins: 10
+                                        spacing: 10
+
+                                        Rectangle {
+                                            width: 24
+                                            height: 24
+                                            radius: 12
+                                            color: "#064E3B"
+                                            border.color: "#10B981"
+                                            border.width: 1
+                                            Text {
+                                                anchors.centerIn: parent
+                                                text: "3"
+                                                color: "#6EE7B7"
+                                                font.bold: true
+                                                font.pointSize: 9
+                                            }
+                                        }
+                                        ColumnLayout {
+                                            Layout.fillWidth: true
+                                            spacing: 2
+                                            Text {
+                                                text: qsTr("Play Audio")
+                                                color: "#FFFFFF"
+                                                font.bold: true
+                                                font.pointSize: 9
+                                            }
+                                            Text {
+                                                text: qsTr("Play any sound tile. Key holds and tab glows 🟢 TRANSMITTING.")
+                                                color: "#8E95A0"
+                                                font.pointSize: 8
+                                                wrapMode: Text.WordWrap
+                                                Layout.fillWidth: true
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // 2. Operating Modes (Side-by-Side Cards)
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: 12
+
+                        // PTT Mode Card
+                        Rectangle {
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: pttModeCol.implicitHeight + 24
+                            radius: 8
+                            color: "#222528"
+                            border.color: "#33373B"
+                            border.width: 1
+
+                            ColumnLayout {
+                                id: pttModeCol
+                                anchors.fill: parent
+                                anchors.margins: 14
+                                spacing: 8
+
+                                RowLayout {
+                                    spacing: 8
+                                    Text {
+                                        text: qsTr("Push-to-Talk Mode")
+                                        color: "#FFFFFF"
+                                        font.bold: true
+                                        font.pointSize: 10
+                                    }
+                                    Rectangle {
+                                        width: 52
+                                        height: 18
+                                        radius: 9
+                                        color: "#064E3B"
+                                        border.color: "#10B981"
+                                        border.width: 1
+                                        Text {
+                                            anchors.centerIn: parent
+                                            text: "HOLD"
+                                            color: "#A7F3D0"
+                                            font.bold: true
+                                            font.pointSize: 7.5
+                                        }
+                                    }
+                                }
+
+                                Text {
+                                    text: qsTr("Emulates holding down your PTT key (e.g. KEY_V) while the sound plays, then automatically releases when playback ends. Perfect for Discord or in-game PTT.")
+                                    color: "#CCCCCC"
+                                    font.pointSize: 8.5
+                                    wrapMode: Text.WordWrap
+                                    Layout.fillWidth: true
+                                    lineHeight: 1.2
+                                }
+                            }
+                        }
+
+                        // Mute Toggle Mode Card
+                        Rectangle {
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: muteModeCol.implicitHeight + 24
+                            radius: 8
+                            color: "#222528"
+                            border.color: "#33373B"
+                            border.width: 1
+
+                            ColumnLayout {
+                                id: muteModeCol
+                                anchors.fill: parent
+                                anchors.margins: 14
+                                spacing: 8
+
+                                RowLayout {
+                                    spacing: 8
+                                    Text {
+                                        text: qsTr("Mute Toggle Mode")
+                                        color: "#FFFFFF"
+                                        font.bold: true
+                                        font.pointSize: 10
+                                    }
+                                    Rectangle {
+                                        width: 48
+                                        height: 18
+                                        radius: 9
+                                        color: "#451A03"
+                                        border.color: "#F59E0B"
+                                        border.width: 1
+                                        Text {
+                                            anchors.centerIn: parent
+                                            text: "TAP"
+                                            color: "#FDE68A"
+                                            font.bold: true
+                                            font.pointSize: 7.5
+                                        }
+                                    }
+                                }
+
+                                Text {
+                                    text: qsTr("Taps your mute key (e.g. KEY_M) once before playing to unmute, and taps it again after playback finishes to re-mute. Ideal for open-mic streamers.")
+                                    color: "#CCCCCC"
+                                    font.pointSize: 8.5
+                                    wrapMode: Text.WordWrap
+                                    Layout.fillWidth: true
+                                    lineHeight: 1.2
+                                }
+                            }
+                        }
+                    }
+
+                    // 3. Audio Delays & Kernel uinput Card
+                    Rectangle {
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: pttTechCol.implicitHeight + 28
+                        radius: 8
+                        color: "#222528"
+                        border.color: "#33373B"
+                        border.width: 1
+
+                        ColumnLayout {
+                            id: pttTechCol
                             anchors.fill: parent
                             anchors.margins: 16
                             spacing: 12
 
                             Text {
-                                text: qsTr("Caster Soundboard includes a kernel-level <b>Push-to-Talk (PTT) & Mic Automation</b> system that automatically keys up Discord, TeamSpeak, OBS, or in-game voice chat whenever sounds play on designated tabs. <i>(Note: Formerly referred to as 'Actions' in legacy profiles, now fully standardized as Push-to-Talk / PTT)</i>:")
-                                color: "#AAAAAA"
-                                font.pointSize: 9
-                                textFormat: Text.RichText
-                                wrapMode: Text.WordWrap
-                                Layout.fillWidth: true
+                                text: qsTr("Timing & Linux Driver Settings")
+                                color: "#FFFFFF"
+                                font.bold: true
+                                font.pointSize: 10.5
                             }
 
-                            Text {
-                                text: qsTr("• <b>Opening PTT Configuration:</b> Click the <b>🎙️ PTT</b> button on the top toolbar or right-click any soundboard tab to open the PTT profile configuration dialog.\n• <b>Per-Tab PTT Profiles:</b> Each soundboard tab can have its own PTT profile, or tabs can share profiles. Tabs with PTT configured display an idle key indicator (e.g. <code>🎙️ PTT: KEY_V</code>) and glow with a pulsing green halo (<code>🟢 TRANSMITTING</code>) whenever audio playback is active.\n• <b>Key Holding vs. Mute Toggle:</b>\n  1. <i>Push-to-Talk Mode:</i> Emulates holding down a key (e.g. <code>KEY_V</code>, <code>KEY_F24</code>) for the full duration of sound playback.\n  2. <i>Mute Toggle Mode:</i> Emulates tapping a mute key (e.g. <code>KEY_M</code>) to unmute before playing, and tapping it again after playback finishes to re-mute.\n  3. <i>Disabled (None):</i> Disables key automation for the tab while keeping audio playback intact.\n• <b>Audio Buffer Delays (Anti-Clipping):</b>\n  1. <i>Lead-In Buffer Delay:</i> Holds playback for a configurable duration (0–500 ms) after keying up PTT. This gives Discord and games time to open the voice channel, completely preventing clipped sound intros.\n  2. <i>Tail Buffer Delay:</i> Keeps the PTT key held down for a configurable duration (0–1000 ms) after the sound ends to ensure room reverberations and speech tails are not cut short.\n• <b>Linux <code>/dev/uinput</code> Virtual Keyboard:</b> Caster Soundboard uses the Linux kernel <code>uinput</code> subsystem to inject virtual keyboard events at the hardware level. This ensures 100% reliable detection across full-screen Wayland/X11 games and Flatpak applications without needing window focus.\n  • <i>Permissions Setup:</i> Ensure your Linux user is a member of the <code>input</code> group:<br/>  <code>sudo usermod -aG input $USER</code> (then log out and back in), or verify your distro's udev permissions for <code>/dev/uinput</code>.\n• <b>Web Remote & MCP Synchronization:</b> Connected mobile Web Remote surfaces and MCP AI agents automatically reflect real-time PTT transmission states and can safely trigger panic stop-all to release held keys.")
-                                color: "#CCCCCC"
-                                font.pointSize: 9
-                                textFormat: Text.RichText
-                                wrapMode: Text.WordWrap
+                            // Delays breakdown
+                            RowLayout {
                                 Layout.fillWidth: true
-                                lineHeight: 1.25
+                                spacing: 14
+
+                                ColumnLayout {
+                                    Layout.fillWidth: true
+                                    spacing: 4
+                                    RowLayout {
+                                        spacing: 6
+                                        Text { text: "⏱️"; font.pixelSize: 12 }
+                                        Text {
+                                            text: qsTr("Audio Delay Buffer (Lead-In)")
+                                            color: "#93C5FD"
+                                            font.bold: true
+                                            font.pointSize: 9
+                                        }
+                                    }
+                                    Text {
+                                        text: qsTr("Delays audio playback by 50–200 ms after pressing PTT. Gives Discord time to open the mic channel so the first syllable is never chopped.")
+                                        color: "#CCCCCC"
+                                        font.pointSize: 8.5
+                                        wrapMode: Text.WordWrap
+                                        Layout.fillWidth: true
+                                    }
+                                }
+
+                                ColumnLayout {
+                                    Layout.fillWidth: true
+                                    spacing: 4
+                                    RowLayout {
+                                        spacing: 6
+                                        Text { text: "⏱️"; font.pixelSize: 12 }
+                                        Text {
+                                            text: qsTr("PTT Release Delay (Tail)")
+                                            color: "#93C5FD"
+                                            font.bold: true
+                                            font.pointSize: 9
+                                        }
+                                    }
+                                    Text {
+                                        text: qsTr("Holds PTT down for 100–300 ms after the sound finishes. Prevents abrupt cutoff of room reverberations and speech echoes.")
+                                        color: "#CCCCCC"
+                                        font.pointSize: 8.5
+                                        wrapMode: Text.WordWrap
+                                        Layout.fillWidth: true
+                                    }
+                                }
+                            }
+
+                            Rectangle {
+                                Layout.fillWidth: true
+                                height: 1
+                                color: "#2C3035"
+                            }
+
+                            // Linux /dev/uinput command
+                            ColumnLayout {
+                                Layout.fillWidth: true
+                                spacing: 6
+
+                                RowLayout {
+                                    spacing: 6
+                                    Text { text: "⌨️"; font.pixelSize: 12 }
+                                    Text {
+                                        text: qsTr("Linux /dev/uinput Hardware Permissions")
+                                        color: "#FFFFFF"
+                                        font.bold: true
+                                        font.pointSize: 9
+                                    }
+                                    Text {
+                                        text: qsTr("(Enables key injection in full-screen games & Flatpaks without window focus)")
+                                        color: "#7E8590"
+                                        font.pointSize: 8
+                                    }
+                                }
+
+                                TerminalBox {
+                                    commandText: "sudo usermod -aG input $USER"
+                                }
+
+                                Text {
+                                    text: qsTr("Run once in terminal, then log out and back in. Check status anytime in the About view (PTT Automation Driver: ✓ Ready).")
+                                    color: "#7E8590"
+                                    font.pointSize: 8
+                                }
+                            }
+                        }
+                    }
+
+                    // 4. Discord Pro-Tip Callout Card
+                    Rectangle {
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: discordTipCol.implicitHeight + 20
+                        radius: 8
+                        color: "#231B15"
+                        border.color: "#B45309"
+                        border.width: 1
+
+                        RowLayout {
+                            id: discordTipCol
+                            anchors.fill: parent
+                            anchors.margins: 14
+                            spacing: 12
+
+                            Text {
+                                text: "⚠️"
+                                font.pixelSize: 20
+                                Layout.alignment: Qt.AlignVCenter
+                            }
+
+                            ColumnLayout {
+                                Layout.fillWidth: true
+                                spacing: 2
+
+                                Text {
+                                    text: qsTr("Critical Discord Voice Setting: Disable Krisp Noise Suppression")
+                                    color: "#FDE68A"
+                                    font.bold: true
+                                    font.pointSize: 9.5
+                                }
+                                Text {
+                                    text: qsTr("In Discord <i>Settings → Voice & Video</i>, set <b>Noise Suppression</b> to <b>None / Off</b>. Discord's Krisp filter detects soundboard music, memes, and sound effects as background noise and completely mutes them for other voice chat participants!")
+                                    color: "#D1D5DB"
+                                    font.pointSize: 8.5
+                                    textFormat: Text.RichText
+                                    wrapMode: Text.WordWrap
+                                    Layout.fillWidth: true
+                                }
                             }
                         }
                     }
