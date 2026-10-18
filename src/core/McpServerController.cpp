@@ -5,6 +5,7 @@
 #include "SoundboardGridModel.h"
 #include "SoundTileController.h"
 #include "PttController.h"
+#include "CasterVersion.h"
 
 #include <QSettings>
 #include <QDebug>
@@ -211,7 +212,7 @@ void McpServerController::handleHttpRequest(QTcpSocket *socket, const QByteArray
     if (method == "GET" && (path == "/" || path == "/status")) {
         QJsonObject info;
         info["server"] = "Caster Soundboard MCP Server";
-        info["version"] = "2.0.0";
+        info["version"] = CASTER_VERSION_STRING;
         info["protocolVersion"] = "2024-11-05";
         info["sseEndpoint"] = sseUrl();
         info["messageEndpoint"] = localUrl() + "/message";
@@ -378,7 +379,7 @@ QJsonObject McpServerController::handleInitialize(const QJsonObject &id, const Q
 
     QJsonObject serverInfo;
     serverInfo["name"] = "caster-soundboard";
-    serverInfo["version"] = "2.0.0";
+    serverInfo["version"] = CASTER_VERSION_STRING;
     result["serverInfo"] = serverInfo;
 
     return makeSuccessResponse(id, result);
@@ -575,7 +576,7 @@ QJsonObject McpServerController::toolGetState(const QJsonObject &/*args*/)
 
     QJsonObject state;
     state["appName"] = "CasterSoundboard";
-    state["version"] = "2.0.0";
+    state["version"] = CASTER_VERSION_STRING;
     state["projectFile"] = m_projectController->filePath();
     state["masterVolume"] = m_projectController->masterVolume();
     state["isDuckingActive"] = m_projectController->isDuckingActive();

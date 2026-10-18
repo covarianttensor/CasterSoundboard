@@ -4,6 +4,7 @@
 #include "SoundTileController.h"
 #include "PttController.h"
 #include "LegacyProjectImporter.h"
+#include "CasterVersion.h"
 
 #include <QFile>
 #include <QFileInfo>
@@ -541,4 +542,15 @@ void SoundboardProjectController::copyToClipboard(const QString &text)
         clip->setText(text);
     }
 }
+
+QString SoundboardProjectController::appVersion() const
+{
+    return QStringLiteral(CASTER_VERSION_STRING);
+}
+
+bool SoundboardProjectController::isDevBuild() const
+{
+    return CASTER_VERSION_IS_DEV;
+}
+
 

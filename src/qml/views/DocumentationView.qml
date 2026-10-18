@@ -100,16 +100,17 @@ Item {
                                 font.pointSize: 18
                             }
                             Rectangle {
-                                width: 56
-                                height: 22
+                                implicitWidth: Math.max(56, docVersionBadgeText.implicitWidth + 14)
+                                implicitHeight: 22
                                 radius: 11
-                                color: "#2B213A"
-                                border.color: "#8E2DE2"
+                                color: (typeof projectController !== "undefined" && projectController.isDevBuild) ? "#1E293B" : "#2B213A"
+                                border.color: (typeof projectController !== "undefined" && projectController.isDevBuild) ? "#3B82F6" : "#8E2DE2"
                                 border.width: 1
                                 Text {
+                                    id: docVersionBadgeText
                                     anchors.centerIn: parent
-                                    text: "v2.0.0"
-                                    color: "#C285FF"
+                                    text: "v" + ((typeof projectController !== "undefined" && projectController.appVersion) ? projectController.appVersion : (Qt.application.version || "2.0.0"))
+                                    color: (typeof projectController !== "undefined" && projectController.isDevBuild) ? "#93C5FD" : "#C285FF"
                                     font.bold: true
                                     font.pointSize: 8
                                 }

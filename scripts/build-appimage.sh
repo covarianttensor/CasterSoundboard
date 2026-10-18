@@ -12,11 +12,11 @@ if [ -z "${VERSION}" ]; then
     if [ "${GITHUB_REF_TYPE:-}" = "tag" ] && [ -n "${GITHUB_REF_NAME:-}" ]; then
         VERSION="${GITHUB_REF_NAME#v}"
     else
-        TAG_DESC="$(git describe --tags --always 2>/dev/null || echo "")"
-        if [[ "${TAG_DESC}" =~ ^v?([0-9]+(\.[0-9]+)*) ]]; then
-            VERSION="${BASH_REMATCH[1]}"
+        TAG_DESC="$(git describe --tags --always --dirty 2>/dev/null || echo "")"
+        if [ -n "${TAG_DESC}" ]; then
+            VERSION="${TAG_DESC#v}"
         else
-            VERSION="2.0.0"
+            VERSION="2.0.0-dev"
         fi
     fi
 fi

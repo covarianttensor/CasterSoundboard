@@ -1,12 +1,41 @@
 cmake_minimum_required(VERSION 3.16)
 
-if(DEFINED CASTER_VERSION AND CASTER_VERSION MATCHES "^[0-9]+(\\.[0-9]+)*")
-    set(PROJECT_VERSION_STRING "${CMAKE_MATCH_0}")
+# -------------------------------------------------------------
+# Dynamic Git & Release Version Extraction
+# -------------------------------------------------------------
+set(CASTER_GENERATED_DIR "${CMAKE_CURRENT_BINARY_DIR}/generated")
+
+execute_process(
+    COMMAND ${CMAKE_COMMAND}
+        -DSOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}
+        -DHEADER_OUTPUT=${CASTER_GENERATED_DIR}/CasterVersion.h
+        -DEXPLICIT_VERSION=${CASTER_VERSION}
+        -DFALLBACK_VERSION=2.0.0
+        -DSEMVER_OUTPUT=${CASTER_GENERATED_DIR}/semver.txt
+        -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/GenerateVersionHeader.cmake
+)
+
+if(EXISTS "${CASTER_GENERATED_DIR}/semver.txt")
+    file(READ "${CASTER_GENERATED_DIR}/semver.txt" PROJECT_VERSION_STRING)
+    string(STRIP "${PROJECT_VERSION_STRING}" PROJECT_VERSION_STRING)
 else()
     set(PROJECT_VERSION_STRING "2.0.0")
 endif()
 
 project(CasterSoundboard VERSION ${PROJECT_VERSION_STRING} LANGUAGES CXX)
+
+# Target to re-check git version on every build without causing unnecessary rebuilds
+add_custom_target(generate_version_header
+    COMMAND ${CMAKE_COMMAND}
+        -DSOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}
+        -DHEADER_OUTPUT=${CASTER_GENERATED_DIR}/CasterVersion.h
+        -DEXPLICIT_VERSION=${CASTER_VERSION}
+        -DFALLBACK_VERSION=2.0.0
+        -DSEMVER_OUTPUT=${CASTER_GENERATED_DIR}/semver.txt
+        -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/GenerateVersionHeader.cmake
+    BYPRODUCTS ${CASTER_GENERATED_DIR}/CasterVersion.h
+    COMMENT "Verifying git commit and updating CasterVersion.h..."
+)
 
 include(GNUInstallDirs)
 
@@ -64,7 +93,9 @@ add_library(CasterCore STATIC ${CORE_SOURCES})
 target_include_directories(CasterCore PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/src/core
     ${CMAKE_CURRENT_SOURCE_DIR}/src/audio
+    ${CASTER_GENERATED_DIR}
 )
+add_dependencies(CasterCore generate_version_header)
 
 target_link_libraries(CasterCore PUBLIC
     Qt6::Core
@@ -83,7 +114,9 @@ qt_add_executable(CasterSoundboard
 
 target_include_directories(CasterSoundboard PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src/core
+    ${CASTER_GENERATED_DIR}
 )
+add_dependencies(CasterSoundboard generate_version_header)
 
 target_link_libraries(CasterSoundboard PRIVATE
     CasterCore
@@ -167,6 +200,7 @@ enable_testing()
 function(add_caster_test test_name test_source)
     add_executable(${test_name} ${test_source})
     target_link_libraries(${test_name} PRIVATE CasterCore Qt6::Test)
+    add_dependencies(${test_name} generate_version_header)
     add_test(NAME ${test_name} COMMAND ${test_name})
 endfunction()
 

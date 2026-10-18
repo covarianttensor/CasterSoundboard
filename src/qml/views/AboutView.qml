@@ -19,8 +19,9 @@ Item {
 
     function generateDiagnosticReport() {
         var lines = [];
+        var verStr = (typeof projectController !== "undefined" && projectController.appVersion) ? projectController.appVersion : (Qt.application.version || "2.0.0");
         lines.push("### Caster Soundboard Diagnostic Report");
-        lines.push("- **Application Version:** 2.0.0");
+        lines.push("- **Application Version:** " + verStr);
         lines.push("- **Framework:** Qt 6.8+ (QtQuick / QML / Multimedia)");
         lines.push("- **Core Architecture:** C++17 (Headless CasterCore static engine)");
         lines.push("- **OS Platform:** Linux (Wayland / X11)");
@@ -102,7 +103,8 @@ Item {
                             font.pointSize: 18
                         }
                         Text {
-                            text: qsTr("Caster Soundboard v2.0 • Linux Touch-First Soundboard & Virtual Audio Router")
+                            text: qsTr("Caster Soundboard %1 • Linux Touch-First Soundboard & Virtual Audio Router")
+                                  .arg((typeof projectController !== "undefined" && projectController.appVersion) ? ("v" + projectController.appVersion) : (Qt.application.version ? ("v" + Qt.application.version) : "v2.0"))
                             color: "#888888"
                             font.pointSize: 10
                         }
@@ -163,8 +165,8 @@ Item {
                                     font.pointSize: 17
                                 }
                                 Rectangle {
-                                    color: "#3D1E4E"
-                                    border.color: "#8E2DE2"
+                                    color: (typeof projectController !== "undefined" && projectController.isDevBuild) ? "#1E293B" : "#3D1E4E"
+                                    border.color: (typeof projectController !== "undefined" && projectController.isDevBuild) ? "#3B82F6" : "#8E2DE2"
                                     border.width: 1
                                     radius: 4
                                     implicitWidth: versionBadgeText.implicitWidth + 12
@@ -172,15 +174,15 @@ Item {
                                     Text {
                                         id: versionBadgeText
                                         anchors.centerIn: parent
-                                        text: "v2.0.0"
-                                        color: "#E0C3FC"
+                                        text: "v" + ((typeof projectController !== "undefined" && projectController.appVersion) ? projectController.appVersion : (Qt.application.version || "2.0.0"))
+                                        color: (typeof projectController !== "undefined" && projectController.isDevBuild) ? "#93C5FD" : "#E0C3FC"
                                         font.bold: true
                                         font.pointSize: 8.5
                                     }
                                 }
                                 Rectangle {
-                                    color: "#064E3B"
-                                    border.color: "#10B981"
+                                    color: (typeof projectController !== "undefined" && projectController.isDevBuild) ? "#451A03" : "#064E3B"
+                                    border.color: (typeof projectController !== "undefined" && projectController.isDevBuild) ? "#F59E0B" : "#10B981"
                                     border.width: 1
                                     radius: 4
                                     implicitWidth: platformBadgeText.implicitWidth + 12
@@ -188,8 +190,8 @@ Item {
                                     Text {
                                         id: platformBadgeText
                                         anchors.centerIn: parent
-                                        text: "Linux Native"
-                                        color: "#A7F3D0"
+                                        text: (typeof projectController !== "undefined" && projectController.isDevBuild) ? "Dev Build" : "Release"
+                                        color: (typeof projectController !== "undefined" && projectController.isDevBuild) ? "#FDE68A" : "#A7F3D0"
                                         font.bold: true
                                         font.pointSize: 8.5
                                     }

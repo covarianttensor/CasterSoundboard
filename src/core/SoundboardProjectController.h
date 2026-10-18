@@ -33,6 +33,8 @@ class SoundboardProjectController : public QObject
     Q_PROPERTY(QString stopAllHotkey READ stopAllHotkey WRITE setStopAllHotkey NOTIFY stopAllHotkeyChanged)
     Q_PROPERTY(QString duckingHotkey READ duckingHotkey WRITE setDuckingHotkey NOTIFY duckingHotkeyChanged)
     Q_PROPERTY(PttController* pttController READ pttController CONSTANT)
+    Q_PROPERTY(QString appVersion READ appVersion CONSTANT)
+    Q_PROPERTY(bool isDevBuild READ isDevBuild CONSTANT)
 
 public:
     enum HotkeyScope {
@@ -46,6 +48,9 @@ public:
 
     SoundboardTabModel* tabModel() const { return m_tabModel; }
     PttController* pttController() const { return m_pttController; }
+
+    QString appVersion() const;
+    bool isDevBuild() const;
 
     QString filePath() const { return m_filePath; }
     bool isDirty() const { return m_isDirty; }

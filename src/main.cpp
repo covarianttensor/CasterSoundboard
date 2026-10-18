@@ -20,6 +20,7 @@
 #include "AudioRoutingController.h"
 #include "WebRemoteController.h"
 #include "McpServerController.h"
+#include "CasterVersion.h"
 #include <QSocketNotifier>
 #include <iostream>
 
@@ -120,7 +121,7 @@ int main(int argc, char *argv[])
     app.setApplicationDisplayName("Caster Soundboard");
     app.setOrganizationName("JupiterBroadcasting");
     app.setOrganizationDomain("jupiterbroadcasting.com");
-    app.setApplicationVersion("2.0.0");
+    app.setApplicationVersion(CASTER_VERSION_STRING);
     app.setWindowIcon(QIcon(":/qt/qml/CasterSoundboard/src/qml/icons/app.png"));
 
     QCommandLineParser parser;
@@ -291,7 +292,7 @@ int main(int argc, char *argv[])
         }
 
         qInfo().noquote() << "=========================================================";
-        qInfo().noquote() << "Caster Soundboard v2.0.0 (Headless Mode Active)";
+        qInfo().noquote() << QString("Caster Soundboard v%1 (Headless Mode Active)").arg(CASTER_VERSION_STRING);
         qInfo().noquote() << "---------------------------------------------------------";
         qInfo().noquote() << "• Project:    " << (projectController.filePath().isEmpty() ? "New Default Project" : projectController.filePath());
         qInfo().noquote() << "• OSC Server: " << (oscController.isRunning() ? QString("Running on UDP port %1").arg(oscController.inboundPort()) : "Disabled");

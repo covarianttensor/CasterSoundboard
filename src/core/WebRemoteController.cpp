@@ -4,6 +4,7 @@
 #include "SoundboardGridModel.h"
 #include "SoundTileController.h"
 #include "PttController.h"
+#include "CasterVersion.h"
 
 #include <QFile>
 #include <QFileInfo>
@@ -613,7 +614,7 @@ QByteArray WebRemoteController::generateStateJson() const
 {
     QJsonObject root;
     root["appName"] = "CasterSoundboard";
-    root["version"] = "2.0.0";
+    root["version"] = CASTER_VERSION_STRING;
 
     if (!m_projectController) {
         return QJsonDocument(root).toJson(QJsonDocument::Compact);
