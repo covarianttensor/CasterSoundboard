@@ -27,10 +27,20 @@ Item {
         color: "#181A1B"
 
         Flickable {
+            id: prefFlickable
             anchors.fill: parent
             anchors.margins: 24
             contentHeight: prefCol.implicitHeight
             clip: true
+
+            Timer {
+                interval: 50
+                running: typeof scrollBottomOnStart !== "undefined" && scrollBottomOnStart
+                repeat: false
+                onTriggered: {
+                    prefFlickable.contentY = Math.max(0, prefFlickable.contentHeight - prefFlickable.height);
+                }
+            }
 
             ColumnLayout {
                 id: prefCol
@@ -716,6 +726,224 @@ Item {
                                 onToggled: {
                                     if (typeof webRemoteController !== "undefined") {
                                         webRemoteController.autoStart = checked;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Model Context Protocol (MCP) Server Setting
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: mcpContentCol.implicitHeight + 32
+                    color: "#222528"
+                    radius: 8
+                    border.color: "#33373B"
+                    border.width: 1
+
+                    ColumnLayout {
+                        id: mcpContentCol
+                        anchors.fill: parent
+                        anchors.margins: 16
+                        spacing: 14
+
+                        RowLayout {
+                            spacing: 12
+                            Layout.fillWidth: true
+
+                            Rectangle {
+                                width: 14
+                                height: 14
+                                radius: 7
+                                color: (typeof mcpServerController !== "undefined" && mcpServerController.isRunning) ? "#2ECC71" : "#7E8590"
+                            }
+
+                            ColumnLayout {
+                                spacing: 2
+                                Layout.fillWidth: true
+                                Text {
+                                    text: qsTr("Model Context Protocol (MCP) AI Server")
+                                    color: "#FFFFFF"
+                                    font.bold: true
+                                    font.pointSize: 13
+                                }
+                                Text {
+                                    text: (typeof mcpServerController !== "undefined" && mcpServerController.isRunning)
+                                          ? qsTr("Active on %1 (%2 client%3 connected &bull; %4 tool calls)")
+                                                .arg(mcpServerController.sseUrl)
+                                                .arg(mcpServerController.connectedClients)
+                                                .arg(mcpServerController.connectedClients === 1 ? "" : "s")
+                                                .arg(mcpServerController.toolInvocationsCount)
+                                          : qsTr("Exposes native AI tools for Antigravity, Claude Desktop, Cursor, and LLM assistants.")
+                                    color: (typeof mcpServerController !== "undefined" && mcpServerController.isRunning) ? "#4EBA6F" : "#888888"
+                                    font.pointSize: 9.5
+                                    elide: Text.ElideRight
+                                    Layout.fillWidth: true
+                                }
+                            }
+
+                            Button {
+                                text: (typeof mcpServerController !== "undefined" && mcpServerController.isRunning) ? qsTr("Stop Server") : qsTr("Start Server")
+                                Layout.preferredHeight: 36
+                                Layout.preferredWidth: 120
+                                background: Rectangle {
+                                    color: (typeof mcpServerController !== "undefined" && mcpServerController.isRunning) ? "#8B2635" : "#8E2DE2"
+                                    radius: 6
+                                }
+                                contentItem: Text {
+                                    text: parent.text
+                                    color: "#FFFFFF"
+                                    font.bold: true
+                                    font.pointSize: 9.5
+                                    horizontalAlignment: Text.AlignHCenter
+                                    verticalAlignment: Text.AlignVCenter
+                                }
+                                onClicked: {
+                                    if (typeof mcpServerController !== "undefined") {
+                                        mcpServerController.toggleServer();
+                                    }
+                                }
+                            }
+                        }
+
+                        // SSE Endpoint box & Quick Copy
+                        Rectangle {
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: 44
+                            radius: 6
+                            color: "#181A1D"
+                            border.color: "#33383E"
+                            visible: typeof mcpServerController !== "undefined" && mcpServerController.isRunning
+
+                            RowLayout {
+                                anchors.fill: parent
+                                anchors.margins: 8
+                                spacing: 10
+
+                                Text {
+                                    text: qsTr("SSE Endpoint:")
+                                    color: "#AAAAAA"
+                                    font.pointSize: 9
+                                }
+
+                                Text {
+                                    text: typeof mcpServerController !== "undefined" ? mcpServerController.sseUrl : ""
+                                    color: "#10B981"
+                                    font.bold: true
+                                    font.family: "Monospace"
+                                    font.pointSize: 9.5
+                                    Layout.fillWidth: true
+                                    elide: Text.ElideRight
+                                }
+
+                                Button {
+                                    text: qsTr("Copy SSE URL")
+                                    Layout.preferredHeight: 28
+                                    Layout.preferredWidth: 96
+                                    onClicked: {
+                                        if (typeof projectController !== "undefined" && typeof mcpServerController !== "undefined") {
+                                            projectController.copyToClipboard(mcpServerController.sseUrl);
+                                        }
+                                    }
+                                    background: Rectangle {
+                                        color: parent.hovered ? "#383E44" : "#282C32"
+                                        radius: 4
+                                        border.color: "#4A525D"
+                                        border.width: 1
+                                    }
+                                    contentItem: Text {
+                                        text: parent.text
+                                        color: "#FFFFFF"
+                                        font.bold: true
+                                        font.pointSize: 8.5
+                                        horizontalAlignment: Text.AlignHCenter
+                                        verticalAlignment: Text.AlignVCenter
+                                    }
+                                }
+                            }
+                        }
+
+                        // Port & Bind Address inputs
+                        GridLayout {
+                            columns: 4
+                            columnSpacing: 14
+                            rowSpacing: 8
+                            Layout.fillWidth: true
+
+                            Text {
+                                text: qsTr("Port:")
+                                color: "#AAAAAA"
+                                font.pointSize: 9
+                            }
+                            DarkTextField {
+                                text: typeof mcpServerController !== "undefined" ? String(mcpServerController.port) : "5055"
+                                Layout.preferredWidth: 100
+                                enabled: typeof mcpServerController !== "undefined" && !mcpServerController.isRunning
+                                onEditingFinished: {
+                                    if (typeof mcpServerController !== "undefined") {
+                                        var p = parseInt(text);
+                                        if (!isNaN(p)) mcpServerController.port = p;
+                                    }
+                                }
+                            }
+
+                            Text {
+                                text: qsTr("Bind Address:")
+                                color: "#AAAAAA"
+                                font.pointSize: 9
+                            }
+                            DarkTextField {
+                                text: typeof mcpServerController !== "undefined" ? mcpServerController.bindAddress : "127.0.0.1"
+                                Layout.fillWidth: true
+                                enabled: typeof mcpServerController !== "undefined" && !mcpServerController.isRunning
+                                onEditingFinished: {
+                                    if (typeof mcpServerController !== "undefined") {
+                                        mcpServerController.bindAddress = text.trim();
+                                    }
+                                }
+                            }
+                        }
+
+                        // Last tool invoked indicator
+                        RowLayout {
+                            spacing: 8
+                            visible: typeof mcpServerController !== "undefined" && mcpServerController.toolInvocationsCount > 0
+
+                            Text {
+                                text: qsTr("Last Invoked Tool:")
+                                color: "#8E96A0"
+                                font.pointSize: 9
+                            }
+                            Rectangle {
+                                color: "#338E2DE2"
+                                border.color: "#8E2DE2"
+                                radius: 4
+                                implicitHeight: 22
+                                implicitWidth: toolLabel.implicitWidth + 12
+
+                                Text {
+                                    id: toolLabel
+                                    anchors.centerIn: parent
+                                    text: typeof mcpServerController !== "undefined" ? mcpServerController.lastInvokedTool : ""
+                                    color: "#D8B4FE"
+                                    font.bold: true
+                                    font.family: "Monospace"
+                                    font.pointSize: 9
+                                }
+                            }
+                        }
+
+                        // Auto-start Checkbox
+                        RowLayout {
+                            spacing: 8
+                            CheckBox {
+                                id: autoStartMcpCb
+                                text: qsTr("Automatically start MCP Server on application startup")
+                                checked: typeof mcpServerController !== "undefined" ? mcpServerController.autoStart : false
+                                onToggled: {
+                                    if (typeof mcpServerController !== "undefined") {
+                                        mcpServerController.autoStart = checked;
                                     }
                                 }
                             }

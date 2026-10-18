@@ -41,6 +41,8 @@ set(CORE_SOURCES
     src/core/AudioRoutingController.cpp
     src/core/WebRemoteController.h
     src/core/WebRemoteController.cpp
+    src/core/McpServerController.h
+    src/core/McpServerController.cpp
     src/core/ActionProfile.h
     src/core/UInputChannel.h
     src/core/UInputChannel.cpp
@@ -175,6 +177,7 @@ add_caster_test(test_osc_server tests/core/test_osc_server.cpp)
 add_caster_test(test_audio_routing tests/core/test_audio_routing.cpp)
 add_caster_test(test_web_remote tests/core/test_web_remote.cpp)
 add_caster_test(test_actions tests/core/test_actions.cpp)
+add_caster_test(test_mcp_server tests/core/test_mcp_server.cpp)
 
 # -------------------------------------------------------------
 # Installation

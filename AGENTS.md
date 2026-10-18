@@ -48,6 +48,7 @@ CasterSoundboard/
 │   │   ├── AudioRoutingController.*       # High-level QML-to-audio-backend bridge
 │   │   ├── HotkeyManager.*                # Keyboard shortcut dispatcher & Bank Mode
 │   │   ├── WebRemoteController.*          # Local HTTP/AJAX web remote control server
+│   │   ├── McpServerController.*          # Model Context Protocol (MCP) AI server (HTTP/SSE & stdio)
 │   │   └── OscServerController.*          # Two-way UDP Open Sound Control server
 │   ├── qml/                   # Modern QML touch UI
 │   │   ├── Main.qml                       # Root application shell & window geometry
@@ -169,7 +170,7 @@ Any modification must preserve functionality across all four distribution format
 
 Before concluding your task, verify the following:
 * [ ] The project builds with zero compilation errors (`cmake --build build-cmake`).
-* [ ] All 9 unit tests pass (`ctest --test-dir build-cmake`).
+* [ ] All 10 unit tests pass (`ctest --test-dir build-cmake`).
 * [ ] Web Remote changes verified with headless browser touch automation (`node scripts/test-web-remote.js`).
 * [ ] No existing comments or docstrings were unnecessarily removed.
 * [ ] Changes are committed to `main` (or a task branch off `main`), never `legacy-v1`.

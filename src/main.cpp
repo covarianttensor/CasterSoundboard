@@ -19,6 +19,9 @@
 #include "OscServerController.h"
 #include "AudioRoutingController.h"
 #include "WebRemoteController.h"
+#include "McpServerController.h"
+#include <QSocketNotifier>
+#include <iostream>
 
 static void handleSigInt(int)
 {
@@ -149,11 +152,17 @@ int main(int argc, char *argv[])
     QCommandLineOption testFocusMicOption("test-focus-mic", "Focus microphone selector on startup for visual verification.");
     QCommandLineOption testFocusVirtOption("test-focus-virt", "Focus virtual mic text field on startup for visual verification.");
     QCommandLineOption legacyImportPromptOption("open-legacy-import-prompt", "Open legacy import prompt dialog on startup for testing.");
+    QCommandLineOption autoStartMcpOption("auto-start-mcp", "Automatically start Model Context Protocol (MCP) AI server on startup.");
+    QCommandLineOption mcpPortOption("mcp-port", "Inbound TCP port for MCP server (defaults to 5055).", "port", "5055");
+    QCommandLineOption mcpStdioOption("mcp-stdio", "Run MCP server in stdio mode (JSON-RPC 2.0 over stdin/stdout) for AI assistants.");
     parser.addOption(headlessOption);
     parser.addOption(autoStartWebOption);
     parser.addOption(webPortOption);
     parser.addOption(webUserOption);
     parser.addOption(webPassOption);
+    parser.addOption(autoStartMcpOption);
+    parser.addOption(mcpPortOption);
+    parser.addOption(mcpStdioOption);
     parser.addOption(screenshotOption);
     parser.addOption(drawerOption);
     parser.addOption(drawerIndexOption);
@@ -190,6 +199,7 @@ int main(int argc, char *argv[])
     qmlRegisterType<OscServerController>("CasterCore", 1, 0, "OscServerController");
     qmlRegisterType<AudioRoutingController>("CasterCore", 1, 0, "AudioRoutingController");
     qmlRegisterType<WebRemoteController>("CasterCore", 1, 0, "WebRemoteController");
+    qmlRegisterType<McpServerController>("CasterCore", 1, 0, "McpServerController");
 
     SoundboardProjectController projectController;
     HotkeyManager hotkeyManager;
@@ -220,6 +230,26 @@ int main(int argc, char *argv[])
     }
     if (parser.isSet(autoStartWebOption) || webRemoteController.autoStart()) {
         webRemoteController.startServer();
+    }
+
+    McpServerController mcpServerController;
+    mcpServerController.setProjectController(&projectController);
+    mcpServerController.setAudioRoutingController(&audioRoutingController);
+    if (parser.isSet(mcpPortOption)) {
+        mcpServerController.setPort(parser.value(mcpPortOption).toInt());
+    }
+    if (parser.isSet(autoStartMcpOption) || mcpServerController.autoStart()) {
+        mcpServerController.startServer();
+    }
+
+    if (parser.isSet(mcpStdioOption)) {
+        auto *notifier = new QSocketNotifier(fileno(stdin), QSocketNotifier::Read, &app);
+        QObject::connect(notifier, &QSocketNotifier::activated, [&mcpServerController]() {
+            std::string line;
+            if (std::getline(std::cin, line)) {
+                mcpServerController.processStdioLine(QByteArray::fromStdString(line));
+            }
+        });
     }
 
     // Load initial project from CLI or create a fresh default project
@@ -267,6 +297,7 @@ int main(int argc, char *argv[])
         for (const QString &url : webRemoteController.availableUrls()) {
             qInfo().noquote() << "              " << url;
         }
+        qInfo().noquote() << "• MCP Server: " << (mcpServerController.isRunning() ? QString("Running on %1 (Port %2)").arg(mcpServerController.sseUrl()).arg(mcpServerController.port()) : "Disabled");
         qInfo().noquote() << "Press Ctrl+C to terminate.";
         qInfo().noquote() << "=========================================================";
 
@@ -279,6 +310,7 @@ int main(int argc, char *argv[])
     engine.rootContext()->setContextProperty("oscController", &oscController);
     engine.rootContext()->setContextProperty("audioRoutingController", &audioRoutingController);
     engine.rootContext()->setContextProperty("webRemoteController", &webRemoteController);
+    engine.rootContext()->setContextProperty("mcpServerController", &mcpServerController);
     engine.rootContext()->setContextProperty("openDrawerOnStart", parser.isSet(drawerOption) || parser.isSet(hotkeyPromptOption) || parser.isSet(scrollCueOption));
     engine.rootContext()->setContextProperty("drawerTileIndex", parser.value(drawerIndexOption).toInt());
     engine.rootContext()->setContextProperty("initialViewIndex", parser.value(viewOption).toInt());
