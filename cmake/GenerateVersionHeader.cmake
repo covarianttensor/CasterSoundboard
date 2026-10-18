@@ -6,7 +6,7 @@ if(NOT DEFINED SOURCE_DIR)
 endif()
 
 if(NOT DEFINED FALLBACK_VERSION)
-    set(FALLBACK_VERSION "2.0.0")
+    set(FALLBACK_VERSION "2.1.0")
 endif()
 
 # 1. Determine RAW_DESC
@@ -47,9 +47,9 @@ if(RAW_DESC MATCHES "^v(.+)")
 endif()
 
 # Parse into clean SemVer
-set(SEMVER_NUMERIC "2.0.0")
+set(SEMVER_NUMERIC "2.1.0")
 set(MAJOR "2")
-set(MINOR "0")
+set(MINOR "1")
 set(PATCH "0")
 set(IS_DEV "false")
 set(VERSION_STRING "${RAW_DESC}")

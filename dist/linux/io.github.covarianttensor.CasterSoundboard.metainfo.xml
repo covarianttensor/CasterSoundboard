@@ -26,6 +26,16 @@
   <url type="bugtracker">https://github.com/covarianttensor/CasterSoundboard/issues</url>
   <content_rating type="oars-1.1" />
   <releases>
+    <release version="2.1.0" date="2026-10-18">
+      <description>
+        <p>Batch import directories directly into soundboards, clone tabs, manage PTT profiles with custom names, and customize all top action bar global shortcuts.</p>
+      </description>
+    </release>
+    <release version="2.0.0" date="2026-10-17">
+      <description>
+        <p>Complete QML touch-first redesign with PipeWire/PulseAudio virtual routing, dual-monitor web remote, Push-to-Talk automation, interactive cue points, and multi-track ducking.</p>
+      </description>
+    </release>
     <release version="0.7.0" date="2026-10-13">
       <description>
         <p>Added audio output device selection dropdown with dynamic routing and persistent device preferences.</p>

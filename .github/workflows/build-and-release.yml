@@ -72,7 +72,7 @@ jobs:
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
           if [ -z "${VERSION}" ] || [ "${GITHUB_REF_TYPE:-}" != "tag" ]; then
-            VERSION="$(git describe --tags --always --dirty 2>/dev/null | sed 's/^v//' || echo "2.0.0-dev")"
+            VERSION="$(git describe --tags --always --dirty 2>/dev/null | sed 's/^v//' || echo "2.1.0-dev")"
           fi
           echo "${VERSION}" > VERSION
 
