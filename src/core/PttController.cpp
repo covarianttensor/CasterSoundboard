@@ -242,9 +242,18 @@ bool PttController::hasPttForTab(const QString &tabName) const
     return !activeBadgeForTab(tabName).isEmpty();
 }
 
-QString PttController::keyNameFromEvent(int qtKey, quint32 nativeScanCode) const
+void PttController::setIsCapturingKey(bool capturing)
 {
-    return UInputChannel::nameFromQtKey(qtKey, nativeScanCode);
+    if (m_isCapturingKey != capturing) {
+        m_isCapturingKey = capturing;
+        emit isCapturingKeyChanged(capturing);
+    }
+}
+
+QString PttController::keyNameFromEvent(int qtKey, quint32 nativeScanCode, int convention) const
+{
+    auto conv = static_cast<UInputChannel::ScanCodeConvention>(convention);
+    return UInputChannel::nameFromQtKey(qtKey, nativeScanCode, conv);
 }
 
 Ptt::Profile PttController::profileForTab(const QString &tabName) const

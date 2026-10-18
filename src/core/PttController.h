@@ -27,6 +27,7 @@ class PttController : public QObject
     Q_PROPERTY(QString uinputStatus READ uinputStatusMessage NOTIFY uinputStatusChanged)
     Q_PROPERTY(bool isTransmitting READ isTransmitting NOTIFY transmissionChanged)
     Q_PROPERTY(QString activeTransmittingKey READ activeTransmittingKey NOTIFY transmissionChanged)
+    Q_PROPERTY(bool isCapturingKey READ isCapturingKey WRITE setIsCapturingKey NOTIFY isCapturingKeyChanged)
 
 public:
     explicit PttController(QObject *parent = nullptr);
@@ -51,9 +52,12 @@ public:
     Q_INVOKABLE bool renameProfile(int index, const QString &newName);
     Q_INVOKABLE bool removeProfile(int index);
 
+    bool isCapturingKey() const { return m_isCapturingKey; }
+    void setIsCapturingKey(bool capturing);
+
     Q_INVOKABLE QString activeBadgeForTab(const QString &tabName) const;
     Q_INVOKABLE bool hasPttForTab(const QString &tabName) const;
-    Q_INVOKABLE QString keyNameFromEvent(int qtKey, quint32 nativeScanCode = 0) const;
+    Q_INVOKABLE QString keyNameFromEvent(int qtKey, quint32 nativeScanCode = 0, int convention = 0) const;
 
     Ptt::Profile profileForTab(const QString &tabName) const;
 
@@ -75,6 +79,7 @@ signals:
     void profilesChanged();
     void uinputStatusChanged();
     void transmissionChanged();
+    void isCapturingKeyChanged(bool capturing);
     void pttStarted(const QString &profileName, const QString &key, int mode);
     void pttEnded(const QString &profileName, const QString &key);
 
@@ -96,6 +101,7 @@ private:
     QMap<QString, Session*> m_sessions; // keyName -> Session
     QMap<SoundTileController*, QString> m_tileToKey;
     int m_revision = 0;
+    bool m_isCapturingKey = false;
     QTimer *m_testTimer = nullptr;
     QString m_testKeyName;
     void notifyProfilesChanged();

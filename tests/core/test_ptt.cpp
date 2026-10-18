@@ -287,6 +287,65 @@ private slots:
         QVERIFY(!controller.isTransmitting());
         QVERIFY(controller.activeTransmittingKey().isEmpty());
     }
+
+    void testKeyNameFromEvent_ScanCodeConventions()
+    {
+        // 1. XKB / Desktop Linux convention (nativeScanCode is evdev + 8)
+        // Issue #28 regressions: Period must resolve to KEY_DOT (not KEY_F2), M must resolve to KEY_M (not KEY_CAPSLOCK)
+        QCOMPARE(UInputChannel::nameFromQtKey(Qt::Key_Period, 60, UInputChannel::ScanCodeConvention::XkbOffset8), QString("KEY_DOT"));
+        QCOMPARE(UInputChannel::nameFromQtKey(Qt::Key_M, 58, UInputChannel::ScanCodeConvention::XkbOffset8), QString("KEY_M"));
+        QCOMPARE(UInputChannel::nameFromQtKey(Qt::Key_F1, 67, UInputChannel::ScanCodeConvention::XkbOffset8), QString("KEY_F1"));
+        QCOMPARE(UInputChannel::nameFromQtKey(Qt::Key_F2, 68, UInputChannel::ScanCodeConvention::XkbOffset8), QString("KEY_F2"));
+        QCOMPARE(UInputChannel::nameFromQtKey(Qt::Key_CapsLock, 66, UInputChannel::ScanCodeConvention::XkbOffset8), QString("KEY_CAPSLOCK"));
+        QCOMPARE(UInputChannel::nameFromQtKey(Qt::Key_Space, 65, UInputChannel::ScanCodeConvention::XkbOffset8), QString("KEY_SPACE"));
+
+        // Modifiers Left vs Right disambiguation via normalized scan code
+        QCOMPARE(UInputChannel::nameFromQtKey(Qt::Key_Control, 37, UInputChannel::ScanCodeConvention::XkbOffset8), QString("KEY_LEFTCTRL"));
+        QCOMPARE(UInputChannel::nameFromQtKey(Qt::Key_Control, 105, UInputChannel::ScanCodeConvention::XkbOffset8), QString("KEY_RIGHTCTRL"));
+        QCOMPARE(UInputChannel::nameFromQtKey(Qt::Key_Shift, 50, UInputChannel::ScanCodeConvention::XkbOffset8), QString("KEY_LEFTSHIFT"));
+        QCOMPARE(UInputChannel::nameFromQtKey(Qt::Key_Shift, 62, UInputChannel::ScanCodeConvention::XkbOffset8), QString("KEY_RIGHTSHIFT"));
+        QCOMPARE(UInputChannel::nameFromQtKey(Qt::Key_Alt, 64, UInputChannel::ScanCodeConvention::XkbOffset8), QString("KEY_LEFTALT"));
+        QCOMPARE(UInputChannel::nameFromQtKey(Qt::Key_Alt, 108, UInputChannel::ScanCodeConvention::XkbOffset8), QString("KEY_RIGHTALT"));
+
+        // 2. Direct Evdev convention (raw kernel code)
+        QCOMPARE(UInputChannel::nameFromQtKey(Qt::Key_Period, 52, UInputChannel::ScanCodeConvention::DirectEvdev), QString("KEY_DOT"));
+        QCOMPARE(UInputChannel::nameFromQtKey(Qt::Key_M, 50, UInputChannel::ScanCodeConvention::DirectEvdev), QString("KEY_M"));
+        QCOMPARE(UInputChannel::nameFromQtKey(Qt::Key_F2, 60, UInputChannel::ScanCodeConvention::DirectEvdev), QString("KEY_F2"));
+
+        // 3. Fallback when nativeScanCode is 0 (headless / synthetic events)
+        QCOMPARE(UInputChannel::nameFromQtKey(Qt::Key_Period, 0), QString("KEY_DOT"));
+        QCOMPARE(UInputChannel::nameFromQtKey(Qt::Key_M, 0), QString("KEY_M"));
+        QCOMPARE(UInputChannel::nameFromQtKey(Qt::Key_F2, 0), QString("KEY_F2"));
+        QCOMPARE(UInputChannel::nameFromQtKey(Qt::Key_Space, 0), QString("KEY_SPACE"));
+        QCOMPARE(UInputChannel::nameFromQtKey(Qt::Key_Backspace, 0), QString("KEY_BACKSPACE"));
+        QCOMPARE(UInputChannel::nameFromQtKey(Qt::Key_Delete, 0), QString("KEY_DELETE"));
+
+        // 4. PttController invocation test
+        PttController controller;
+        QCOMPARE(controller.keyNameFromEvent(Qt::Key_Period, 60, static_cast<int>(UInputChannel::ScanCodeConvention::XkbOffset8)), QString("KEY_DOT"));
+        QCOMPARE(controller.keyNameFromEvent(Qt::Key_M, 58, static_cast<int>(UInputChannel::ScanCodeConvention::XkbOffset8)), QString("KEY_M"));
+    }
+
+    void testIsCapturingKeyProperty()
+    {
+        PttController controller;
+        QVERIFY(!controller.isCapturingKey());
+
+        QSignalSpy spy(&controller, &PttController::isCapturingKeyChanged);
+        controller.setIsCapturingKey(true);
+        QVERIFY(controller.isCapturingKey());
+        QCOMPARE(spy.count(), 1);
+        QCOMPARE(spy.takeFirst().at(0).toBool(), true);
+
+        // Setting to same value should not emit redundant signal
+        controller.setIsCapturingKey(true);
+        QCOMPARE(spy.count(), 0);
+
+        controller.setIsCapturingKey(false);
+        QVERIFY(!controller.isCapturingKey());
+        QCOMPARE(spy.count(), 1);
+        QCOMPARE(spy.takeFirst().at(0).toBool(), false);
+    }
 };
 
 QTEST_MAIN(TestPtt)

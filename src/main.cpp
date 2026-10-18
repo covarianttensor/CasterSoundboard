@@ -80,6 +80,11 @@ protected:
                 }
             }
 
+            // If key capture is actively listening in PTT or shortcut configuration, bypass hotkey interception
+            if (m_manager && m_manager->isCapturingKey()) {
+                return QObject::eventFilter(watched, event);
+            }
+
             // Never intercept typing when a text field or editor has active keyboard focus
             QObject *focusObj = QGuiApplication::focusObject();
             if (isTextInputObject(focusObj) || isTextInputObject(watched)) {

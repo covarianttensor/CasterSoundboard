@@ -8,7 +8,7 @@ Dialog {
     parent: Overlay.overlay
     anchors.centerIn: parent
     modal: true
-    closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
+    closePolicy: root.isCapturingKey ? Popup.NoAutoClose : (Popup.CloseOnEscape | Popup.CloseOnPressOutside)
     implicitWidth: 640
     implicitHeight: 640
     topPadding: 16
@@ -20,6 +20,12 @@ Dialog {
     property bool isCapturingKey: false
     property string activeTargetKey: "ptt" // "ptt" or "mute"
     property string targetTabOnOpen: ""
+
+    onIsCapturingKeyChanged: {
+        if (projectController && projectController.pttController) {
+            projectController.pttController.isCapturingKey = root.isCapturingKey;
+        }
+    }
 
     background: Rectangle {
         color: "#222528"
@@ -535,8 +541,23 @@ Dialog {
                             keyCaptureBtn.forceActiveFocus();
                         }
 
+                        onActiveFocusChanged: {
+                            if (!activeFocus && root.isCapturingKey) {
+                                root.isCapturingKey = false;
+                            }
+                        }
+
                         Keys.onPressed: (event) => {
-                            if (root.isCapturingKey && projectController && projectController.pttController) {
+                            if (!root.isCapturingKey)
+                                return;
+
+                            if (event.key === Qt.Key_Escape) {
+                                root.isCapturingKey = false;
+                                event.accepted = true;
+                                return;
+                            }
+
+                            if (projectController && projectController.pttController) {
                                 var codeName = projectController.pttController.keyNameFromEvent(event.key, event.nativeScanCode);
                                 if (codeName && codeName.length > 0) {
                                     var data = {};

@@ -14,6 +14,7 @@ class HotkeyManager : public QObject
     Q_OBJECT
 
     Q_PROPERTY(bool isMuted READ isMuted WRITE setIsMuted NOTIFY isMutedChanged)
+    Q_PROPERTY(bool isCapturingKey READ isCapturingKey WRITE setIsCapturingKey NOTIFY isCapturingKeyChanged)
 
 public:
     explicit HotkeyManager(QObject *parent = nullptr);
@@ -21,6 +22,9 @@ public:
 
     bool isMuted() const { return m_isMuted; }
     void setIsMuted(bool mute);
+
+    bool isCapturingKey() const;
+    Q_INVOKABLE void setIsCapturingKey(bool capturing);
 
     Q_INVOKABLE void registerTile(SoundTileController *tile);
     Q_INVOKABLE void unregisterTile(SoundTileController *tile);
@@ -40,6 +44,7 @@ public slots:
 
 signals:
     void isMutedChanged();
+    void isCapturingKeyChanged(bool capturing);
     void hotkeyTriggered(SoundTileController *tile);
     void tabHotkeyTriggered(int tabIndex);
     void stopAllTriggered();
@@ -54,6 +59,7 @@ private:
     void rebuildMap();
 
     bool m_isMuted{false};
+    bool m_isCapturingKey{false};
     SoundboardProjectController *m_monitoredProject{nullptr};
     QList<SoundTileController*> m_registeredTiles;
     QMap<QKeySequence, SoundTileController*> m_keyMap;

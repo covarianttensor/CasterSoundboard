@@ -280,6 +280,69 @@ private slots:
         QVERIFY(manager.handleKeyEvent(&keyV));
         QCOMPARE(triggerSpy.count(), 2);
     }
+
+    void testKeyCapturePriorityOverHotkeys_Issue28()
+    {
+        SoundboardProjectController project;
+        HotkeyManager manager;
+        manager.monitorProject(&project);
+
+        SoundTileController tile;
+        tile.setFilePath("/dummy/sound.wav");
+        tile.setHotkey("M");
+        manager.registerTile(&tile);
+
+        QSignalSpy tileSpy(&manager, &HotkeyManager::hotkeyTriggered);
+        QSignalSpy stopAllSpy(&manager, &HotkeyManager::stopAllTriggered);
+
+        QKeyEvent keyM(QEvent::KeyPress, Qt::Key_M, Qt::NoModifier);
+        QKeyEvent keySpace(QEvent::KeyPress, Qt::Key_Space, Qt::NoModifier);
+
+        // 1. Normal state: M triggers tile, Space triggers Stop All
+        QVERIFY(!manager.isMuted());
+        QVERIFY(!manager.isCapturingKey());
+
+        QVERIFY(manager.handleKeyEvent(&keyM));
+        QCOMPARE(tileSpy.count(), 1);
+
+        QVERIFY(manager.handleKeyEvent(&keySpace));
+        QCOMPARE(stopAllSpy.count(), 1);
+
+        // 2. Active key capture: Must NOT consume M or Space, leaving them for the capture control
+        manager.setIsCapturingKey(true);
+        QVERIFY(manager.isCapturingKey());
+
+        QVERIFY(!manager.handleKeyEvent(&keyM));
+        QCOMPARE(tileSpy.count(), 1); // Not consumed or triggered
+
+        QVERIFY(!manager.handleKeyEvent(&keySpace));
+        QCOMPARE(stopAllSpy.count(), 1); // Not consumed or triggered
+
+        // 3. Capture ended: Hotkeys resume normal operation, prior mute state preserved
+        manager.setIsCapturingKey(false);
+        QVERIFY(!manager.isCapturingKey());
+        QVERIFY(!manager.isMuted());
+
+        QVERIFY(manager.handleKeyEvent(&keyM));
+        QCOMPARE(tileSpy.count(), 2);
+
+        QVERIFY(manager.handleKeyEvent(&keySpace));
+        QCOMPARE(stopAllSpy.count(), 2);
+
+        // 4. Test coordination via project PTT controller
+        PttController *ptt = project.pttController();
+        QVERIFY(ptt != nullptr);
+        ptt->setIsCapturingKey(true);
+        QVERIFY(manager.isCapturingKey());
+
+        QVERIFY(!manager.handleKeyEvent(&keyM));
+        QCOMPARE(tileSpy.count(), 2);
+
+        ptt->setIsCapturingKey(false);
+        QVERIFY(!manager.isCapturingKey());
+        QVERIFY(manager.handleKeyEvent(&keyM));
+        QCOMPARE(tileSpy.count(), 3);
+    }
 };
 
 QTEST_MAIN(TestHotkeyManager)

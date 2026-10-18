@@ -29,6 +29,27 @@ void HotkeyManager::toggleMute()
     setIsMuted(!m_isMuted);
 }
 
+bool HotkeyManager::isCapturingKey() const
+{
+    if (m_isCapturingKey)
+        return true;
+    if (m_monitoredProject && m_monitoredProject->pttController()) {
+        return m_monitoredProject->pttController()->isCapturingKey();
+    }
+    return false;
+}
+
+void HotkeyManager::setIsCapturingKey(bool capturing)
+{
+    if (m_isCapturingKey != capturing) {
+        m_isCapturingKey = capturing;
+        emit isCapturingKeyChanged(capturing);
+    }
+    if (m_monitoredProject && m_monitoredProject->pttController()) {
+        m_monitoredProject->pttController()->setIsCapturingKey(capturing);
+    }
+}
+
 void HotkeyManager::registerTile(SoundTileController *tile)
 {
     if (!tile || m_registeredTiles.contains(tile))
@@ -212,7 +233,7 @@ void HotkeyManager::rebuildMap()
 
 bool HotkeyManager::handleKeyEvent(QKeyEvent *event)
 {
-    if (m_isMuted || !event)
+    if (m_isMuted || !event || isCapturingKey())
         return false;
 
     // 0. Ignore synthetic keystrokes originating from Caster's own virtual keyboard device

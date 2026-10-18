@@ -3,6 +3,7 @@
 #include <QDebug>
 #include <QFile>
 #include <QTimer>
+#include <QGuiApplication>
 #include <cstring>
 #include <fcntl.h>
 #include <unistd.h>
@@ -126,6 +127,29 @@ void UInputChannel::initKeyMaps()
     addKey("KEY_INSERT", KEY_INSERT);
     addKey("KEY_DELETE", KEY_DELETE);
     addKey("KEY_MUTE", KEY_MUTE);
+    addKey("KEY_NUMLOCK", KEY_NUMLOCK);
+    addKey("KEY_SCROLLLOCK", KEY_SCROLLLOCK);
+    addKey("KEY_PAUSE", KEY_PAUSE);
+    addKey("KEY_LEFTMETA", KEY_LEFTMETA);
+    addKey("KEY_RIGHTMETA", KEY_RIGHTMETA);
+
+    addKey("KEY_KP0", KEY_KP0);
+    addKey("KEY_KP1", KEY_KP1);
+    addKey("KEY_KP2", KEY_KP2);
+    addKey("KEY_KP3", KEY_KP3);
+    addKey("KEY_KP4", KEY_KP4);
+    addKey("KEY_KP5", KEY_KP5);
+    addKey("KEY_KP6", KEY_KP6);
+    addKey("KEY_KP7", KEY_KP7);
+    addKey("KEY_KP8", KEY_KP8);
+    addKey("KEY_KP9", KEY_KP9);
+    addKey("KEY_KPDOT", KEY_KPDOT);
+    addKey("KEY_KPENTER", KEY_KPENTER);
+    addKey("KEY_KPPLUS", KEY_KPPLUS);
+    addKey("KEY_KPMINUS", KEY_KPMINUS);
+    addKey("KEY_KPASTERISK", KEY_KPASTERISK);
+    addKey("KEY_KPSLASH", KEY_KPSLASH);
+    addKey("KEY_KPEQUAL", KEY_KPEQUAL);
 
     addKey("KEY_F13", KEY_F13);
     addKey("KEY_F14", KEY_F14);
@@ -156,17 +180,43 @@ QString UInputChannel::nameFromKeyCode(int code)
     return s_codeToName.value(code, QString("KEY_%1").arg(code));
 }
 
-QString UInputChannel::nameFromQtKey(int qtKey, quint32 nativeScanCode)
+int UInputChannel::evdevCodeFromScanCode(quint32 nativeScanCode, ScanCodeConvention convention)
+{
+    if (nativeScanCode == 0)
+        return 0;
+
+    ScanCodeConvention effective = convention;
+    if (effective == ScanCodeConvention::Auto) {
+        if (qApp) {
+            const QString platform = QGuiApplication::platformName().toLower();
+            if (platform == "xcb" || platform.startsWith("wayland")) {
+                effective = ScanCodeConvention::XkbOffset8;
+            } else {
+                effective = ScanCodeConvention::XkbOffset8;
+            }
+        } else {
+            effective = ScanCodeConvention::XkbOffset8;
+        }
+    }
+
+    if (effective == ScanCodeConvention::XkbOffset8) {
+        if (nativeScanCode >= 8) {
+            return static_cast<int>(nativeScanCode - 8);
+        }
+        return static_cast<int>(nativeScanCode);
+    }
+
+    return static_cast<int>(nativeScanCode);
+}
+
+QString UInputChannel::nameFromQtKey(int qtKey, quint32 nativeScanCode, ScanCodeConvention convention)
 {
     initKeyMaps();
 
     if (nativeScanCode > 0) {
-        // Under Linux X11, nativeScanCode is evdev + 8; under Wayland it is often evdev directly.
-        if (s_codeToName.contains(static_cast<int>(nativeScanCode))) {
-            return s_codeToName.value(static_cast<int>(nativeScanCode));
-        }
-        if (nativeScanCode >= 8 && s_codeToName.contains(static_cast<int>(nativeScanCode - 8))) {
-            return s_codeToName.value(static_cast<int>(nativeScanCode - 8));
+        int evdevCode = evdevCodeFromScanCode(nativeScanCode, convention);
+        if (s_codeToName.contains(evdevCode)) {
+            return s_codeToName.value(evdevCode);
         }
     }
 
@@ -217,11 +267,29 @@ QString UInputChannel::nameFromQtKey(int qtKey, quint32 nativeScanCode)
     case Qt::Key_Equal: return "KEY_EQUAL";
     case Qt::Key_Semicolon: return "KEY_SEMICOLON";
     case Qt::Key_Apostrophe: return "KEY_APOSTROPHE";
+    case Qt::Key_BracketLeft: return "KEY_LEFTBRACE";
+    case Qt::Key_BracketRight: return "KEY_RIGHTBRACE";
+    case Qt::Key_Backslash: return "KEY_BACKSLASH";
+    case Qt::Key_QuoteLeft:
+    case Qt::Key_AsciiTilde: return "KEY_GRAVE";
     case Qt::Key_Tab: return "KEY_TAB";
     case Qt::Key_Return:
     case Qt::Key_Enter: return "KEY_ENTER";
+    case Qt::Key_Backspace: return "KEY_BACKSPACE";
     case Qt::Key_Escape: return "KEY_ESC";
     case Qt::Key_CapsLock: return "KEY_CAPSLOCK";
+
+    case Qt::Key_Insert: return "KEY_INSERT";
+    case Qt::Key_Delete: return "KEY_DELETE";
+    case Qt::Key_Home: return "KEY_HOME";
+    case Qt::Key_End: return "KEY_END";
+    case Qt::Key_PageUp: return "KEY_PAGEUP";
+    case Qt::Key_PageDown: return "KEY_PAGEDOWN";
+    case Qt::Key_Left: return "KEY_LEFT";
+    case Qt::Key_Right: return "KEY_RIGHT";
+    case Qt::Key_Up: return "KEY_UP";
+    case Qt::Key_Down: return "KEY_DOWN";
+    case Qt::Key_VolumeMute: return "KEY_MUTE";
 
     case Qt::Key_F1: return "KEY_F1";
     case Qt::Key_F2: return "KEY_F2";
@@ -251,6 +319,7 @@ QString UInputChannel::nameFromQtKey(int qtKey, quint32 nativeScanCode)
     case Qt::Key_Control: return "KEY_LEFTCTRL";
     case Qt::Key_Shift: return "KEY_LEFTSHIFT";
     case Qt::Key_Alt: return "KEY_LEFTALT";
+    case Qt::Key_Meta: return "KEY_LEFTMETA";
     default:
         break;
     }

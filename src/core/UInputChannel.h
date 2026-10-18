@@ -23,9 +23,16 @@ public:
     void sendKeyUp(const QString &keyName);
     void sendKeyTap(const QString &keyName, int tapDurationMs = 80);
 
+    enum class ScanCodeConvention {
+        Auto,       // Detect based on QGuiApplication::platformName() (XkbOffset8 on xcb/wayland)
+        XkbOffset8, // nativeScanCode is evdev + 8 (X11 / Wayland desktop convention)
+        DirectEvdev // nativeScanCode is raw evdev code
+    };
+
     static int keyCodeFromName(const QString &name);
     static QString nameFromKeyCode(int code);
-    static QString nameFromQtKey(int qtKey, quint32 nativeScanCode = 0);
+    static QString nameFromQtKey(int qtKey, quint32 nativeScanCode = 0, ScanCodeConvention convention = ScanCodeConvention::Auto);
+    static int evdevCodeFromScanCode(quint32 nativeScanCode, ScanCodeConvention convention = ScanCodeConvention::Auto);
 
 private:
     bool m_isAvailable = false;
