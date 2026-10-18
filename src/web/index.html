@@ -212,6 +212,11 @@
       align-items: center;
       gap: 6px;
       transition: all 0.15s ease;
+      touch-action: manipulation;
+    }
+
+    .tab-pill * {
+      pointer-events: none;
     }
 
     .tab-pill.active {
@@ -290,6 +295,12 @@
       overflow: hidden;
       transition: transform 0.1s ease, border-color 0.15s ease, box-shadow 0.15s ease;
       text-align: left;
+      touch-action: manipulation;
+      -webkit-touch-callout: none;
+    }
+
+    .tile-btn * {
+      pointer-events: none;
     }
 
     .tile-btn:active {
@@ -588,6 +599,7 @@
       try {
         const resp = await fetch(endpoint, {
           method: 'POST',
+          credentials: 'same-origin',
           headers: {
             'X-Caster-Remote': '1'
           }
@@ -609,6 +621,7 @@
       try {
         const resp = await fetch('/api/state?_t=' + Date.now(), {
           method: 'GET',
+          credentials: 'same-origin',
           cache: 'no-store'
         });
         if (resp.ok) {
@@ -745,6 +758,7 @@
           const isTx = !!tab.isTransmitting;
           pill.className = 'tab-pill' + (idx === selectedTabIndex ? ' active' : '') + (isTx ? ' transmitting' : '');
           pill.dataset.tabId = String(tab.id || idx);
+          pill.dataset.tabIndex = String(idx);
           pill.dataset.isTransmitting = String(isTx);
           pill.dataset.actionBadge = String(tab.actionBadge || '');
 
@@ -758,16 +772,13 @@
           pill.innerHTML = `<span>${escapeHtml(tab.name || ('Tab ' + (idx + 1)))}</span>` +
                            (tab.hotkey ? `<span class="tab-hotkey-badge">${escapeHtml(tab.hotkey)}</span>` : '') +
                            actionBadgeHtml;
-          pill.onclick = async () => {
-            selectedTabIndex = idx;
-            await apiPost('/api/tab/' + idx);
-          };
           tabBar.appendChild(pill);
         });
       } else {
         Array.from(tabBar.children).forEach((pill, idx) => {
           const tab = appState.tabs[idx];
           const isTx = tab ? !!tab.isTransmitting : false;
+          pill.dataset.tabIndex = String(idx);
           pill.classList.toggle('active', idx === selectedTabIndex);
           pill.classList.toggle('transmitting', isTx);
         });
@@ -790,16 +801,7 @@
 
         tiles.forEach((tile) => {
           const btn = document.createElement('button');
-          btn.dataset.tileIndex = String(tile.index);
           updateTileButton(btn, tile);
-
-          btn.onclick = async () => {
-            if (tile.hasFile) {
-              recordOptimisticActionTrigger(selectedTabIndex);
-              await apiPost(`/api/toggle/${selectedTabIndex}/${tile.index}`);
-            }
-          };
-
           tileGrid.appendChild(btn);
         });
       } else {
@@ -815,6 +817,7 @@
 
     // Helper to update a single tile button element efficiently
     function updateTileButton(btn, tile) {
+      const tileIndex = String(tile.index !== undefined ? tile.index : '');
       const hasFile = !!tile.hasFile;
       const state = (tile.state || 'Stopped').toLowerCase();
       const tileColor = (hasFile && tile.color && tile.color !== '#000000') ? tile.color : '#25292E';
@@ -825,6 +828,7 @@
       const isTransmitting = !!tile.isTransmitting;
 
       // Check if anything changed on this button
+      const oldIndex = btn.dataset.tileIndex;
       const oldState = btn.dataset.state;
       const oldHasFile = btn.dataset.hasFile;
       const oldColor = btn.dataset.color;
@@ -833,13 +837,14 @@
       const oldLooped = btn.dataset.isLooped;
       const oldTransmitting = btn.dataset.isTransmitting;
 
-      if (oldState === state && oldHasFile === String(hasFile) &&
+      if (oldIndex === tileIndex && oldState === state && oldHasFile === String(hasFile) &&
           oldColor === tileColor && oldName === name &&
           oldHotkey === hotkey && oldLooped === String(isLooped) &&
           oldTransmitting === String(isTransmitting)) {
         return; // No changes on this tile
       }
 
+      btn.dataset.tileIndex = tileIndex;
       btn.dataset.state = state;
       btn.dataset.hasFile = String(hasFile);
       btn.dataset.color = tileColor;
@@ -874,6 +879,27 @@
         </div>
       `;
     }
+
+    // Event Delegation for Sound Tile Grid (robust against DOM reuse & mobile touch taps)
+    tileGrid.addEventListener('click', async (e) => {
+      const btn = e.target.closest('.tile-btn');
+      if (!btn) return;
+      if (btn.dataset.hasFile !== 'true') return;
+      const tileIdx = btn.dataset.tileIndex;
+      if (tileIdx === undefined || tileIdx === null) return;
+      recordOptimisticActionTrigger(selectedTabIndex);
+      await apiPost(`/api/toggle/${selectedTabIndex}/${tileIdx}`);
+    });
+
+    // Event Delegation for Tab Bar Navigation
+    tabBar.addEventListener('click', async (e) => {
+      const pill = e.target.closest('.tab-pill');
+      if (!pill) return;
+      const tabIdx = parseInt(pill.dataset.tabIndex, 10);
+      if (isNaN(tabIdx)) return;
+      selectedTabIndex = tabIdx;
+      await apiPost('/api/tab/' + tabIdx);
+    });
 
     // Global Action Button Handlers
     stopAllBtn.onclick = () => apiPost('/api/stopAll');
