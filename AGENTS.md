@@ -33,7 +33,9 @@ CasterSoundboard/
 ├── TouchOSC-Layouts/          # TouchOSC layout templates
 ├── scripts/
 │   ├── build-appimage.sh      # Standalone AppImage compilation script
-│   └── build-flatpak.sh       # Flatpak bundle compilation script
+│   ├── build-flatpak.sh       # Flatpak bundle compilation script
+│   ├── test-web-remote.js     # Headless Chromium E2E touch interaction test suite
+│   └── caster-mcp.js          # Stdio-to-HTTP/SSE bridge for Model Context Protocol (MCP)
 ├── src/
 │   ├── main.cpp               # QML engine bootstrapper, CLI parser & hotkey filter
 │   ├── audio/                 # Low-level PipeWire/PulseAudio virtual routing backend
@@ -122,6 +124,28 @@ APP_PID=$!
 node scripts/test-web-remote.js
 
 # 3. Terminate background instance:
+kill $APP_PID
+```
+
+### 🤖 Model Context Protocol (MCP) Verification
+When modifying [`McpServerController.cpp`](src/core/McpServerController.cpp) or [`scripts/caster-mcp.js`](scripts/caster-mcp.js), verify HTTP/SSE and stdio JSON-RPC 2.0 communication:
+
+```bash
+# 1. Start CasterSoundboard in the background with MCP auto-started:
+./build-cmake/bin/CasterSoundboard --auto-start-mcp examples/broadcast_show.caster &
+APP_PID=$!
+
+# 2. Verify HTTP health / status:
+curl -s http://127.0.0.1:5055/status
+
+# 3. Verify JSON-RPC tool listing:
+curl -s -X POST http://127.0.0.1:5055/message -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}'
+
+# 4. Verify stdio bridge execution:
+echo '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}' | node scripts/caster-mcp.js
+
+# 5. Terminate background instance:
 kill $APP_PID
 ```
 

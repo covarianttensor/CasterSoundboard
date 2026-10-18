@@ -117,7 +117,7 @@ Item {
                         }
 
                         Text {
-                            text: qsTr("Complete guide to terminal arguments, CLI automation, keyboard shortcuts, and OSC network control.")
+                            text: qsTr("Complete guide to terminal arguments, CLI automation, keyboard shortcuts, OSC network control, Web Remote, and MCP AI server.")
                             color: "#888888"
                             font.pointSize: 10
                         }
@@ -219,6 +219,10 @@ Item {
                         FilterPill {
                             label: qsTr("Web Remote")
                             catId: "web"
+                        }
+                        FilterPill {
+                            label: qsTr("MCP AI Server")
+                            catId: "mcp"
                         }
                     }
                 }
@@ -361,6 +365,36 @@ Item {
                         badgeColor: "#00D2FF"
                         description: qsTr("Configures the HTTP Basic authentication username and password for browser access. Disallows colons in username for security.")
                         exampleCommand: "./CasterSoundboard --auto-start-web --web-user studio --web-pass secret123"
+                    }
+
+                    // 8. --auto-start-mcp
+                    CliCard {
+                        optFlag: "--auto-start-mcp"
+                        optParams: qsTr("Flag (no arguments)")
+                        optBadge: qsTr("MCP / AI")
+                        badgeColor: "#8E2DE2"
+                        description: qsTr("Automatically binds and starts the Model Context Protocol (MCP) HTTP and Server-Sent Events server upon launch (default port 5055). Allows AI assistants (Claude Desktop, Antigravity, Cursor) to control Caster Soundboard.")
+                        exampleCommand: "./CasterSoundboard ~/shows/morning.caster --auto-start-mcp"
+                    }
+
+                    // 9. --mcp-port <port>
+                    CliCard {
+                        optFlag: "--mcp-port <port>"
+                        optParams: qsTr("Integer port (defaults to 5055)")
+                        optBadge: qsTr("MCP / AI")
+                        badgeColor: "#8E2DE2"
+                        description: qsTr("Overrides the listening TCP port for the embedded Model Context Protocol (MCP) server.")
+                        exampleCommand: "./CasterSoundboard --auto-start-mcp --mcp-port 5060"
+                    }
+
+                    // 10. --mcp-stdio
+                    CliCard {
+                        optFlag: "--mcp-stdio"
+                        optParams: qsTr("Flag (no arguments)")
+                        optBadge: qsTr("MCP / AI")
+                        badgeColor: "#8E2DE2"
+                        description: qsTr("Runs the Model Context Protocol (MCP) JSON-RPC loop directly over standard input/output (stdio) in headless mode. Ideal for direct process spawning by AI desktop applications.")
+                        exampleCommand: "./CasterSoundboard ~/shows/morning.caster --mcp-stdio"
                     }
 
                     // 4. -s, --screenshot <path>
@@ -813,6 +847,95 @@ Item {
                         }
                     }
                 }
+
+                // ========================================================
+                // SECTION: Model Context Protocol (MCP) AI Server
+                // ========================================================
+                ColumnLayout {
+                    id: mcpSection
+                    Layout.fillWidth: true
+                    spacing: 14
+                    visible: (root.activeCategory === "all" || root.activeCategory === "mcp")
+
+                    RowLayout {
+                        spacing: 8
+                        Rectangle {
+                            width: 4
+                            height: 20
+                            radius: 2
+                            color: "#8E2DE2"
+                        }
+                        Text {
+                            text: qsTr("Model Context Protocol (MCP) AI Server")
+                            color: "#FFFFFF"
+                            font.bold: true
+                            font.pointSize: 14
+                        }
+                        Rectangle {
+                            Layout.fillWidth: true
+                            height: 1
+                            color: "#2C3035"
+                        }
+                    }
+
+                    Rectangle {
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: mcpDocCol.implicitHeight + 24
+                        radius: 8
+                        color: "#222528"
+                        border.color: "#33373B"
+                        border.width: 1
+
+                        ColumnLayout {
+                            id: mcpDocCol
+                            anchors.fill: parent
+                            anchors.margins: 16
+                            spacing: 12
+
+                            Text {
+                                text: qsTr("Caster Soundboard features a native <b>Model Context Protocol (MCP)</b> server implementing the official JSON-RPC 2.0 specification over HTTP/Server-Sent Events (SSE) and stdio. AI assistants such as <b>Claude Desktop</b>, <b>Antigravity</b>, and <b>Cursor</b> can directly inspect soundboard state, trigger sound effects, duck audio during live speech, adjust volumes, and query virtual audio routing:")
+                                color: "#AAAAAA"
+                                font.pointSize: 9
+                                textFormat: Text.RichText
+                                wrapMode: Text.WordWrap
+                                Layout.fillWidth: true
+                            }
+
+                            TerminalBox {
+                                commandText: "http://127.0.0.1:5055/sse  (JSON-RPC POST endpoint: http://127.0.0.1:5055/message)"
+                            }
+
+                            Text {
+                                text: qsTr("<b>Claude Desktop & Stdio Bridge Configuration:</b><br/>To connect Claude Desktop or command-line MCP clients, add the bundled Node.js stdio bridge (<code>scripts/caster-mcp.js</code>) to your configuration:")
+                                color: "#CCCCCC"
+                                font.pointSize: 9
+                                textFormat: Text.RichText
+                                wrapMode: Text.WordWrap
+                                Layout.fillWidth: true
+                            }
+
+                            TerminalBox {
+                                commandText: "node /path/to/CasterSoundboard/scripts/caster-mcp.js"
+                            }
+
+                            Text {
+                                text: qsTr("<b>Available Native MCP AI Tools:</b>")
+                                color: "#FFFFFF"
+                                font.bold: true
+                                font.pointSize: 10
+                                Layout.topMargin: 4
+                            }
+
+                            McpToolRow { toolName: "caster_get_state"; desc: qsTr("Returns JSON snapshot of all tabs, tiles, playback states, volume, and ducking") }
+                            McpToolRow { toolName: "caster_trigger_sound"; desc: qsTr("Toggles or plays a sound tile by tab/tile index or title search query") }
+                            McpToolRow { toolName: "caster_stop_all"; desc: qsTr("Emergency panic stop: silences all active audio channels across all tabs") }
+                            McpToolRow { toolName: "caster_set_ducking"; desc: qsTr("Enables or disables audio ducking attenuation for voiceover commentary") }
+                            McpToolRow { toolName: "caster_switch_tab"; desc: qsTr("Switches the active sound bank tab by index or tab name") }
+                            McpToolRow { toolName: "caster_set_volume"; desc: qsTr("Sets playback volume for a specific tile or active master tab (0.0 to 1.0)") }
+                            McpToolRow { toolName: "caster_get_audio_routing"; desc: qsTr("Inspects PipeWire/PulseAudio endpoints and virtual mic routing status") }
+                        }
+                    }
+                }
             }
         }
     }
@@ -1088,6 +1211,54 @@ Item {
             Text {
                 Layout.fillWidth: true
                 text: oscItem.desc
+                color: "#CCCCCC"
+                font.pointSize: 9
+                elide: Text.ElideRight
+            }
+        }
+    }
+
+    // MCP Tool Row Component
+    component McpToolRow : Rectangle {
+        id: mcpItem
+        property string toolName: ""
+        property string desc: ""
+
+        visible: {
+            if (root.searchQuery === "") return true;
+            var q = root.searchQuery;
+            return toolName.toLowerCase().indexOf(q) !== -1 || desc.toLowerCase().indexOf(q) !== -1;
+        }
+
+        Layout.fillWidth: true
+        Layout.preferredHeight: 34
+        color: "transparent"
+
+        RowLayout {
+            anchors.fill: parent
+            spacing: 12
+
+            Rectangle {
+                Layout.preferredWidth: 230
+                Layout.preferredHeight: 26
+                radius: 4
+                color: "#1C1728"
+                border.color: "#8E2DE2"
+                border.width: 1
+
+                Text {
+                    anchors.centerIn: parent
+                    text: mcpItem.toolName
+                    color: "#C084FC"
+                    font.bold: true
+                    font.family: "Monospace"
+                    font.pointSize: 9
+                }
+            }
+
+            Text {
+                Layout.fillWidth: true
+                text: mcpItem.desc
                 color: "#CCCCCC"
                 font.pointSize: 9
                 elide: Text.ElideRight
