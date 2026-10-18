@@ -134,8 +134,6 @@ LegacyProjectImporter::ImportResult LegacyProjectImporter::importLegacyProject(c
                 }
                 actionsArray.append(prof.toJson());
             }
-            result.hasActions = (count > 0);
-            result.importedActionsCount = count;
             result.hasPttProfiles = (count > 0);
             result.importedPttProfilesCount = count;
             actionsRead = true;

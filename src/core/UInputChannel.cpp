@@ -341,7 +341,7 @@ void UInputChannel::emitRawEvent(int type, int code, int value)
 
     ssize_t n = ::write(m_fd, &ev, sizeof(ev));
     if (n < 0) {
-        qWarning().noquote() << QString("[Actions] uinput write failed: %1").arg(strerror(errno));
+        qWarning().noquote() << QString("[PTT] uinput write failed: %1").arg(strerror(errno));
     }
 #else
     Q_UNUSED(type);
@@ -362,11 +362,11 @@ void UInputChannel::sendKeyDown(const QString &keyName)
 #ifdef __linux__
     int code = keyCodeFromName(keyName);
     if (code > 0) {
-        qInfo().noquote() << QString("[Actions] Virtual key DOWN: %1 (Linux code %2)").arg(keyName).arg(code);
+        qInfo().noquote() << QString("[PTT] Virtual key DOWN: %1 (Linux code %2)").arg(keyName).arg(code);
         emitRawEvent(EV_KEY, code, 1);
         syncEvent();
     } else {
-        qWarning().noquote() << QString("[Actions] Virtual key DOWN failed: unknown key '%1'").arg(keyName);
+        qWarning().noquote() << QString("[PTT] Virtual key DOWN failed: unknown key '%1'").arg(keyName);
     }
 #else
     Q_UNUSED(keyName);
@@ -378,7 +378,7 @@ void UInputChannel::sendKeyUp(const QString &keyName)
 #ifdef __linux__
     int code = keyCodeFromName(keyName);
     if (code > 0) {
-        qInfo().noquote() << QString("[Actions] Virtual key UP: %1 (Linux code %2)").arg(keyName).arg(code);
+        qInfo().noquote() << QString("[PTT] Virtual key UP: %1 (Linux code %2)").arg(keyName).arg(code);
         emitRawEvent(EV_KEY, code, 0);
         syncEvent();
     }
@@ -389,7 +389,7 @@ void UInputChannel::sendKeyUp(const QString &keyName)
 
 void UInputChannel::sendKeyTap(const QString &keyName, int tapDurationMs)
 {
-    qInfo().noquote() << QString("[Actions] Virtual key TAP: %1 for %2 ms").arg(keyName).arg(tapDurationMs);
+    qInfo().noquote() << QString("[PTT] Virtual key TAP: %1 for %2 ms").arg(keyName).arg(tapDurationMs);
     sendKeyDown(keyName);
     QTimer::singleShot(tapDurationMs, this, [this, keyName]() {
         sendKeyUp(keyName);

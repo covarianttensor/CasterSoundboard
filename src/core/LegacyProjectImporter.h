@@ -20,8 +20,6 @@ public:
         bool success = false;
         QString errorMessage;
         QJsonObject projectJson;
-        bool hasActions = false;
-        int importedActionsCount = 0;
         bool hasPttProfiles = false;
         int importedPttProfilesCount = 0;
     };

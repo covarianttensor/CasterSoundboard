@@ -106,7 +106,7 @@ public:
 public slots:
     void trigger();
     void play();
-    Q_INVOKABLE void play(bool withActions);
+    Q_INVOKABLE void play(bool withPtt);
     void playDirect();
     void pause();
     void stop();

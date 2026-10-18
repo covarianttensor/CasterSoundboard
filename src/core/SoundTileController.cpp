@@ -378,12 +378,12 @@ void SoundTileController::play()
     play(true);
 }
 
-void SoundTileController::play(bool withActions)
+void SoundTileController::play(bool withPtt)
 {
     if (m_filePath.isEmpty())
         return;
 
-    if (withActions && m_playbackCoordinator) {
+    if (withPtt && m_playbackCoordinator) {
         m_playbackCoordinator(this, [this]() {
             playDirect();
         });
