@@ -465,13 +465,55 @@ QString PulseCompatBackend::resolve(const Endpoint &e, const QJsonArray &nodes) 
     }
     return found;
 }
-QString PulseCompatBackend::uniqueName(const QString &base) const {
-    for (auto v : sinks) if (v.toObject().value("name").toString() == base) return base + "_" + token;
-    return base;
+bool PulseCompatBackend::hasNodeName(const QString &name) const {
+    if (name.isEmpty()) return false;
+    for (auto v : sinks) {
+        QString s = v.toObject().value("name").toString();
+        if (s == name || s + ".monitor" == name) return true;
+    }
+    for (auto v : sources) {
+        if (v.toObject().value("name").toString() == name) return true;
+    }
+    if (!boardSink.isEmpty() && (boardSink == name || boardSink + ".monitor" == name)) return true;
+    if (!micSink.isEmpty() && (micSink == name || micSink + ".monitor" == name)) return true;
+    if (!micSource.isEmpty() && micSource == name) return true;
+    for (const auto &m : owned) {
+        if (m.name == "module-null-sink") {
+            for (const auto &arg : m.arguments.split(' ')) {
+                if (arg.startsWith("sink_name=")) {
+                    QString s = arg.mid(10);
+                    if (s == name || s + ".monitor" == name) return true;
+                }
+            }
+        } else if (m.name == "module-remap-source") {
+            for (const auto &arg : m.arguments.split(' ')) {
+                if (arg.startsWith("source_name=")) {
+                    QString s = arg.mid(12);
+                    if (s == name) return true;
+                }
+            }
+        }
+    }
+    return false;
 }
+
+QString PulseCompatBackend::uniqueNodeName(const QString &base) const {
+    if (!hasNodeName(base)) return base;
+    QString candidate = base + "_" + token;
+    if (!hasNodeName(candidate)) return candidate;
+    int counter = 2;
+    while (hasNodeName(candidate + "_" + QString::number(counter))) {
+        counter++;
+    }
+    return candidate + "_" + QString::number(counter);
+}
+
+QString PulseCompatBackend::uniqueName(const QString &base) const {
+    return uniqueNodeName(base);
+}
+
 QString PulseCompatBackend::uniqueSourceName(const QString &base) const {
-    for (auto v : sources) if (v.toObject().value("name").toString() == base) return base + "_" + token;
-    return base;
+    return uniqueNodeName(base);
 }
 QString PulseCompatBackend::load(const QString &name, const QStringList &args) {
     QStringList commandArgs = {"load-module", name}; commandArgs += args;
@@ -553,7 +595,7 @@ Result PulseCompatBackend::apply(const Plan &supplied) {
         if (desired.mix) setPort(desired.microphone, input, true);
         if (desired.monitor) setPort(desired.monitorOutput, monitor, false);
         if (boardSink.isEmpty()) {
-            boardSink = uniqueName("SoundboardSink");
+            boardSink = uniqueNodeName("SoundboardSink");
             load("module-null-sink", {"sink_name=" + boardSink, "sink_properties=\"device.description=Caster_Soundboard caster.owner=" + token + "\""});
         }
         if (desired.mix) {
@@ -564,7 +606,8 @@ Result PulseCompatBackend::apply(const Plan &supplied) {
             const bool isDefault = sanitizedNodeName.isEmpty() || sanitizedNodeName == "Virtual_Microphone" || sanitizedNodeName == "VirtualMic";
             if (sanitizedNodeName.isEmpty())
                 sanitizedNodeName = "VirtualMic";
-            const QString targetSinkName = isDefault ? QString("VirtualMic") : sanitizedNodeName;
+            const QString targetSourceName = isDefault ? QString("VirtualMic") : sanitizedNodeName;
+            const QString targetSinkName = targetSourceName + "_Mix";
 
             QString displayDescription = rawName;
             displayDescription.replace('_', ' ');
@@ -572,7 +615,7 @@ Result PulseCompatBackend::apply(const Plan &supplied) {
                 displayDescription = "Caster Soundboard Mic";
             displayDescription.remove('"').remove('\\');
 
-            if (micSink.isEmpty() || !micSink.startsWith(targetSinkName) || micSource.isEmpty() || appliedMicDescription != displayDescription) {
+            if (micSink.isEmpty() || !micSink.startsWith(targetSinkName) || micSource.isEmpty() || !micSource.startsWith(targetSourceName) || appliedMicDescription != displayDescription) {
                 if (!micSource.isEmpty()) {
                     for (int i = owned.size() - 1; i >= 0; --i) {
                         if (owned[i].name == "module-remap-source" && owned[i].arguments.contains("source_name=" + micSource)) {
@@ -589,10 +632,10 @@ Result PulseCompatBackend::apply(const Plan &supplied) {
                     }
                     micSink.clear();
                 }
-                micSink = uniqueName(targetSinkName);
-                load("module-null-sink", {"sink_name=" + micSink, "sink_properties=\"device.description=" + sanitizedNodeName + " caster.owner=" + token + "\""});
+                micSink = uniqueNodeName(targetSinkName);
+                load("module-null-sink", {"sink_name=" + micSink, "sink_properties=\"device.description=\\\"Caster Virtual Mic Mixer (Internal)\\\" caster.owner=" + token + "\""});
 
-                micSource = uniqueSourceName(micSink);
+                micSource = uniqueNodeName(targetSourceName);
                 appliedMicDescription = displayDescription;
                 load("module-remap-source", {"master=" + micSink + ".monitor", "source_name=" + micSource,
                     "source_properties=\"device.description=\\\"" + displayDescription + "\\\" caster.owner=" + token + "\""});

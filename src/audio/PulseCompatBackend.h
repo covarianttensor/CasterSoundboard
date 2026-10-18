@@ -44,6 +44,8 @@ private:
     void unload(const QString &);
     QString resolve(const Endpoint &, const QJsonArray &) const;
     Endpoint endpoint(const QString &) const;
+    bool hasNodeName(const QString &) const;
+    QString uniqueNodeName(const QString &) const;
     QString uniqueName(const QString &) const;
     QString uniqueSourceName(const QString &) const;
     void restoreSource();

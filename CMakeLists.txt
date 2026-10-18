@@ -213,6 +213,8 @@ add_caster_test(test_project_serialization tests/core/test_project_serialization
 add_caster_test(test_hotkey_manager tests/core/test_hotkey_manager.cpp)
 add_caster_test(test_osc_server tests/core/test_osc_server.cpp)
 add_caster_test(test_audio_routing tests/core/test_audio_routing.cpp)
+add_caster_test(test_audio_backend tests/audio/tst_AudioBackend.cpp)
+set_tests_properties(test_audio_backend PROPERTIES WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/tests/audio")
 add_caster_test(test_web_remote tests/core/test_web_remote.cpp)
 add_caster_test(test_ptt tests/core/test_ptt.cpp)
 add_caster_test(test_mcp_server tests/core/test_mcp_server.cpp)

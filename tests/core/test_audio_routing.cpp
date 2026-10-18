@@ -28,6 +28,8 @@ private slots:
         QStringList recoveries = audio.recoveryDevices();
         QVERIFY(!recoveries.isEmpty());
         QVERIFY(recoveries.contains(tr("Choose a device to enable or reset...")));
+
+        QVERIFY(!audio.virtualMicName().isEmpty());
     }
 
     void testConfigurationSetters()

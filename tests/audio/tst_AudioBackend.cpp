@@ -75,7 +75,14 @@ struct FakeServer {
             if(failDefault) { failDefault=false; return {false,{},"Injected default failure"}; }
             defaultSink=a[1]; return {true,{}, {}};
         }
-        if(a[0]=="set-default-source") {defaultSource=a[1];return {true,{}, {}};}
+        if(a[0]=="set-default-source") {
+            for (auto v : lists["sinks"]) {
+                if (v.toObject()["name"].toString() == a[1]) {
+                    return {false, {}, "Failure: No such entity"};
+                }
+            }
+            defaultSource=a[1]; return {true, {}, {}};
+        }
         if(a[0]=="move-sink-input") return {true,{}, {}};
         return {false,{},"Unimplemented fake command: "+a.join(' ')};
     }
@@ -186,7 +193,7 @@ private slots:
         QCOMPARE(r.voiceSource, QString("Discord_Soundboard_Mic"));
         bool foundSink = false;
         for (auto v : f.lists["sinks"]) {
-            if (v.toObject()["name"].toString() == "Discord_Soundboard_Mic") foundSink = true;
+            if (v.toObject()["name"].toString() == "Discord_Soundboard_Mic_Mix") foundSink = true;
         }
         QVERIFY(foundSink);
         bool foundSource = false;
@@ -194,6 +201,33 @@ private slots:
             if (v.toObject()["name"].toString() == "Discord_Soundboard_Mic") foundSource = true;
         }
         QVERIFY(foundSource);
+        QVERIFY(b.stopManagedRouting().ok);
+    }
+    void pipeWireSameNameDefaultConflictPrevention() {
+        FakeServer f;
+        PulseCompatBackend b([&](const QStringList &a) { return f.run(a); });
+        auto c = f.config();
+        c.defaultInput = true;
+        c.virtualMicName = "Virtual Microphone";
+        auto plan = b.validateConfiguration(c);
+        QVERIFY2(plan.error.isEmpty(), qPrintable(plan.error));
+        auto r = b.apply(plan);
+        QVERIFY2(r.ok, qPrintable(r.message));
+        QCOMPARE(r.voiceSource, QString("VirtualMic"));
+        QCOMPARE(f.defaultSource, QString("VirtualMic"));
+
+        QString sinkName, sourceName;
+        for (auto v : f.lists["sinks"]) {
+            QString name = v.toObject()["name"].toString();
+            if (name.contains("VirtualMic")) sinkName = name;
+        }
+        for (auto v : f.lists["sources"]) {
+            QString name = v.toObject()["name"].toString();
+            if (name.contains("VirtualMic") && !name.endsWith(".monitor")) sourceName = name;
+        }
+        QCOMPARE(sinkName, QString("VirtualMic_Mix"));
+        QCOMPARE(sourceName, QString("VirtualMic"));
+        QVERIFY(sinkName != sourceName);
         QVERIFY(b.stopManagedRouting().ok);
     }
     void rejectReusedModuleId() {

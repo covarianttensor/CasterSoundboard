@@ -61,6 +61,33 @@ Item {
         }
     }
 
+    component DarkCheckBox : CheckBox {
+        id: dchk
+        HoverHandler { cursorShape: Qt.PointingHandCursor }
+        indicator: Rectangle {
+            implicitWidth: 20
+            implicitHeight: 20
+            x: dchk.leftPadding
+            y: Math.round(dchk.height / 2 - height / 2)
+            radius: 5
+            color: dchk.checked ? "#8E2DE2" : (dchk.hovered ? "#363B42" : "#282C32")
+            border.color: dchk.checked ? "#A855F7" : (dchk.hovered ? "#6B7280" : "#454B54")
+            border.width: dchk.checked ? 1.5 : 1
+
+            Behavior on color { ColorAnimation { duration: 120 } }
+            Behavior on border.color { ColorAnimation { duration: 120 } }
+
+            Text {
+                anchors.centerIn: parent
+                text: "✓"
+                color: "#FFFFFF"
+                font.bold: true
+                font.pixelSize: 13
+                visible: dchk.checked
+            }
+        }
+    }
+
     Rectangle {
         anchors.fill: parent
         color: "#181A1B"
@@ -1661,7 +1688,8 @@ Item {
                                 // Checkbox 1: Mix physical mic with soundboard
                                 RowLayout {
                                     spacing: 12
-                                    CheckBox {
+                                    Layout.fillWidth: true
+                                    DarkCheckBox {
                                         id: mixCheck
                                         checked: typeof audioRoutingController !== "undefined" ? audioRoutingController.mixMicrophone : true
                                         onToggled: {
@@ -1673,6 +1701,10 @@ Item {
                                     ColumnLayout {
                                         spacing: 2
                                         Layout.fillWidth: true
+                                        TapHandler {
+                                            cursorShape: Qt.PointingHandCursor
+                                            onTapped: mixCheck.toggle()
+                                        }
                                         Text {
                                             text: qsTr("Send microphone + soundboard to virtual microphone (Summing Mixer ⊕)")
                                             color: "#FFFFFF"
@@ -1692,7 +1724,8 @@ Item {
                                 // Checkbox 2: Monitor soundboard through chosen output
                                 RowLayout {
                                     spacing: 12
-                                    CheckBox {
+                                    Layout.fillWidth: true
+                                    DarkCheckBox {
                                         id: monCheck
                                         checked: typeof audioRoutingController !== "undefined" ? audioRoutingController.monitorSoundboard : true
                                         onToggled: {
@@ -1704,6 +1737,10 @@ Item {
                                     ColumnLayout {
                                         spacing: 2
                                         Layout.fillWidth: true
+                                        TapHandler {
+                                            cursorShape: Qt.PointingHandCursor
+                                            onTapped: monCheck.toggle()
+                                        }
                                         Text {
                                             text: qsTr("Monitor soundboard through headphones (never plays your live microphone back)")
                                             color: "#FFFFFF"
@@ -1723,7 +1760,8 @@ Item {
                                 // Checkbox 3: Set as system default input
                                 RowLayout {
                                     spacing: 12
-                                    CheckBox {
+                                    Layout.fillWidth: true
+                                    DarkCheckBox {
                                         id: defInputCheck
                                         checked: typeof audioRoutingController !== "undefined" ? audioRoutingController.useAsDefaultInput : false
                                         onToggled: {
@@ -1735,6 +1773,10 @@ Item {
                                     ColumnLayout {
                                         spacing: 2
                                         Layout.fillWidth: true
+                                        TapHandler {
+                                            cursorShape: Qt.PointingHandCursor
+                                            onTapped: defInputCheck.toggle()
+                                        }
                                         Text {
                                             text: qsTr("Use mixed virtual microphone as system default input (global)")
                                             color: "#FFFFFF"
