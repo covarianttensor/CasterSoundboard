@@ -69,7 +69,7 @@ PulseCompatBackend::PulseCompatBackend(CommandRunner r, std::function<void(unsig
 #ifdef Q_OS_LINUX
         QString executable = QStandardPaths::findExecutable("pactl");
         QStringList cmdArgs = args;
-        if (QFile::exists("/.flatpak-info")) {
+        if (executable.isEmpty() && QFile::exists("/.flatpak-info")) {
             const auto flatpakSpawn = QStandardPaths::findExecutable("flatpak-spawn");
             if (!flatpakSpawn.isEmpty()) {
                 executable = flatpakSpawn;

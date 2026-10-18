@@ -21,7 +21,7 @@ void CasterPlaybackRouter::setEnabled(bool value) {
         if (events.state() == QProcess::NotRunning) {
             auto path = QStandardPaths::findExecutable("pactl");
             QStringList args = {"subscribe"};
-            if (QFile::exists("/.flatpak-info")) {
+            if (path.isEmpty() && QFile::exists("/.flatpak-info")) {
                 const auto flatpakSpawn = QStandardPaths::findExecutable("flatpak-spawn");
                 if (!flatpakSpawn.isEmpty()) {
                     path = flatpakSpawn;

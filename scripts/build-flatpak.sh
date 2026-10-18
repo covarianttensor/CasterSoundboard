@@ -36,7 +36,20 @@ cleanup() {
 }
 trap cleanup EXIT
 
-flatpak-builder --force-clean --repo="${REPO_DIR}" "${BUILD_DIR}/build" "${REPO_ROOT}/${APP_ID}.yml"
+MANIFEST="${REPO_ROOT}/${APP_ID}.yml"
+LOCAL_MANIFEST="${BUILD_DIR}/${APP_ID}.local.yml"
+
+# Allow building directly from the local working directory when --local is provided
+if [ "${1:-}" = "--local" ] || [ "${CASTER_FLATPAK_LOCAL:-0}" = "1" ]; then
+    sed -e 's|type: git|type: dir|g' \
+        -e 's|url: .*|path: '"${REPO_ROOT}"'|g' \
+        -e '/tag: .*/d' \
+        -e '/commit: .*/d' \
+        "${MANIFEST}" > "${LOCAL_MANIFEST}"
+    MANIFEST="${LOCAL_MANIFEST}"
+fi
+
+flatpak-builder --force-clean --repo="${REPO_DIR}" "${BUILD_DIR}/build" "${MANIFEST}"
 flatpak build-bundle "${REPO_DIR}" "${BUNDLE_FILE}" "${APP_ID}"
 cp -f "${BUNDLE_FILE}" "${DEFAULT_BUNDLE}"
 

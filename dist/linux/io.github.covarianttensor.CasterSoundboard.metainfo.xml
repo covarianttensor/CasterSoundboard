@@ -5,25 +5,57 @@
   <id>io.github.covarianttensor.CasterSoundboard</id>
   <metadata_license>CC0-1.0</metadata_license>
   <project_license>LGPL-3.0-or-later</project_license>
-  <name>CasterSoundboard</name>
-  <summary>A soundboard for hot-keying and playing back sounds</summary>
+  <name>Caster Soundboard</name>
+  <summary>Touch-first soundboard and live audio routing tool for Linux</summary>
   <description>
     <p>
-      A soundboard application for hot-keying and playing audio sound effects and music tracks during podcasts and live broadcasts.
+      Caster Soundboard is a high-performance, touch-first soundboard and live audio routing application designed for podcasters, streamers, and live broadcasters on Linux (Wayland and X11).
     </p>
+    <p>Key features include:</p>
+    <ul>
+      <li>Responsive touch-first soundboard tile grid with bank switching across multiple tabs</li>
+      <li>Seamless virtual audio routing with zero configuration via PipeWire and PulseAudio</li>
+      <li>Push-to-Talk (PTT) automation with custom hotkeys, ducking, and microphone mute integration</li>
+      <li>Interactive audio waveform visualizer with trim handles, looping, and cue point auditioning</li>
+      <li>Local Web Remote control surface accessible from smartphones, tablets, and secondary monitors</li>
+      <li>Multi-track audio ducking with configurable attenuation and smooth release timing</li>
+      <li>Open Sound Control (OSC) and Model Context Protocol (MCP) AI remote integration</li>
+      <li>Hardware output device selection and per-stream remapping</li>
+    </ul>
   </description>
   <developer id="io.github.covarianttensor">
     <name>Oscar Cerna</name>
   </developer>
+  <branding>
+    <color type="primary" scheme_preference="light">#8E2DE2</color>
+    <color type="primary" scheme_preference="dark">#8E2DE2</color>
+  </branding>
   <launchable type="desktop-id">io.github.covarianttensor.CasterSoundboard.desktop</launchable>
+  <provides>
+    <binary>CasterSoundboard</binary>
+  </provides>
   <screenshots>
     <screenshot type="default">
-      <caption>Main window of CasterSoundboard</caption>
-      <image>https://raw.githubusercontent.com/covarianttensor/CasterSoundboard/master/docs/img/screenshot.png</image>
+      <caption>Main soundboard view with responsive tile grid and audio waveforms</caption>
+      <image>https://raw.githubusercontent.com/covarianttensor/CasterSoundboard/main/docs/img/screenshot_main.png</image>
+    </screenshot>
+    <screenshot>
+      <caption>Orthogonal audio routing diagram with PipeWire virtual sinks and source remapping</caption>
+      <image>https://raw.githubusercontent.com/covarianttensor/CasterSoundboard/main/docs/img/screenshot_audio_routing.png</image>
+    </screenshot>
+    <screenshot>
+      <caption>Push-to-Talk and microphone automation dialog</caption>
+      <image>https://raw.githubusercontent.com/covarianttensor/CasterSoundboard/main/docs/img/screenshot_ptt_dialog.png</image>
+    </screenshot>
+    <screenshot>
+      <caption>Sound tile drawer with interactive cue points and waveform editor</caption>
+      <image>https://raw.githubusercontent.com/covarianttensor/CasterSoundboard/main/docs/img/screenshot_tile_drawer.png</image>
     </screenshot>
   </screenshots>
   <url type="homepage">https://github.com/covarianttensor/CasterSoundboard</url>
   <url type="bugtracker">https://github.com/covarianttensor/CasterSoundboard/issues</url>
+  <url type="vcs-browser">https://github.com/covarianttensor/CasterSoundboard</url>
+  <url type="help">https://github.com/covarianttensor/CasterSoundboard/tree/main/docs</url>
   <content_rating type="oars-1.1" />
   <releases>
     <release version="2.1.1" date="2026-10-18">

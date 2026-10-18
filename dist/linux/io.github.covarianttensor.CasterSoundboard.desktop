@@ -1,11 +1,12 @@
 [Desktop Entry]
 Version=1.0
 Type=Application
-Name=CasterSoundboard
-Comment=A soundboard for hot-keying and playing back sounds
+Name=Caster Soundboard
+GenericName=Soundboard
+Comment=Touch-first soundboard and live audio routing tool
 Icon=io.github.covarianttensor.CasterSoundboard
-Exec=CasterSoundboard
-NoDisplay=false
-Categories=AudioVideo;
-StartupNotify=false
+Exec=CasterSoundboard %F
 Terminal=false
+Categories=AudioVideo;Audio;Player;Recorder;
+Keywords=soundboard;audio;pipewire;pulseaudio;podcast;stream;broadcast;push-to-talk;
+StartupNotify=true

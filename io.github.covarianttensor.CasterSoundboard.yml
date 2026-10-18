@@ -1,19 +1,27 @@
 app-id: io.github.covarianttensor.CasterSoundboard
 runtime: org.kde.Platform
-runtime-version: '6.8'
+runtime-version: '6.11'
 sdk: org.kde.Sdk
 command: CasterSoundboard
 
 finish-args:
+  # IPC and display sockets (Wayland with X11 fallback)
   - --share=ipc
   - --socket=wayland
   - --socket=fallback-x11
-  - --socket=pulseaudio
-  - --share=network
+  # Hardware-accelerated graphics for Qt Quick
   - --device=dri
-  - --filesystem=host
-  - --filesystem=home
-  - --talk-name=org.freedesktop.Flatpak
+  # PulseAudio and PipeWire Pulse compatibility socket
+  - --socket=pulseaudio
+  # PipeWire direct socket
+  - --filesystem=xdg-run/pipewire-0:ro
+  # Web Remote HTTP server (port 5052), MCP AI bridge (port 5055) & OSC (UDP)
+  - --share=network
+  # Audio file access
+  - --filesystem=xdg-music:ro
+  - --filesystem=xdg-download:ro
+  - --filesystem=/media:ro
+  - --filesystem=/run/media:ro
 
 modules:
   - name: castersoundboard
@@ -21,5 +29,6 @@ modules:
     config-opts:
       - -DCMAKE_BUILD_TYPE=Release
     sources:
-      - type: dir
-        path: .
+      - type: git
+        url: https://github.com/covarianttensor/CasterSoundboard.git
+        tag: v2.1.1
