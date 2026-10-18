@@ -730,6 +730,7 @@ Item {
                     spacing: 14
                     visible: (root.activeCategory === "all" || root.activeCategory === "audio")
 
+                    // Section Title
                     RowLayout {
                         spacing: 8
                         Rectangle {
@@ -751,36 +752,433 @@ Item {
                         }
                     }
 
+                    // 1. Overview & 3-Step Setup Workflow
                     Rectangle {
                         Layout.fillWidth: true
-                        Layout.preferredHeight: audioCol.implicitHeight + 24
+                        Layout.preferredHeight: audioFlowCol.implicitHeight + 28
                         radius: 8
                         color: "#222528"
                         border.color: "#33373B"
                         border.width: 1
 
                         ColumnLayout {
-                            id: audioCol
+                            id: audioFlowCol
                             anchors.fill: parent
                             anchors.margins: 16
-                            spacing: 10
+                            spacing: 14
 
-                            Text {
-                                text: qsTr("Caster Soundboard is designed to feed high-fidelity audio into your headphones while simultaneously routing audio directly into streaming and conferencing applications:")
-                                color: "#AAAAAA"
-                                font.pointSize: 9
-                                wrapMode: Text.WordWrap
-                                Layout.fillWidth: true
+                            RowLayout {
+                                spacing: 8
+                                Text { text: "🎛️"; font.pixelSize: 18 }
+                                ColumnLayout {
+                                    spacing: 2
+                                    Text {
+                                        text: qsTr("Dual-Path Audio Signal Architecture")
+                                        color: "#FFFFFF"
+                                        font.bold: true
+                                        font.pointSize: 11
+                                    }
+                                    Text {
+                                        text: qsTr("Plays sounds in your headphones while mixing audio into a virtual microphone for your listeners.")
+                                        color: "#9AA0A6"
+                                        font.pointSize: 8.5
+                                    }
+                                }
                             }
 
-                            Text {
-                                text: qsTr("• <b>Direct Soundboard Playback Output:</b> Choose the target audio device directly from Preferences or the Audio Devices view. Route soundboard playback straight to any physical speaker/headphone or external DAC.\n• <b>Virtual Audio Routing & Mic Loopback:</b> Click 'Apply Routing' in Audio Devices to seamlessly bridge soundboard audio with your physical microphone into a virtual microphone sink (e.g. <i>Caster Soundboard Mic</i>). This allows games, streaming apps (OBS), and VoIP apps (Discord, Zoom) to receive your voice and sound effects simultaneously.\n• <b>Push-to-Talk (PTT) Automation:</b> Automatically press your Discord or in-game PTT key (e.g. F24, V) or toggle mic mute whenever sounds play in designated soundboard tabs, complete with customizable lead-in and tail buffer delays to eliminate audio clipping.\n• <b>Discord & Voice Chat Setup (Critical):</b>\n  1. <i>Input Device:</i> In Discord <i>Settings → Voice & Video</i>, explicitly set <b>Input Device</b> to <b>Caster Soundboard Mic</b>.\n  2. <i>Noise Suppression (Krisp):</i> Set to <b>None / Off</b>. Discord's Krisp AI cancels out non-vocal audio (music, explosions, jingles), making soundboard playback silent to others!\n  3. <i>Echo Cancellation:</i> Turn off <i>Echo Cancellation</i> and <i>Advanced Voice Activity</i> if sound clips cut out prematurely.\n• <b>Independent Tile Gain:</b> Each tile supports dedicated volume trimming and custom cue points to balance levels across disparate audio files.")
-                                color: "#CCCCCC"
-                                font.pointSize: 9
-                                textFormat: Text.RichText
-                                wrapMode: Text.WordWrap
+                            // 3-Step Setup Workflow Cards
+                            RowLayout {
                                 Layout.fillWidth: true
-                                lineHeight: 1.25
+                                spacing: 10
+
+                                // Step 1
+                                Rectangle {
+                                    Layout.fillWidth: true
+                                    Layout.preferredHeight: 74
+                                    radius: 6
+                                    color: "#181A1D"
+                                    border.color: "#2C3036"
+                                    border.width: 1
+
+                                    RowLayout {
+                                        anchors.fill: parent
+                                        anchors.margins: 10
+                                        spacing: 10
+
+                                        Rectangle {
+                                            width: 24
+                                            height: 24
+                                            radius: 12
+                                            color: "#2B1B4A"
+                                            border.color: "#8E2DE2"
+                                            border.width: 1
+                                            Text {
+                                                anchors.centerIn: parent
+                                                text: "1"
+                                                color: "#C285FF"
+                                                font.bold: true
+                                                font.pointSize: 9
+                                            }
+                                        }
+                                        ColumnLayout {
+                                            Layout.fillWidth: true
+                                            spacing: 2
+                                            Text {
+                                                text: qsTr("Set Monitor Output")
+                                                color: "#FFFFFF"
+                                                font.bold: true
+                                                font.pointSize: 9
+                                            }
+                                            Text {
+                                                text: qsTr("Choose physical headphones/speakers in Audio Devices or Preferences.")
+                                                color: "#8E95A0"
+                                                font.pointSize: 8
+                                                wrapMode: Text.WordWrap
+                                                Layout.fillWidth: true
+                                            }
+                                        }
+                                    }
+                                }
+
+                                // Step 2
+                                Rectangle {
+                                    Layout.fillWidth: true
+                                    Layout.preferredHeight: 74
+                                    radius: 6
+                                    color: "#181A1D"
+                                    border.color: "#2C3036"
+                                    border.width: 1
+
+                                    RowLayout {
+                                        anchors.fill: parent
+                                        anchors.margins: 10
+                                        spacing: 10
+
+                                        Rectangle {
+                                            width: 24
+                                            height: 24
+                                            radius: 12
+                                            color: "#2B1B4A"
+                                            border.color: "#8E2DE2"
+                                            border.width: 1
+                                            Text {
+                                                anchors.centerIn: parent
+                                                text: "2"
+                                                color: "#C285FF"
+                                                font.bold: true
+                                                font.pointSize: 9
+                                            }
+                                        }
+                                        ColumnLayout {
+                                            Layout.fillWidth: true
+                                            spacing: 2
+                                            Text {
+                                                text: qsTr("Apply Routing")
+                                                color: "#FFFFFF"
+                                                font.bold: true
+                                                font.pointSize: 9
+                                            }
+                                            Text {
+                                                text: qsTr("In Audio Devices view, select your physical mic and click Apply Routing.")
+                                                color: "#8E95A0"
+                                                font.pointSize: 8
+                                                wrapMode: Text.WordWrap
+                                                Layout.fillWidth: true
+                                            }
+                                        }
+                                    }
+                                }
+
+                                // Step 3
+                                Rectangle {
+                                    Layout.fillWidth: true
+                                    Layout.preferredHeight: 74
+                                    radius: 6
+                                    color: "#181A1D"
+                                    border.color: "#2C3036"
+                                    border.width: 1
+
+                                    RowLayout {
+                                        anchors.fill: parent
+                                        anchors.margins: 10
+                                        spacing: 10
+
+                                        Rectangle {
+                                            width: 24
+                                            height: 24
+                                            radius: 12
+                                            color: "#064E3B"
+                                            border.color: "#10B981"
+                                            border.width: 1
+                                            Text {
+                                                anchors.centerIn: parent
+                                                text: "3"
+                                                color: "#6EE7B7"
+                                                font.bold: true
+                                                font.pointSize: 9
+                                            }
+                                        }
+                                        ColumnLayout {
+                                            Layout.fillWidth: true
+                                            spacing: 2
+                                            Text {
+                                                text: qsTr("Set Discord Input")
+                                                color: "#FFFFFF"
+                                                font.bold: true
+                                                font.pointSize: 9
+                                            }
+                                            Text {
+                                                text: qsTr("In Discord/OBS, set Input Device to Caster Soundboard Mic.")
+                                                color: "#8E95A0"
+                                                font.pointSize: 8
+                                                wrapMode: Text.WordWrap
+                                                Layout.fillWidth: true
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // 2. Dual Output Pathways (Side-by-Side Cards)
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: 12
+
+                        // Local Headphones Card
+                        Rectangle {
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: localHeadphonesCol.implicitHeight + 24
+                            radius: 8
+                            color: "#222528"
+                            border.color: "#33373B"
+                            border.width: 1
+
+                            ColumnLayout {
+                                id: localHeadphonesCol
+                                anchors.fill: parent
+                                anchors.margins: 14
+                                spacing: 8
+
+                                RowLayout {
+                                    spacing: 8
+                                    Text {
+                                        text: qsTr("Local Headphones (Your Ears)")
+                                        color: "#FFFFFF"
+                                        font.bold: true
+                                        font.pointSize: 10
+                                    }
+                                    Rectangle {
+                                        width: 86
+                                        height: 18
+                                        radius: 9
+                                        color: "#2B1B4A"
+                                        border.color: "#8E2DE2"
+                                        border.width: 1
+                                        Text {
+                                            anchors.centerIn: parent
+                                            text: "MONITORING"
+                                            color: "#C285FF"
+                                            font.bold: true
+                                            font.pointSize: 7.5
+                                        }
+                                    }
+                                }
+
+                                Text {
+                                    text: qsTr("Routes soundboard audio straight to your physical headphones/speakers. Does NOT loop your microphone back into your ears, preventing feedback and distracting self-echo.")
+                                    color: "#CCCCCC"
+                                    font.pointSize: 8.5
+                                    wrapMode: Text.WordWrap
+                                    Layout.fillWidth: true
+                                    lineHeight: 1.2
+                                }
+                            }
+                        }
+
+                        // Virtual Mic Sink Card
+                        Rectangle {
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: virtualMicCol.implicitHeight + 24
+                            radius: 8
+                            color: "#222528"
+                            border.color: "#33373B"
+                            border.width: 1
+
+                            ColumnLayout {
+                                id: virtualMicCol
+                                anchors.fill: parent
+                                anchors.margins: 14
+                                spacing: 8
+
+                                RowLayout {
+                                    spacing: 8
+                                    Text {
+                                        text: qsTr("Virtual Mic (Your Listeners)")
+                                        color: "#FFFFFF"
+                                        font.bold: true
+                                        font.pointSize: 10
+                                    }
+                                    Rectangle {
+                                        width: 82
+                                        height: 18
+                                        radius: 9
+                                        color: "#064E3B"
+                                        border.color: "#10B981"
+                                        border.width: 1
+                                        Text {
+                                            anchors.centerIn: parent
+                                            text: "BROADCAST"
+                                            color: "#A7F3D0"
+                                            font.bold: true
+                                            font.pointSize: 7.5
+                                        }
+                                    }
+                                }
+
+                                Text {
+                                    text: qsTr("Creates a PipeWire/PulseAudio virtual sink (caster_sink.monitor) that combines your hardware microphone and soundboard clips into a single input for Discord, OBS, and games.")
+                                    color: "#CCCCCC"
+                                    font.pointSize: 8.5
+                                    wrapMode: Text.WordWrap
+                                    Layout.fillWidth: true
+                                    lineHeight: 1.2
+                                }
+                            }
+                        }
+                    }
+
+                    // 3. Discord & VoIP Configuration Checklist Card
+                    Rectangle {
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: voipChecklistCol.implicitHeight + 28
+                        radius: 8
+                        color: "#222528"
+                        border.color: "#33373B"
+                        border.width: 1
+
+                        ColumnLayout {
+                            id: voipChecklistCol
+                            anchors.fill: parent
+                            anchors.margins: 16
+                            spacing: 12
+
+                            Text {
+                                text: qsTr("VoIP & Streaming Configuration Checklist (Discord, OBS, Zoom)")
+                                color: "#FFFFFF"
+                                font.bold: true
+                                font.pointSize: 10.5
+                            }
+
+                            // 3 settings in row
+                            RowLayout {
+                                Layout.fillWidth: true
+                                spacing: 14
+
+                                ColumnLayout {
+                                    Layout.fillWidth: true
+                                    spacing: 4
+                                    RowLayout {
+                                        spacing: 6
+                                        Text { text: "1️⃣"; font.pixelSize: 12 }
+                                        Text {
+                                            text: qsTr("Input Device")
+                                            color: "#93C5FD"
+                                            font.bold: true
+                                            font.pointSize: 9
+                                        }
+                                    }
+                                    Text {
+                                        text: qsTr("In Discord Settings → Voice & Video, set Input Device to Caster Soundboard Mic (do not leave on 'Default').")
+                                        color: "#CCCCCC"
+                                        font.pointSize: 8.5
+                                        wrapMode: Text.WordWrap
+                                        Layout.fillWidth: true
+                                    }
+                                }
+
+                                ColumnLayout {
+                                    Layout.fillWidth: true
+                                    spacing: 4
+                                    RowLayout {
+                                        spacing: 6
+                                        Text { text: "2️⃣"; font.pixelSize: 12 }
+                                        Text {
+                                            text: qsTr("Turn Off Krisp AI")
+                                            color: "#F59E0B"
+                                            font.bold: true
+                                            font.pointSize: 9
+                                        }
+                                    }
+                                    Text {
+                                        text: qsTr("Set Noise Suppression to None/Off. Krisp cancels non-vocal audio (music, explosions) making sounds silent to others!")
+                                        color: "#CCCCCC"
+                                        font.pointSize: 8.5
+                                        wrapMode: Text.WordWrap
+                                        Layout.fillWidth: true
+                                    }
+                                }
+
+                                ColumnLayout {
+                                    Layout.fillWidth: true
+                                    spacing: 4
+                                    RowLayout {
+                                        spacing: 6
+                                        Text { text: "3️⃣"; font.pixelSize: 12 }
+                                        Text {
+                                            text: qsTr("Echo Cancellation")
+                                            color: "#93C5FD"
+                                            font.bold: true
+                                            font.pointSize: 9
+                                        }
+                                    }
+                                    Text {
+                                        text: qsTr("Turn off Echo Cancellation and Advanced Voice Activity in Discord if sound clips stutter or cut out prematurely.")
+                                        color: "#CCCCCC"
+                                        font.pointSize: 8.5
+                                        wrapMode: Text.WordWrap
+                                        Layout.fillWidth: true
+                                    }
+                                }
+                            }
+
+                            Rectangle {
+                                Layout.fillWidth: true
+                                height: 1
+                                color: "#2C3035"
+                            }
+
+                            // Diagnostics Command
+                            ColumnLayout {
+                                Layout.fillWidth: true
+                                spacing: 6
+
+                                RowLayout {
+                                    spacing: 6
+                                    Text { text: "🔍"; font.pixelSize: 12 }
+                                    Text {
+                                        text: qsTr("Verify PipeWire / PulseAudio Virtual Mic via CLI")
+                                        color: "#FFFFFF"
+                                        font.bold: true
+                                        font.pointSize: 9
+                                    }
+                                    Text {
+                                        text: qsTr("(Checks if the caster_sink null-sink and loopback source are currently active)")
+                                        color: "#7E8590"
+                                        font.pointSize: 8
+                                    }
+                                }
+
+                                TerminalBox {
+                                    commandText: "pactl list short sinks | grep caster"
+                                }
+
+                                Text {
+                                    text: qsTr("Displays caster_sink module ID. You can also view live routing status anytime in Caster Soundboard's Audio Devices and About views.")
+                                    color: "#7E8590"
+                                    font.pointSize: 8
+                                }
                             }
                         }
                     }
