@@ -96,6 +96,15 @@ private slots:
         QCOMPARE(controller.activeBadgeForTab("Jingles"), QString("Mute: M"));
         QVERIFY(!controller.hasPttForTab("Other Tab"));
 
+        // Tab cloning synchronization
+        controller.handleTabCloned("Jingles", "Jingles (Copy)");
+        QCOMPARE(controller.count(), 2);
+        QVERIFY(controller.hasPttForTab("Jingles"));
+        QVERIFY(controller.hasPttForTab("Jingles (Copy)"));
+        QCOMPARE(controller.activeBadgeForTab("Jingles (Copy)"), QString("Mute: M"));
+        QCOMPARE(controller.getProfile(1)["name"].toString(), QString("Podcast Mute (Copy)"));
+        QVERIFY(controller.getProfile(1)["id"].toString() != controller.getProfile(0)["id"].toString());
+
         // Tab rename synchronization
         controller.handleTabRenamed("Jingles", "Live Drops");
         QVERIFY(!controller.hasPttForTab("Jingles"));

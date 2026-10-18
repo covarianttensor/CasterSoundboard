@@ -136,6 +136,98 @@ private slots:
         QVERIFY(tabs.setTabHotkey(0, ""));
         QCOMPARE(tabs.tabHotkeyAt(0), QString());
     }
+
+    void testCloneTab()
+    {
+        SoundboardTabModel tabs;
+        SoundboardGridModel *g1 = tabs.addTab("Original Board");
+        tabs.setTabHotkey(0, "Alt+1");
+
+        SoundTileController *t1 = g1->appendTile();
+        t1->setDisplayName("Theme Song");
+        t1->setFilePath("/sounds/theme.wav");
+        t1->setVolume(0.85);
+        t1->setIsLooped(true);
+        t1->setColor("#E74C3C");
+        t1->setTriggerStyle(SoundTileController::PlayStop);
+        t1->setHotkey("T");
+        t1->setHasCueRegion(true);
+        t1->setCueBeginMs(250);
+        t1->setCueEndMs(1500);
+
+        SoundTileController *t2 = g1->appendTile();
+        t2->setDisplayName("Applause");
+        t2->setFilePath("/sounds/applause.wav");
+        t2->setVolume(0.5);
+
+        tabs.addTab("Other Board"); // Tab at index 1
+
+        QSignalSpy countSpy(&tabs, &SoundboardTabModel::countChanged);
+        QSignalSpy cloneSpy(&tabs, &SoundboardTabModel::tabCloned);
+        QSignalSpy indexSpy(&tabs, &SoundboardTabModel::currentIndexChanged);
+
+        // Current index was 0. Clone tab 0
+        int clonedIdx = tabs.cloneTab(0);
+        QCOMPARE(clonedIdx, 1); // Inserted immediately adjacent
+        QCOMPARE(tabs.count(), 3);
+        QCOMPARE(countSpy.count(), 1);
+        QCOMPARE(cloneSpy.count(), 1);
+        QCOMPARE(cloneSpy.at(0).at(0).toString(), QString("Original Board"));
+        QCOMPARE(cloneSpy.at(0).at(1).toString(), QString("Original Board (Copy)"));
+        QCOMPARE(tabs.currentIndex(), 1); // Automatically switched to cloned tab
+
+        // Names and IDs
+        QCOMPARE(tabs.tabNameAt(0), QString("Original Board"));
+        QCOMPARE(tabs.tabNameAt(1), QString("Original Board (Copy)"));
+        QCOMPARE(tabs.tabNameAt(2), QString("Other Board"));
+        QVERIFY(tabs.tabIdAt(0) != tabs.tabIdAt(1));
+        QVERIFY(!tabs.tabIdAt(1).isEmpty());
+
+        // Tab hotkey should not conflict
+        QCOMPARE(tabs.tabHotkeyAt(1), QString());
+
+        // Deep-copied tiles in the cloned tab
+        SoundboardGridModel *clonedGrid = tabs.gridModelAt(1);
+        QVERIFY(clonedGrid != nullptr);
+        QCOMPARE(clonedGrid->count(), 2);
+
+        SoundTileController *ct1 = clonedGrid->tileAt(0);
+        QVERIFY(ct1 != nullptr);
+        QCOMPARE(ct1->displayName(), QString("Theme Song"));
+        QCOMPARE(ct1->filePath(), QString("/sounds/theme.wav"));
+        QCOMPARE(ct1->volume(), 0.85);
+        QCOMPARE(ct1->isLooped(), true);
+        QCOMPARE(ct1->color(), QString("#E74C3C"));
+        QCOMPARE(ct1->triggerStyle(), SoundTileController::PlayStop);
+        QCOMPARE(ct1->hotkey(), QString("T"));
+        QCOMPARE(ct1->hasCueRegion(), true);
+        QCOMPARE(ct1->cueBeginMs(), 250);
+        QCOMPARE(ct1->cueEndMs(), 1500);
+        // Verify unique UUID
+        QVERIFY(ct1->id() != t1->id());
+        QVERIFY(!ct1->id().isEmpty());
+
+        SoundTileController *ct2 = clonedGrid->tileAt(1);
+        QVERIFY(ct2 != nullptr);
+        QCOMPARE(ct2->displayName(), QString("Applause"));
+        QCOMPARE(ct2->volume(), 0.5);
+        QVERIFY(ct2->id() != t2->id());
+
+        // Clone again from original tab: suffix increment
+        int secondCloneIdx = tabs.cloneTab(0);
+        QCOMPARE(secondCloneIdx, 1); // inserted adjacent to tab 0
+        QCOMPARE(tabs.tabNameAt(1), QString("Original Board (Copy 2)"));
+        QCOMPARE(tabs.tabNameAt(2), QString("Original Board (Copy)"));
+
+        // Clone with custom name
+        int customCloneIdx = tabs.cloneTab(0, "VIP Board");
+        QCOMPARE(customCloneIdx, 1);
+        QCOMPARE(tabs.tabNameAt(1), QString("VIP Board"));
+
+        // Invalid index
+        QCOMPARE(tabs.cloneTab(-1), -1);
+        QCOMPARE(tabs.cloneTab(99), -1);
+    }
 };
 
 QTEST_MAIN(TestTabModel)

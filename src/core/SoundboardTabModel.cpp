@@ -1,6 +1,7 @@
 #include "SoundboardTabModel.h"
 #include "SoundboardGridModel.h"
 #include <QUuid>
+#include <QSet>
 
 SoundboardTabModel::SoundboardTabModel(QObject *parent)
     : QAbstractListModel(parent)
@@ -115,10 +116,72 @@ SoundboardGridModel* SoundboardTabModel::addTab(const QString &name)
     return item.gridModel;
 }
 
+int SoundboardTabModel::cloneTab(int index, const QString &customName)
+{
+    if (index < 0 || index >= m_tabs.size())
+        return -1;
+
+    const SoundboardTabItem &sourceTab = m_tabs.at(index);
+    const QString sourceName = sourceTab.name;
+
+    QString newName = customName.trimmed();
+    if (newName.isEmpty()) {
+        newName = QString("%1 (Copy)").arg(sourceName);
+        QSet<QString> existingNames;
+        for (const auto &t : m_tabs) {
+            existingNames.insert(t.name);
+        }
+        int copyNum = 2;
+        while (existingNames.contains(newName)) {
+            newName = QString("%1 (Copy %2)").arg(sourceName).arg(copyNum++);
+        }
+    }
+
+    int insertIndex = index + 1;
+    QString newId = QUuid::createUuid().toString(QUuid::WithoutBraces);
+
+    beginInsertRows(QModelIndex(), insertIndex, insertIndex);
+
+    SoundboardTabItem newItem;
+    newItem.id = newId;
+    newItem.name = newName;
+    newItem.hotkey = QString(); // Reset tab hotkey to avoid duplicate tab switch hotkeys
+    newItem.gridModel = new SoundboardGridModel(this);
+
+    if (sourceTab.gridModel) {
+        QJsonArray sourceTiles = sourceTab.gridModel->toJson();
+        QJsonArray clonedTiles;
+        for (const QJsonValue &val : sourceTiles) {
+            if (val.isObject()) {
+                QJsonObject tileObj = val.toObject();
+                // Assign a fresh, unique UUID to each cloned tile
+                tileObj["id"] = QUuid::createUuid().toString(QUuid::WithoutBraces);
+                clonedTiles.append(tileObj);
+            }
+        }
+        newItem.gridModel->fromJson(clonedTiles);
+    }
+
+    m_tabs.insert(insertIndex, newItem);
+    endInsertRows();
+
+    emit countChanged();
+    emit tabCloned(sourceName, newName);
+
+    // Switch selection to the cloned tab
+    m_currentIndex = insertIndex;
+    emit currentIndexChanged();
+    emit currentGridModelChanged();
+
+    return insertIndex;
+}
+
 bool SoundboardTabModel::removeTab(int index)
 {
     if (index < 0 || index >= m_tabs.size() || m_tabs.size() <= 1)
         return false; // Prevent removing the last remaining tab
+
+    QString removedName = m_tabs.at(index).name;
 
     beginRemoveRows(QModelIndex(), index, index);
     SoundboardTabItem item = m_tabs.takeAt(index);
@@ -128,6 +191,7 @@ bool SoundboardTabModel::removeTab(int index)
     endRemoveRows();
 
     emit countChanged();
+    emit tabRemoved(removedName);
 
     if (m_currentIndex >= m_tabs.size()) {
         setCurrentIndex(m_tabs.size() - 1);
@@ -146,9 +210,11 @@ bool SoundboardTabModel::renameTab(int index, const QString &name)
     if (m_tabs[index].name == name)
         return true;
 
+    QString oldName = m_tabs[index].name;
     m_tabs[index].name = name;
     QModelIndex idx = this->index(index, 0);
     emit dataChanged(idx, idx, {NameRole});
+    emit tabRenamed(oldName, name);
     return true;
 }
 

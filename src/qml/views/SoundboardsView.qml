@@ -26,6 +26,11 @@ Item {
                     projectController.tabModel.addTab();
                 }
             }
+            onCloneTabRequested: (index) => {
+                if (projectController && projectController.tabModel) {
+                    projectController.tabModel.cloneTab(index);
+                }
+            }
             onCloseTabRequested: (index) => {
                 root.requestCloseTab(index);
             }

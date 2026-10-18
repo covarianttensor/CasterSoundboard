@@ -287,6 +287,16 @@ private slots:
         // Removing tile marks dirty
         project.tabModel()->gridModelAt(0)->removeTile(0);
         QCOMPARE(project.isDirty(), true);
+
+        // Saving marks clean
+        QVERIFY(project.saveProject(projectPath));
+        QCOMPARE(project.isDirty(), false);
+
+        // Cloning tab marks dirty
+        int clonedIdx = project.tabModel()->cloneTab(0);
+        QCOMPARE(clonedIdx, 1);
+        QCOMPARE(project.isDirty(), true);
+        QCOMPARE(project.tabModel()->count(), 2);
     }
 };
 

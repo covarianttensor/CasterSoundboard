@@ -57,6 +57,9 @@ SoundboardProjectController::SoundboardProjectController(QObject *parent)
         applyOutputDeviceToAllTiles();
         setupPttCoordination();
     });
+    connect(m_tabModel, &SoundboardTabModel::tabRenamed, m_pttController, &PttController::handleTabRenamed);
+    connect(m_tabModel, &SoundboardTabModel::tabRemoved, m_pttController, &PttController::handleTabRemoved);
+    connect(m_tabModel, &SoundboardTabModel::tabCloned, m_pttController, &PttController::handleTabCloned);
     newProject();
 }
 

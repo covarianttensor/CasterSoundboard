@@ -64,6 +64,7 @@ public:
     // Tab synchronization
     void handleTabRenamed(const QString &oldName, const QString &newName);
     void handleTabRemoved(const QString &tabName);
+    void handleTabCloned(const QString &sourceTabName, const QString &newTabName);
 
     // Serialization
     QJsonArray toJson() const;

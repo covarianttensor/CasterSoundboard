@@ -44,6 +44,7 @@ public:
     SoundboardGridModel* currentGridModel() const;
 
     Q_INVOKABLE SoundboardGridModel* addTab(const QString &name = QString());
+    Q_INVOKABLE int cloneTab(int index, const QString &customName = QString());
     Q_INVOKABLE bool removeTab(int index);
     Q_INVOKABLE bool renameTab(int index, const QString &name);
     Q_INVOKABLE bool setTabHotkey(int index, const QString &hotkey);
@@ -69,6 +70,9 @@ signals:
     void countChanged();
     void currentIndexChanged();
     void currentGridModelChanged();
+    void tabCloned(const QString &sourceTabName, const QString &newTabName);
+    void tabRenamed(const QString &oldName, const QString &newName);
+    void tabRemoved(const QString &tabName);
 
 private:
     QVector<SoundboardTabItem> m_tabs;

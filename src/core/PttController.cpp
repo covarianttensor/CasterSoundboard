@@ -268,6 +268,41 @@ void PttController::handleTabRemoved(const QString &tabName)
         notifyProfilesChanged();
 }
 
+void PttController::handleTabCloned(const QString &sourceTabName, const QString &newTabName)
+{
+    if (sourceTabName.isEmpty() || newTabName.isEmpty())
+        return;
+
+    bool changed = false;
+    QList<Ptt::Profile> newProfiles;
+    QSet<QString> existingNames;
+    for (const auto &p : m_profiles) {
+        existingNames.insert(p.name);
+    }
+
+    for (const auto &p : m_profiles) {
+        if (p.pinnedTabName == sourceTabName) {
+            Ptt::Profile clone = p;
+            clone.id = QUuid::createUuid().toString(QUuid::WithoutBraces);
+            QString cloneName = QString("%1 (Copy)").arg(p.name);
+            int copyNum = 2;
+            while (existingNames.contains(cloneName)) {
+                cloneName = QString("%1 (Copy %2)").arg(p.name).arg(copyNum++);
+            }
+            clone.name = cloneName;
+            clone.pinnedTabName = newTabName;
+            newProfiles.append(clone);
+            existingNames.insert(cloneName);
+            changed = true;
+        }
+    }
+
+    if (changed) {
+        m_profiles.append(newProfiles);
+        notifyProfilesChanged();
+    }
+}
+
 void PttController::coordinatePlayback(SoundTileController *tile, const QString &tabName, std::function<void()> onReadyToPlay)
 {
     if (!tile) {

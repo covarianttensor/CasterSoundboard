@@ -8,6 +8,7 @@ Rectangle {
     property var tabModel: null
     property int currentIndex: tabModel ? tabModel.currentIndex : 0
     signal addTabRequested()
+    signal cloneTabRequested(int index)
     signal closeTabRequested(int index)
     signal renameTabRequested(int index)
     signal setTabHotkeyRequested(int index)
@@ -307,6 +308,11 @@ Rectangle {
                         MenuItem {
                             text: qsTr("Rename Tab...")
                             onTriggered: root.renameTabRequested(tabItem.index)
+                        }
+
+                        MenuItem {
+                            text: qsTr("Clone Soundboard")
+                            onTriggered: root.cloneTabRequested(tabItem.index)
                         }
 
                         MenuItem {
