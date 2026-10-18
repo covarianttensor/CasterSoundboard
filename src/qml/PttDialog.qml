@@ -9,7 +9,7 @@ Dialog {
     anchors.centerIn: parent
     modal: true
     closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
-    implicitWidth: 580
+    implicitWidth: 640
     implicitHeight: 640
     topPadding: 16
     bottomPadding: 16
@@ -256,6 +256,31 @@ Dialog {
                         border.color: "#3A3E42"
                         border.width: 1
                     }
+                }
+            }
+
+            Button {
+                id: renameProfileBtn
+                text: qsTr("Rename")
+                enabled: profileCombo.count > 0
+                Layout.preferredHeight: 34
+                onClicked: {
+                    root.saveCurrentProfile();
+                    renameProfileDialog.openForRename();
+                }
+                background: Rectangle {
+                    color: parent.enabled ? (parent.down ? "#353A42" : (parent.hovered ? "#3E444E" : "#282C32")) : "#222528"
+                    radius: 6
+                    border.color: parent.enabled ? (parent.hovered ? "#8E2DE2" : "#3A3E42") : "#33373B"
+                    border.width: 1
+                }
+                contentItem: Text {
+                    text: parent.text
+                    color: parent.enabled ? (parent.hovered ? "#FFFFFF" : "#CCCCCC") : "#666666"
+                    font.bold: true
+                    font.pointSize: 9
+                    horizontalAlignment: Text.AlignHCenter
+                    verticalAlignment: Text.AlignVCenter
                 }
             }
 
@@ -806,6 +831,131 @@ Dialog {
                     Layout.preferredHeight: 34
                     Layout.preferredWidth: 90
                     onClicked: newProfileDialog.confirmCreate()
+                    background: Rectangle {
+                        color: parent.enabled ? (parent.down ? "#7324B8" : (parent.hovered ? "#A855F7" : "#8E2DE2")) : "#222528"
+                        radius: 6
+                    }
+                    contentItem: Text {
+                        text: parent.text
+                        color: parent.enabled ? "#FFFFFF" : "#666666"
+                        font.bold: true
+                        font.pointSize: 9.5
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                    }
+                }
+            }
+        }
+    }
+
+    // Rename Profile Modal Name Prompt Dialog
+    Dialog {
+        id: renameProfileDialog
+        parent: Overlay.overlay
+        anchors.centerIn: parent
+        modal: true
+        closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
+        implicitWidth: 420
+        topPadding: 18
+        bottomPadding: 18
+        leftPadding: 20
+        rightPadding: 20
+
+        background: Rectangle {
+            color: "#222528"
+            radius: 8
+            border.color: "#3A3E42"
+            border.width: 1
+        }
+
+        function openForRename() {
+            if (!projectController || !projectController.pttController) return;
+            var list = projectController.pttController.profilesList();
+            if (root.selectedProfileIndex < 0 || root.selectedProfileIndex >= list.length) return;
+            var currentProfile = list[root.selectedProfileIndex];
+            renameProfileNameInput.text = currentProfile.name || "";
+            renameProfileDialog.open();
+            renameProfileNameInput.selectAll();
+            renameProfileNameInput.forceActiveFocus();
+        }
+
+        function confirmRename() {
+            var trimmed = renameProfileNameInput.text.trim();
+            if (trimmed.length === 0) return;
+            if (projectController && projectController.pttController) {
+                projectController.pttController.renameProfile(root.selectedProfileIndex, trimmed);
+                root.refreshProfileUI();
+            }
+            renameProfileDialog.close();
+        }
+
+        contentItem: ColumnLayout {
+            spacing: 14
+
+            Text {
+                text: qsTr("Rename PTT Profile")
+                color: "#FFFFFF"
+                font.bold: true
+                font.pointSize: 12
+            }
+
+            Text {
+                text: qsTr("Enter a new name for the profile:")
+                color: "#CCCCCC"
+                font.pointSize: 9.5
+            }
+
+            TextField {
+                id: renameProfileNameInput
+                Layout.fillWidth: true
+                Layout.preferredHeight: 36
+                color: "#FFFFFF"
+                font.pointSize: 10
+                verticalAlignment: TextInput.AlignVCenter
+                leftPadding: 10
+                selectByMouse: true
+                background: Rectangle {
+                    color: "#282C32"
+                    radius: 6
+                    border.color: renameProfileNameInput.activeFocus ? "#8E2DE2" : "#3A3E42"
+                    border.width: 1
+                }
+                Keys.onReturnPressed: renameProfileDialog.confirmRename()
+                Keys.onEnterPressed: renameProfileDialog.confirmRename()
+            }
+
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: 10
+
+                Item { Layout.fillWidth: true }
+
+                Button {
+                    text: qsTr("Cancel")
+                    Layout.preferredHeight: 34
+                    Layout.preferredWidth: 80
+                    onClicked: renameProfileDialog.close()
+                    background: Rectangle {
+                        color: parent.hovered ? "#353A42" : "#282C32"
+                        radius: 6
+                        border.color: "#3A3E42"
+                        border.width: 1
+                    }
+                    contentItem: Text {
+                        text: parent.text
+                        color: "#CCCCCC"
+                        font.pointSize: 9
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                    }
+                }
+
+                Button {
+                    text: qsTr("Rename")
+                    enabled: renameProfileNameInput.text.trim().length > 0
+                    Layout.preferredHeight: 34
+                    Layout.preferredWidth: 90
+                    onClicked: renameProfileDialog.confirmRename()
                     background: Rectangle {
                         color: parent.enabled ? (parent.down ? "#7324B8" : (parent.hovered ? "#A855F7" : "#8E2DE2")) : "#222528"
                         radius: 6

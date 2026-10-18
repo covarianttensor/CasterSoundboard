@@ -193,6 +193,23 @@ int PttController::addProfile(const QString &name)
     return m_profiles.size() - 1;
 }
 
+bool PttController::renameProfile(int index, const QString &newName)
+{
+    if (index < 0 || index >= m_profiles.size())
+        return false;
+
+    QString clean = newName.trimmed();
+    if (clean.isEmpty())
+        return false;
+
+    if (m_profiles[index].name == clean)
+        return true;
+
+    m_profiles[index].name = clean;
+    notifyProfilesChanged();
+    return true;
+}
+
 bool PttController::removeProfile(int index)
 {
     if (index < 0 || index >= m_profiles.size())

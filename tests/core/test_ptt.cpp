@@ -75,11 +75,18 @@ private slots:
         QCOMPARE(list.size(), 1);
         QCOMPARE(controller.property("profiles").toList().size(), 1);
 
+        // Test profile renaming
+        QVERIFY(controller.renameProfile(0, "Renamed PTT"));
+        QCOMPARE(controller.getProfile(0)["name"].toString(), QString("Renamed PTT"));
+        QCOMPARE(spy.count(), 3);
+        QVERIFY(!controller.renameProfile(0, "   ")); // Blank name rejected
+        QVERIFY(!controller.renameProfile(99, "Invalid")); // Invalid index rejected
+
         bool removed = controller.removeProfile(0);
         QVERIFY(removed);
         QCOMPARE(controller.count(), 0);
         QCOMPARE(controller.property("profiles").toList().size(), 0);
-        QCOMPARE(spy.count(), 3);
+        QCOMPARE(spy.count(), 4);
     }
 
     void testTabBindingAndBadges()

@@ -48,6 +48,7 @@ public:
     Q_INVOKABLE QVariantMap getProfile(int index) const;
     Q_INVOKABLE void setProfile(int index, const QVariantMap &data);
     Q_INVOKABLE int addProfile(const QString &name = QString());
+    Q_INVOKABLE bool renameProfile(int index, const QString &newName);
     Q_INVOKABLE bool removeProfile(int index);
 
     Q_INVOKABLE QString activeBadgeForTab(const QString &tabName) const;
