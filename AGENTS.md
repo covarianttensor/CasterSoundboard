@@ -81,6 +81,20 @@ cmake --build build-cmake -j$(nproc)
 ctest --test-dir build-cmake --output-on-failure
 ```
 
+### 🧪 Required Testing Tools & Environment
+
+To execute all verification tiers (C++ QtTest unit tests, headless QML screenshots, PipeWire audio routing, and Web Remote touch automation), the development host requires:
+
+| Tool | Purpose | Arch / CachyOS | Debian / Ubuntu / Mint | NixOS Flake Attribute |
+| :--- | :--- | :--- | :--- | :--- |
+| **CMake & Ninja** | Build configuration & compilation | `cmake ninja` | `cmake ninja-build` | `pkgs.cmake pkgs.ninja` |
+| **Qt 6.8+ Development** | C++ core, QML, multimedia, and QtTest | `qt6-base qt6-declarative qt6-multimedia` | `qt6-base-dev qt6-declarative-dev qt6-multimedia-dev` | `pkgs.qt6.qtbase pkgs.qt6.qtdeclarative` |
+| **pactl & PipeWire** | Virtual audio routing, null-sinks, and stream remapping | `libpulse pipewire-pulse` | `pulseaudio-utils pipewire-pulse` | `pkgs.pulseaudio pkgs.pipewire` |
+| **FFmpeg** | Waveform PCM downsampling for MP3, OGG, FLAC, M4A | `ffmpeg` | `ffmpeg` | `pkgs.ffmpeg` |
+| **Chromium** | Headless browser execution for Web Remote UI testing | `chromium` | `chromium-browser` | `pkgs.chromium` |
+| **Node.js & npm** | Scripting runner for headless web test automation | `nodejs npm` | `nodejs npm` | `pkgs.nodejs` |
+| **puppeteer-core** | Lightweight CDP client driving system Chromium | `npm install puppeteer-core` | `npm install puppeteer-core` | `npm install puppeteer-core` |
+
 ### Visual Verification (Headless Screenshots)
 Caster Soundboard provides built-in CLI flags to capture screenshots without needing a display server:
 ```bash
@@ -92,6 +106,22 @@ Caster Soundboard provides built-in CLI flags to capture screenshots without nee
 
 # Simulate active routing state for audio diagram verification:
 ./build-cmake/bin/CasterSoundboard --view 1 --test-routing-active -s /tmp/screenshot_routing.png
+```
+
+### 🌐 Web Remote E2E & Touch Verification (Headless Browser)
+When modifying [`src/web/index.html`](src/web/index.html) or [`WebRemoteController.cpp`](src/core/WebRemoteController.cpp), verify touch interaction, event delegation, and real-time state synchronization using headless Chromium:
+
+```bash
+# 1. Start CasterSoundboard in the background with web remote and sample project:
+./build-cmake/bin/CasterSoundboard --auto-start-web examples/broadcast_show.caster &
+APP_PID=$!
+
+# 2. Run the automated touch & interaction test suite via Node.js:
+# (Verifies sound tile touch taps, PTT glow badges, Panic Stop All, tab switching, and Ducking)
+node scripts/test-web-remote.js
+
+# 3. Terminate background instance:
+kill $APP_PID
 ```
 
 ---
@@ -139,7 +169,8 @@ Any modification must preserve functionality across all four distribution format
 
 Before concluding your task, verify the following:
 * [ ] The project builds with zero compilation errors (`cmake --build build-cmake`).
-* [ ] All 8 unit tests pass (`ctest --test-dir build-cmake`).
+* [ ] All 9 unit tests pass (`ctest --test-dir build-cmake`).
+* [ ] Web Remote changes verified with headless browser touch automation (`node scripts/test-web-remote.js`).
 * [ ] No existing comments or docstrings were unnecessarily removed.
 * [ ] Changes are committed to `main` (or a task branch off `main`), never `legacy-v1`.
 * [ ] Commit messages follow the conventional commit standard (`feat:`, `fix:`, `refactor:`, `test:`, `docs:`).
