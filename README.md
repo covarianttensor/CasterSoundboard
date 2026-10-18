@@ -28,19 +28,46 @@ It features integrated **virtual microphone audio routing**, enabling you to pip
 ## Screenshots
 
 ### Main Soundboard Grid
-> Fluid multi-tab sound banks with real-time waveform progress, dedicated volume sliders, and hotkey indicators.
+> Fluid multi-tab sound banks with real-time waveform progress, dedicated volume sliders, looping badges, and customizable hotkey indicators.
 
 ![Main Soundboard Grid](docs/img/screenshot_main.png)
 
+### Push-to-Talk (PTT) & Mic Automation
+> Kernel-level `/dev/uinput` virtual keyboard automation that automatically keys up Discord, OBS, or games during sound playback with configurable pre/post delay buffers.
+
+![Push-to-Talk and Mic Automation Dialog](docs/img/screenshot_ptt_dialog.png)
+
+### Tile Settings & Waveform Cue Trimming
+> Non-destructive intro/outro cue trimming with interactive drag handles, real-time waveform scrubbing, color theming, and playback trigger modes.
+
+![Tile Settings and Cue Waveform Editor](docs/img/screenshot_tile_drawer.png)
+
 ### Virtual Audio Routing & Signal Flow
-> Interactive orthogonal circuit diagram visualizing your physical mic, soundboard audio, and virtual microphone endpoints.
+> Interactive orthogonal circuit diagram visualizing your physical mic, soundboard audio mix node, virtual microphone endpoints, and monitor output.
 
 ![Audio Devices and Virtual Microphone Flow](docs/img/screenshot_audio_routing.png)
 
+### Touch-Friendly Web Remote Surface
+> Responsive local HTTP/SSE control surface for triggering sounds, panic-stopping, and ducking audio from any phone, tablet, or browser on your local network.
+
+<p align="center">
+  <img src="docs/img/screenshot_web_remote.png" alt="Local Web Remote Control Surface" width="600">
+</p>
+
+### Interactive Documentation & CLI Guide
+> Comprehensive in-app guide covering CLI automation flags, global keyboard shortcut scopes, OSC endpoints, and MCP AI integration.
+
+![Embedded Documentation and CLI Guide](docs/img/screenshot_docs.png)
+
 ### Preferences & Workspace Settings
-> Ducking attenuation controls, hotkey scope preferences, and global emergency action shortcuts.
+> Ducking attenuation controls, sound tile hotkey scoping (Bank Mode vs. Global Mode), emergency shortcuts, and background server settings.
 
 ![Preferences and Settings](docs/img/screenshot_preferences.png)
+
+### About & System Diagnostics
+> Real-time project persistence tracking, audio subsystem health, system diagnostics, and community issue reporting.
+
+![About and System Information](docs/img/screenshot_about.png)
 
 ---
 
@@ -149,7 +176,7 @@ CasterSoundboard [options] [project.caster]
 | `--mcp-port <port>` | Specify custom TCP port for MCP server (default: `5055`). |
 | `--mcp-stdio` | Run MCP server directly over standard I/O (stdio) in headless mode. |
 | `--auto-start-osc` | Automatically start the UDP Open Sound Control (OSC) server. |
-| `--view <0-4>` | Start directly on a specific view (`0`: Soundboard, `1`: Audio Devices, `2`: OSC, `3`: Settings, `4`: Docs). |
+| `--view <0-5>` | Start directly on a specific view (`0`: Soundboard, `1`: Audio Devices, `2`: OSC, `3`: Settings, `4`: Docs, `5`: About). |
 | `-s, --screenshot <path>` | Capture high-resolution window screenshot to path and exit immediately. |
 
 ---
