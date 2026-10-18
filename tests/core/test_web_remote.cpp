@@ -11,6 +11,7 @@
 #include "SoundboardTabModel.h"
 #include "SoundboardGridModel.h"
 #include "SoundTileController.h"
+#include "ActionsController.h"
 
 class TestWebRemote : public QObject
 {
@@ -222,7 +223,68 @@ private slots:
 
         web.stopServer();
     }
+
+    void testPttStateReflectedInWebRemote()
+    {
+        SoundboardProjectController project;
+        WebRemoteController web;
+        web.setProjectController(&project);
+        QVERIFY(web.startServer());
+
+        project.newProject();
+
+        QMap<QString, QString> authHeaders;
+        authHeaders["Authorization"] = "Basic " + QByteArray("testuser:testpass").toBase64();
+
+        // 1. Initial state: not transmitting
+        QByteArray resp1 = sendHttpRequest(15052, "GET", "/api/state", authHeaders);
+        QVERIFY(resp1.startsWith("HTTP/1.1 200 OK"));
+        int jsonIdx1 = resp1.indexOf("\r\n\r\n") + 4;
+        QJsonDocument doc1 = QJsonDocument::fromJson(resp1.mid(jsonIdx1));
+        QVERIFY(!doc1.isNull());
+        QCOMPARE(doc1.object().value("isPttActive").toBool(), false);
+
+        // 2. Configure Action profile with PTT pinned to Tab 0
+        ActionsController *actions = project.actionsController();
+        QVERIFY(actions != nullptr);
+        int profIdx = actions->addProfile("PTT Profile");
+        QVariantMap profData = actions->getProfile(profIdx);
+        profData["pinnedTabName"] = "Sound Set 1";
+        profData["pttKey"] = "KEY_V";
+        actions->setProfile(profIdx, profData);
+
+        // 3. Trigger test transmission on KEY_V
+        actions->testTriggerKey("KEY_V", 2000);
+        QVERIFY(actions->isTransmitting());
+
+        // 4. Fetch state and verify PTT active
+        QByteArray resp2 = sendHttpRequest(15052, "GET", "/api/state", authHeaders);
+        QVERIFY(resp2.startsWith("HTTP/1.1 200 OK"));
+        int jsonIdx2 = resp2.indexOf("\r\n\r\n") + 4;
+        QJsonDocument doc2 = QJsonDocument::fromJson(resp2.mid(jsonIdx2));
+        QVERIFY(!doc2.isNull());
+        QCOMPARE(doc2.object().value("isPttActive").toBool(), true);
+        QCOMPARE(doc2.object().value("activeTransmittingKey").toString(), QString("KEY_V"));
+
+        QJsonArray tabs = doc2.object().value("tabs").toArray();
+        QVERIFY(!tabs.isEmpty());
+        QCOMPARE(tabs.at(0).toObject().value("isTransmitting").toBool(), true);
+        QCOMPARE(tabs.at(0).toObject().value("actionBadge").toString(), QString("PTT: V"));
+
+        // 5. Stop transmission
+        actions->stopAll();
+        QVERIFY(!actions->isTransmitting());
+
+        QByteArray resp3 = sendHttpRequest(15052, "GET", "/api/state", authHeaders);
+        int jsonIdx3 = resp3.indexOf("\r\n\r\n") + 4;
+        QJsonDocument doc3 = QJsonDocument::fromJson(resp3.mid(jsonIdx3));
+        QCOMPARE(doc3.object().value("isPttActive").toBool(), false);
+        QCOMPARE(doc3.object().value("activeTransmittingKey").toString(), QString());
+
+        web.stopServer();
+    }
 };
 
 QTEST_MAIN(TestWebRemote)
 #include "test_web_remote.moc"
+

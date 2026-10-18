@@ -105,6 +105,42 @@
       animation: pulse 1.2s infinite;
     }
 
+    .ptt-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 12px;
+      background-color: #064E3B;
+      color: #A7F3D0;
+      border: 1px solid #10B981;
+      box-shadow: 0 0 10px rgba(16, 185, 129, 0.45);
+      animation: pttGlowPulse 1.2s infinite alternate;
+      letter-spacing: 0.3px;
+      transition: all 0.2s ease;
+    }
+
+    .ptt-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: #10B981;
+      box-shadow: 0 0 8px rgba(16, 185, 129, 0.85);
+    }
+
+    @keyframes pttGlowPulse {
+      0% {
+        box-shadow: 0 0 6px rgba(16, 185, 129, 0.3);
+        border-color: #059669;
+      }
+      100% {
+        box-shadow: 0 0 14px rgba(16, 185, 129, 0.85);
+        border-color: #34D399;
+      }
+    }
+
     .global-actions {
       display: flex;
       align-items: center;
@@ -191,6 +227,33 @@
       border-radius: 4px;
       font-size: 10px;
       font-family: monospace;
+    }
+
+    .tab-pill.transmitting {
+      background-color: #064E3B !important;
+      color: #A7F3D0 !important;
+      border-color: #10B981 !important;
+      box-shadow: 0 0 12px rgba(16, 185, 129, 0.6) !important;
+      animation: pttGlowPulse 1.2s infinite alternate;
+    }
+
+    .tab-action-badge {
+      background-color: rgba(142, 45, 226, 0.25);
+      color: #D8B4FE;
+      border: 1px solid rgba(168, 85, 247, 0.4);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 700;
+      margin-left: 4px;
+      transition: all 0.15s ease;
+    }
+
+    .tab-action-badge.transmitting {
+      background-color: #064E3B;
+      color: #6EE7B7;
+      border-color: #10B981;
+      box-shadow: 0 0 6px rgba(16, 185, 129, 0.5);
     }
 
     /* --- SOUND TILE GRID --- */
@@ -287,6 +350,27 @@
       color: #000;
     }
 
+    .tile-btn.transmitting {
+      border-color: #10B981 !important;
+      box-shadow: 0 0 16px rgba(16, 185, 129, 0.75), inset 0 0 12px rgba(16, 185, 129, 0.35) !important;
+    }
+
+    .tile-ptt-tag {
+      background-color: #064E3B;
+      color: #6EE7B7;
+      border: 1px solid #10B981;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 9px;
+      font-weight: 800;
+      letter-spacing: 0.3px;
+      box-shadow: 0 0 6px rgba(16, 185, 129, 0.4);
+      animation: pttGlowPulse 1.2s infinite alternate;
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+    }
+
     .tile-title {
       font-size: 13px;
       font-weight: 700;
@@ -345,6 +429,10 @@
         <span id="statusDot" class="status-dot"></span>
         <span id="statusText">Connecting…</span>
       </div>
+      <div id="pttBadge" class="ptt-badge" style="display: none;">
+        <span class="ptt-dot"></span>
+        <span id="pttText">PTT ACTIVE</span>
+      </div>
     </div>
 
     <div class="global-actions">
@@ -382,10 +470,27 @@
 
     const statusDot = document.getElementById('statusDot');
     const statusText = document.getElementById('statusText');
+    const pttBadge = document.getElementById('pttBadge');
+    const pttText = document.getElementById('pttText');
     const tabBar = document.getElementById('tabBar');
     const tileGrid = document.getElementById('tileGrid');
     const duckBtn = document.getElementById('duckBtn');
     const stopAllBtn = document.getElementById('stopAllBtn');
+
+    function formatKey(rawKey) {
+      if (!rawKey) return '';
+      if (rawKey.startsWith('KEY_')) {
+        const sub = rawKey.substring(4);
+        if (sub === 'SPACE') return 'Space';
+        if (sub === 'DOT') return '.';
+        if (sub === 'COMMA') return ',';
+        if (sub === 'LEFTCTRL') return 'Ctrl';
+        if (sub === 'LEFTSHIFT') return 'Shift';
+        if (sub === 'LEFTALT') return 'Alt';
+        return sub;
+      }
+      return rawKey;
+    }
 
     // Dynamic black/white text contrast calculation
     function getContrastTextColor(hex) {
@@ -549,22 +654,49 @@
         duckBtn.textContent = isDucking ? '🦆 Ducked' : '🦆 Ducking';
       }
 
+      // 1b. PTT Active State
+      const isPttActive = !!appState.isPttActive;
+      if (pttBadge) {
+        if (isPttActive) {
+          pttBadge.style.display = 'inline-flex';
+          const rawKey = appState.activeTransmittingKey || '';
+          const keyLabel = formatKey(rawKey);
+          pttText.textContent = keyLabel ? `PTT ACTIVE (${keyLabel})` : 'PTT ACTIVE';
+        } else {
+          pttBadge.style.display = 'none';
+        }
+      }
+
       // 2. Render Tabs
       const currentTabCount = tabBar.children.length;
       const needsTabRebuild = currentTabCount !== appState.tabs.length ||
         Array.from(tabBar.children).some((pill, idx) => {
           const tab = appState.tabs[idx];
-          return !tab || pill.dataset.tabId !== String(tab.id);
+          return !tab || pill.dataset.tabId !== String(tab.id) ||
+                 pill.dataset.isTransmitting !== String(!!tab.isTransmitting) ||
+                 pill.dataset.actionBadge !== String(tab.actionBadge || '');
         });
 
       if (needsTabRebuild) {
         tabBar.innerHTML = '';
         appState.tabs.forEach((tab, idx) => {
           const pill = document.createElement('button');
-          pill.className = 'tab-pill' + (idx === selectedTabIndex ? ' active' : '');
+          const isTx = !!tab.isTransmitting;
+          pill.className = 'tab-pill' + (idx === selectedTabIndex ? ' active' : '') + (isTx ? ' transmitting' : '');
           pill.dataset.tabId = String(tab.id || idx);
+          pill.dataset.isTransmitting = String(isTx);
+          pill.dataset.actionBadge = String(tab.actionBadge || '');
+
+          let actionBadgeHtml = '';
+          if (isTx) {
+            actionBadgeHtml = `<span class="tab-action-badge transmitting">🟢 PTT</span>`;
+          } else if (tab.actionBadge) {
+            actionBadgeHtml = `<span class="tab-action-badge">⚡ ${escapeHtml(tab.actionBadge)}</span>`;
+          }
+
           pill.innerHTML = `<span>${escapeHtml(tab.name || ('Tab ' + (idx + 1)))}</span>` +
-                           (tab.hotkey ? `<span class="tab-hotkey-badge">${escapeHtml(tab.hotkey)}</span>` : '');
+                           (tab.hotkey ? `<span class="tab-hotkey-badge">${escapeHtml(tab.hotkey)}</span>` : '') +
+                           actionBadgeHtml;
           pill.onclick = async () => {
             selectedTabIndex = idx;
             await apiPost('/api/tab/' + idx);
@@ -573,7 +705,10 @@
         });
       } else {
         Array.from(tabBar.children).forEach((pill, idx) => {
+          const tab = appState.tabs[idx];
+          const isTx = tab ? !!tab.isTransmitting : false;
           pill.classList.toggle('active', idx === selectedTabIndex);
+          pill.classList.toggle('transmitting', isTx);
         });
       }
 
@@ -625,6 +760,7 @@
       const name = tile.name || (hasFile ? 'Untitled Sound' : 'Empty Slot');
       const hotkey = tile.hotkey || '';
       const isLooped = !!tile.isLooped;
+      const isTransmitting = !!tile.isTransmitting;
 
       // Check if anything changed on this button
       const oldState = btn.dataset.state;
@@ -633,10 +769,12 @@
       const oldName = btn.dataset.name;
       const oldHotkey = btn.dataset.hotkey;
       const oldLooped = btn.dataset.isLooped;
+      const oldTransmitting = btn.dataset.isTransmitting;
 
       if (oldState === state && oldHasFile === String(hasFile) &&
           oldColor === tileColor && oldName === name &&
-          oldHotkey === hotkey && oldLooped === String(isLooped)) {
+          oldHotkey === hotkey && oldLooped === String(isLooped) &&
+          oldTransmitting === String(isTransmitting)) {
         return; // No changes on this tile
       }
 
@@ -646,8 +784,9 @@
       btn.dataset.name = name;
       btn.dataset.hotkey = hotkey;
       btn.dataset.isLooped = String(isLooped);
+      btn.dataset.isTransmitting = String(isTransmitting);
 
-      btn.className = 'tile-btn ' + state + (hasFile ? '' : ' empty');
+      btn.className = 'tile-btn ' + state + (hasFile ? '' : ' empty') + (isTransmitting ? ' transmitting' : '');
       btn.style.setProperty('--tile-bg', tileColor);
       btn.style.setProperty('--tile-text', textColor);
 
@@ -660,7 +799,10 @@
 
       btn.innerHTML = `
         <div class="tile-header">
-          ${hotkey ? `<span class="tile-hotkey">${escapeHtml(hotkey)}</span>` : '<span></span>'}
+          <div style="display: flex; align-items: center; gap: 4px;">
+            ${hotkey ? `<span class="tile-hotkey">${escapeHtml(hotkey)}</span>` : '<span></span>'}
+            ${isTransmitting ? `<span class="tile-ptt-tag">🎙️ PTT</span>` : ''}
+          </div>
           ${stateBadgeHtml}
         </div>
         <div class="tile-title">${escapeHtml(name)}</div>
