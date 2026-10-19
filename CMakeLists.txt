@@ -250,3 +250,42 @@ install(FILES dist/linux/io.github.covarianttensor.CasterSoundboard.svg
     DESTINATION ${CMAKE_INSTALL_DATADIR}/icons/hicolor/scalable/apps
 )
 
+# -------------------------------------------------------------
+# CPack Packaging (.deb)
+# -------------------------------------------------------------
+set(CPACK_PACKAGE_NAME "castersoundboard")
+set(CPACK_PACKAGE_VENDOR "Covariant Tensor")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Touch-first live soundboard and audio routing tool for Linux")
+set(CPACK_PACKAGE_HOMEPAGE_URL "https://github.com/covarianttensor/CasterSoundboard")
+set(CPACK_PACKAGE_CONTACT "https://github.com/covarianttensor/CasterSoundboard/issues")
+set(CPACK_PACKAGE_VERSION "${PROJECT_VERSION}")
+
+# Debian generator settings
+set(CPACK_GENERATOR "DEB")
+set(CPACK_DEBIAN_PACKAGE_MAINTAINER "Oscar <https://github.com/covarianttensor>")
+set(CPACK_DEBIAN_PACKAGE_SECTION "sound")
+set(CPACK_DEBIAN_PACKAGE_PRIORITY "optional")
+set(CPACK_DEBIAN_FILE_NAME "DEB-DEFAULT")
+
+# Ensure proper Debian architecture even when dpkg is not present on the host
+if(NOT CPACK_DEBIAN_PACKAGE_ARCHITECTURE)
+    if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64")
+        set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE "amd64")
+    elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64|ARM64")
+        set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE "arm64")
+    elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "armv7|armhf")
+        set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE "armhf")
+    endif()
+endif()
+
+# Automatically detect shared library dependencies for the C++ binary when dpkg-shlibdeps is available
+find_program(DPKG_SHLIBDEPS_EXECUTABLE dpkg-shlibdeps)
+if(DPKG_SHLIBDEPS_EXECUTABLE)
+    set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
+endif()
+
+# Explicitly declare runtime QML modules and CLI utilities that shlibdeps cannot detect
+set(CPACK_DEBIAN_PACKAGE_DEPENDS "qml6-module-qtquick, qml6-module-qtquick-controls, qml6-module-qtquick-layouts, qml6-module-qtquick-templates, qml6-module-qtmultimedia, ffmpeg, pulseaudio-utils | pipewire-pulse")
+
+include(CPack)
+

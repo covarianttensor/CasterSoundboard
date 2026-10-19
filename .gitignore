@@ -23,6 +23,9 @@ build/
 build-*/
 build-flatpak/
 build-appimage/
+build-deb/
 *.AppImage
 *.flatpak
+*.deb
+_CPack_Packages/
 result

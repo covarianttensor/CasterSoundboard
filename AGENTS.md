@@ -40,6 +40,7 @@ CasterSoundboard/
 ├── scripts/
 │   ├── build-appimage.sh      # Standalone AppImage compilation script
 │   ├── build-flatpak.sh       # Flatpak bundle compilation script
+│   ├── build-deb.sh           # Standalone Debian (.deb) CPack packaging script
 │   ├── test-web-remote.js     # Headless Chromium E2E touch interaction test suite
 │   └── caster-mcp.js          # Stdio-to-HTTP/SSE bridge for Model Context Protocol (MCP)
 ├── src/
@@ -191,10 +192,11 @@ kill $APP_PID
    - Hardware Microphone Blue: `#3B82F6`
 
 ### 📦 Multi-Target Packaging Guardrails
-Any modification must preserve functionality across all four distribution formats:
+Any modification must preserve functionality across all distribution formats:
 * **Native**: Handled by standard `CMakeLists.txt` `install()` rules.
 * **AppImage**: Built via `scripts/build-appimage.sh` using `linuxdeploy` and `linuxdeploy-plugin-qt`.
 * **Flatpak**: Manifest `io.github.covarianttensor.CasterSoundboard.yml` must use `buildsystem: cmake-ninja`.
+* **Debian (.deb)**: Built via `scripts/build-deb.sh` or `cpack -G DEB` using CMake's CPack generator.
 * **NixOS**: Maintained in `default.nix` and `flake.nix` using `qt6.wrapQtAppsHook`.
 
 ### 🧠 AI Agent Knowledge Base & Deep Dives

@@ -115,7 +115,18 @@ Or build from source using `flatpak-builder`:
 ./scripts/build-flatpak.sh
 ```
 
-### 3. NixOS / Nix Flakes
+### 3. Debian / Ubuntu (.deb)
+Download the `.deb` package from [GitHub Releases](https://github.com/covarianttensor/CasterSoundboard/releases/latest) and install via `apt`:
+```bash
+sudo apt install ./castersoundboard_*.deb
+```
+
+To compile and package a `.deb` locally with CPack:
+```bash
+./scripts/build-deb.sh
+```
+
+### 4. NixOS / Nix Flakes
 Run directly via Nix Flakes:
 ```bash
 nix run github:covarianttensor/CasterSoundboard
@@ -127,7 +138,7 @@ nix-build
 ./result/bin/CasterSoundboard
 ```
 
-### 4. Native Build (CMake)
+### 5. Native Build (CMake)
 Build and install natively on any Linux distribution (Ubuntu, Debian, Fedora, Arch):
 
 #### Prerequisites
