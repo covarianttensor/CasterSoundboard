@@ -50,6 +50,8 @@ if [ "${REVISION}" -gt 1 ] 2>/dev/null; then
     echo "Revision > 1 detected. Downloading matching orig tarball from Launchpad PPA..."
     if curl -sLf -o "${ORIG_TARBALL}" "${PPA_ORIG_URL}"; then
         echo "Successfully downloaded matching orig tarball from Launchpad."
+        echo "Extracting orig tarball to guarantee identical upstream files..."
+        tar --strip-components=1 -xzf "${ORIG_TARBALL}" --exclude="debian" --exclude="debian/*"
     else
         echo "Warning: Could not download orig tarball from Launchpad, falling back to git archive."
         TAG_REF="v${DEB_UPSTREAM_VER}"
@@ -80,10 +82,6 @@ EOF
 SOURCE_FLAG="-sa"
 if [ "${REVISION}" -gt 1 ] 2>/dev/null; then
     SOURCE_FLAG="-sd"
-    echo "Resetting non-debian files to match upstream tag v${DEB_UPSTREAM_VER}..."
-    if git rev-parse -q --verify "v${DEB_UPSTREAM_VER}" >/dev/null; then
-        git checkout "v${DEB_UPSTREAM_VER}" -- . ':!debian' || true
-    fi
 fi
 
 # Build signed source package (-d skips build-deps check for source-only package)
