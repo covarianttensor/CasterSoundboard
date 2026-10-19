@@ -49,13 +49,27 @@ Item {
         }
         delegate: ItemDelegate {
             id: itemDel
+            required property var model
+            required property int index
+
             width: ListView.view ? ListView.view.width : dcb.width
             implicitHeight: 36
             highlighted: dcb.highlightedIndex === index
             hoverEnabled: true
+            text: {
+                if (dcb.textRole && model && model[dcb.textRole] !== undefined)
+                    return model[dcb.textRole];
+                if (typeof model === "string")
+                    return model;
+                if (model && model.display !== undefined)
+                    return model.display;
+                if (typeof modelData === "string")
+                    return modelData;
+                return dcb.textAt(index);
+            }
 
             contentItem: Text {
-                text: (typeof dcb.textAt === "function" ? dcb.textAt(index) : "") || (typeof modelData === "string" ? modelData : "")
+                text: itemDel.text
                 color: itemDel.highlighted ? "#FFFFFF" : "#CCCCCC"
                 font.pointSize: 9.5
                 verticalAlignment: Text.AlignVCenter
@@ -77,7 +91,7 @@ Item {
             contentItem: ListView {
                 clip: true
                 implicitHeight: contentHeight
-                model: dcb.popup.visible ? dcb.delegateModel : null
+                model: dcb.delegateModel
                 currentIndex: dcb.highlightedIndex
                 ScrollIndicator.vertical: ScrollIndicator { }
             }

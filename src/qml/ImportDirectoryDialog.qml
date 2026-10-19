@@ -326,13 +326,27 @@ Dialog {
                         }
                         delegate: ItemDelegate {
                             id: ordDel
+                            required property var model
+                            required property int index
+
                             width: ListView.view ? ListView.view.width : orderCombo.width
                             implicitHeight: 32
                             highlighted: orderCombo.highlightedIndex === index
                             hoverEnabled: true
+                            text: {
+                                if (orderCombo.textRole && model && model[orderCombo.textRole] !== undefined)
+                                    return model[orderCombo.textRole];
+                                if (typeof model === "string")
+                                    return model;
+                                if (model && model.display !== undefined)
+                                    return model.display;
+                                if (typeof modelData === "string")
+                                    return modelData;
+                                return orderCombo.textAt(index);
+                            }
 
                             contentItem: Text {
-                                text: (typeof orderCombo.textAt === "function" ? orderCombo.textAt(index) : "") || (typeof modelData === "string" ? modelData : "")
+                                text: ordDel.text
                                 color: ordDel.highlighted ? "#FFFFFF" : "#CCCCCC"
                                 font.pointSize: 9
                                 verticalAlignment: Text.AlignVCenter
@@ -353,7 +367,7 @@ Dialog {
                             contentItem: ListView {
                                 clip: true
                                 implicitHeight: contentHeight
-                                model: orderCombo.popup.visible ? orderCombo.delegateModel : null
+                                model: orderCombo.delegateModel
                                 currentIndex: orderCombo.highlightedIndex
                                 ScrollIndicator.vertical: ScrollIndicator { }
                             }
@@ -415,13 +429,27 @@ Dialog {
                         }
                         delegate: ItemDelegate {
                             id: namDel
+                            required property var model
+                            required property int index
+
                             width: ListView.view ? ListView.view.width : namingCombo.width
                             implicitHeight: 32
                             highlighted: namingCombo.highlightedIndex === index
                             hoverEnabled: true
+                            text: {
+                                if (namingCombo.textRole && model && model[namingCombo.textRole] !== undefined)
+                                    return model[namingCombo.textRole];
+                                if (typeof model === "string")
+                                    return model;
+                                if (model && model.display !== undefined)
+                                    return model.display;
+                                if (typeof modelData === "string")
+                                    return modelData;
+                                return namingCombo.textAt(index);
+                            }
 
                             contentItem: Text {
-                                text: (typeof namingCombo.textAt === "function" ? namingCombo.textAt(index) : "") || (typeof modelData === "string" ? modelData : "")
+                                text: namDel.text
                                 color: namDel.highlighted ? "#FFFFFF" : "#CCCCCC"
                                 font.pointSize: 9
                                 verticalAlignment: Text.AlignVCenter
@@ -442,7 +470,7 @@ Dialog {
                             contentItem: ListView {
                                 clip: true
                                 implicitHeight: contentHeight
-                                model: namingCombo.popup.visible ? namingCombo.delegateModel : null
+                                model: namingCombo.delegateModel
                                 currentIndex: namingCombo.highlightedIndex
                                 ScrollIndicator.vertical: ScrollIndicator { }
                             }

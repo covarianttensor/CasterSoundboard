@@ -230,17 +230,39 @@ Dialog {
                     elide: Text.ElideRight
                 }
                 delegate: ItemDelegate {
+                    id: profDel
+                    required property var model
+                    required property int index
+
                     width: profileCombo.width
                     implicitHeight: 34
+                    highlighted: profileCombo.highlightedIndex === index
+                    hoverEnabled: true
+                    text: {
+                        if (profileCombo.textRole && model && model[profileCombo.textRole] !== undefined)
+                            return model[profileCombo.textRole];
+                        if (typeof model === "string")
+                            return model;
+                        if (model && model.name !== undefined)
+                            return model.name;
+                        if (model && model.display !== undefined)
+                            return model.display;
+                        if (typeof modelData === "string")
+                            return modelData;
+                        return profileCombo.textAt(index);
+                    }
+
                     contentItem: Text {
-                        text: (model && model.name !== undefined) ? model.name : ((modelData && modelData.name !== undefined) ? modelData.name : "")
-                        color: highlighted ? "#FFFFFF" : "#CCCCCC"
+                        text: profDel.text
+                        color: profDel.highlighted ? "#FFFFFF" : "#CCCCCC"
                         font.pointSize: 9.5
                         verticalAlignment: Text.AlignVCenter
+                        leftPadding: 8
+                        rightPadding: 8
                         elide: Text.ElideRight
                     }
                     background: Rectangle {
-                        color: highlighted ? "#8E2DE2" : (hovered ? "#2D3238" : "transparent")
+                        color: profDel.highlighted ? "#8E2DE2" : (profDel.hovered ? "#2D3238" : "transparent")
                         radius: 4
                     }
                 }
@@ -252,7 +274,7 @@ Dialog {
                     contentItem: ListView {
                         clip: true
                         implicitHeight: contentHeight
-                        model: profileCombo.popup.visible ? profileCombo.delegateModel : null
+                        model: profileCombo.delegateModel
                         currentIndex: profileCombo.highlightedIndex
                         ScrollIndicator.vertical: ScrollIndicator { }
                     }
@@ -386,17 +408,37 @@ Dialog {
                             elide: Text.ElideRight
                         }
                         delegate: ItemDelegate {
+                            id: tabDel
+                            required property var model
+                            required property int index
+
                             width: tabCombo.width
                             implicitHeight: 34
+                            highlighted: tabCombo.highlightedIndex === index
+                            hoverEnabled: true
+                            text: {
+                                if (tabCombo.textRole && model && model[tabCombo.textRole] !== undefined)
+                                    return model[tabCombo.textRole];
+                                if (typeof model === "string")
+                                    return model;
+                                if (model && model.display !== undefined)
+                                    return model.display;
+                                if (typeof modelData === "string")
+                                    return modelData;
+                                return tabCombo.textAt(index);
+                            }
+
                             contentItem: Text {
-                                text: modelData || ""
-                                color: highlighted ? "#FFFFFF" : "#CCCCCC"
+                                text: tabDel.text
+                                color: tabDel.highlighted ? "#FFFFFF" : "#CCCCCC"
                                 font.pointSize: 9.5
                                 verticalAlignment: Text.AlignVCenter
+                                leftPadding: 8
+                                rightPadding: 8
                                 elide: Text.ElideRight
                             }
                             background: Rectangle {
-                                color: highlighted ? "#8E2DE2" : (hovered ? "#2D3238" : "transparent")
+                                color: tabDel.highlighted ? "#8E2DE2" : (tabDel.hovered ? "#2D3238" : "transparent")
                                 radius: 4
                             }
                         }
@@ -408,7 +450,7 @@ Dialog {
                             contentItem: ListView {
                                 clip: true
                                 implicitHeight: contentHeight
-                                model: tabCombo.popup.visible ? tabCombo.delegateModel : null
+                                model: tabCombo.delegateModel
                                 currentIndex: tabCombo.highlightedIndex
                                 ScrollIndicator.vertical: ScrollIndicator { }
                             }

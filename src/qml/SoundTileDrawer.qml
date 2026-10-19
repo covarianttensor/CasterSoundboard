@@ -972,13 +972,27 @@ Dialog {
                     }
                     delegate: ItemDelegate {
                         id: trigDel
+                        required property var model
+                        required property int index
+
                         width: ListView.view ? ListView.view.width : triggerCombo.width
                         implicitHeight: 36
                         highlighted: triggerCombo.highlightedIndex === index
                         hoverEnabled: true
+                        text: {
+                            if (triggerCombo.textRole && model && model[triggerCombo.textRole] !== undefined)
+                                return model[triggerCombo.textRole];
+                            if (typeof model === "string")
+                                return model;
+                            if (model && model.display !== undefined)
+                                return model.display;
+                            if (typeof modelData === "string")
+                                return modelData;
+                            return triggerCombo.textAt(index);
+                        }
 
                         contentItem: Text {
-                            text: (typeof triggerCombo.textAt === "function" ? triggerCombo.textAt(index) : "") || (typeof modelData === "string" ? modelData : "")
+                            text: trigDel.text
                             color: trigDel.highlighted ? "#FFFFFF" : "#CCCCCC"
                             font.pointSize: 9.5
                             verticalAlignment: Text.AlignVCenter
@@ -999,7 +1013,7 @@ Dialog {
                         contentItem: ListView {
                             clip: true
                             implicitHeight: contentHeight
-                            model: triggerCombo.popup.visible ? triggerCombo.delegateModel : null
+                            model: triggerCombo.delegateModel
                             currentIndex: triggerCombo.highlightedIndex
                             ScrollIndicator.vertical: ScrollIndicator { }
                         }
