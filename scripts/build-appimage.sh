@@ -6,7 +6,7 @@ BUILD_DIR="${REPO_ROOT}/build-appimage"
 APPDIR="${BUILD_DIR}/AppDir"
 TOOLS_DIR="${BUILD_DIR}/tools"
 
-# Extract version from CASTER_VERSION, git tag, or fallback to 2.1.1
+# Extract version from CASTER_VERSION, git tag, or fallback to 2.1.2
 VERSION="${CASTER_VERSION:-}"
 if [ -z "${VERSION}" ]; then
     if [ "${GITHUB_REF_TYPE:-}" = "tag" ] && [ -n "${GITHUB_REF_NAME:-}" ]; then
@@ -16,7 +16,7 @@ if [ -z "${VERSION}" ]; then
         if [ -n "${TAG_DESC}" ]; then
             VERSION="${TAG_DESC#v}"
         else
-            VERSION="2.1.1-dev"
+            VERSION="2.1.2-dev"
         fi
     fi
 fi

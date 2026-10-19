@@ -58,6 +58,11 @@
   <url type="help">https://github.com/covarianttensor/CasterSoundboard/tree/main/docs</url>
   <content_rating type="oars-1.1" />
   <releases>
+    <release version="2.1.2" date="2026-10-18">
+      <description>
+        <p>Enabled virtual audio routing in Flatpak sandboxes, resolved blank dropdown items in the audio device selector, fixed boundary alignment on audio cards and shortcut dialogs, and increased default window width to prevent top bar buttons from clipping.</p>
+      </description>
+    </release>
     <release version="2.1.1" date="2026-10-18">
       <description>
         <p>Fixed PipeWire default source name collision on shared node names (#27), normalized XKB scan code offsets in PTT/Mute key capture (#28), prioritized key capture over active hotkeys (#28), and enhanced contrast of advanced audio settings checkboxes.</p>

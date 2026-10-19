@@ -6,13 +6,13 @@ BUILD_DIR="${REPO_ROOT}/build-flatpak"
 REPO_DIR="${BUILD_DIR}/repo"
 APP_ID="io.github.covarianttensor.CasterSoundboard"
 
-# Extract version from CASTER_VERSION, git tag, or fallback to 2.1.1
+# Extract version from CASTER_VERSION, git tag, or fallback to 2.1.2
 VERSION="${CASTER_VERSION:-}"
 if [ -z "${VERSION}" ]; then
     if [ -n "${GITHUB_REF_NAME:-}" ]; then
         VERSION="${GITHUB_REF_NAME#v}"
     else
-        VERSION="$(git describe --tags --always --dirty 2>/dev/null | sed 's/^v//' || echo "2.1.1-dev")"
+        VERSION="$(git describe --tags --always --dirty 2>/dev/null | sed 's/^v//' || echo "2.1.2-dev")"
     fi
 fi
 export VERSION
