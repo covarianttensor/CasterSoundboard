@@ -7,7 +7,11 @@
 , ffmpeg
 , pulseaudio
 , systemd
-, version ? "2.1.2"
+, version ? (
+    if builtins.pathExists ./VERSION
+    then lib.strings.removeSuffix "\n" (builtins.readFile ./VERSION)
+    else "0.0.0"
+  )
 }:
 
 stdenv.mkDerivation rec {

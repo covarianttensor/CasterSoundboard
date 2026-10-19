@@ -10,7 +10,10 @@
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = import nixpkgs { inherit system; };
-        baseVersion = "2.1.2";
+        baseVersion =
+          if builtins.pathExists ./VERSION
+          then pkgs.lib.strings.removeSuffix "\n" (builtins.readFile ./VERSION)
+          else "0.0.0";
         version =
           if (self ? tag) then self.tag
           else if (self ? shortRev) then "${baseVersion}-dev+${self.shortRev}"

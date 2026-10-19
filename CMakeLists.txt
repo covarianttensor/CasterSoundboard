@@ -5,12 +5,19 @@ cmake_minimum_required(VERSION 3.16)
 # -------------------------------------------------------------
 set(CASTER_GENERATED_DIR "${CMAKE_CURRENT_BINARY_DIR}/generated")
 
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/VERSION")
+    file(READ "${CMAKE_CURRENT_SOURCE_DIR}/VERSION" CASTER_DEFAULT_VERSION)
+    string(STRIP "${CASTER_DEFAULT_VERSION}" CASTER_DEFAULT_VERSION)
+else()
+    set(CASTER_DEFAULT_VERSION "0.0.0")
+endif()
+
 execute_process(
     COMMAND ${CMAKE_COMMAND}
         -DSOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}
         -DHEADER_OUTPUT=${CASTER_GENERATED_DIR}/CasterVersion.h
         -DEXPLICIT_VERSION=${CASTER_VERSION}
-        -DFALLBACK_VERSION=2.1.2
+        -DFALLBACK_VERSION=${CASTER_DEFAULT_VERSION}
         -DSEMVER_OUTPUT=${CASTER_GENERATED_DIR}/semver.txt
         -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/GenerateVersionHeader.cmake
 )
@@ -19,7 +26,7 @@ if(EXISTS "${CASTER_GENERATED_DIR}/semver.txt")
     file(READ "${CASTER_GENERATED_DIR}/semver.txt" PROJECT_VERSION_STRING)
     string(STRIP "${PROJECT_VERSION_STRING}" PROJECT_VERSION_STRING)
 else()
-    set(PROJECT_VERSION_STRING "2.1.2")
+    set(PROJECT_VERSION_STRING "${CASTER_DEFAULT_VERSION}")
 endif()
 
 project(CasterSoundboard VERSION ${PROJECT_VERSION_STRING} LANGUAGES CXX)
@@ -30,7 +37,7 @@ add_custom_target(generate_version_header
         -DSOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}
         -DHEADER_OUTPUT=${CASTER_GENERATED_DIR}/CasterVersion.h
         -DEXPLICIT_VERSION=${CASTER_VERSION}
-        -DFALLBACK_VERSION=2.1.2
+        -DFALLBACK_VERSION=${CASTER_DEFAULT_VERSION}
         -DSEMVER_OUTPUT=${CASTER_GENERATED_DIR}/semver.txt
         -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/GenerateVersionHeader.cmake
     BYPRODUCTS ${CASTER_GENERATED_DIR}/CasterVersion.h
