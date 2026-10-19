@@ -15,7 +15,7 @@ private slots:
     void testWorkspaceDefaults()
     {
         SoundboardProjectController project;
-        QCOMPARE(project.windowWidth(), 1024);
+        QCOMPARE(project.windowWidth(), 1180);
         QCOMPARE(project.windowHeight(), 720);
         QCOMPARE(project.isFullScreen(), false);
         QCOMPARE(project.isMaximized(), false);
@@ -190,7 +190,7 @@ private slots:
 
         SoundboardProjectController project;
         // Verify initial window size
-        QCOMPARE(project.windowWidth(), 1024);
+        QCOMPARE(project.windowWidth(), 1180);
         QCOMPARE(project.windowHeight(), 720);
 
         QVERIFY(project.loadProject(path));
@@ -208,7 +208,7 @@ private slots:
         QCOMPARE(grid->tileAt(31)->hotkey(), QString(","));
 
         // Crucial test: Window size from legacy CWSZ MUST NOT be imported or alter window dimensions
-        QCOMPARE(project.windowWidth(), 1024);
+        QCOMPARE(project.windowWidth(), 1180);
         QCOMPARE(project.windowHeight(), 720);
 
         QVERIFY(project.filePath().isEmpty());

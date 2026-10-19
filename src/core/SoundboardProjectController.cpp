@@ -626,7 +626,7 @@ bool SoundboardProjectController::fromJson(const QJsonObject &json)
         win = json["workspace"].toObject();
     }
     if (!win.isEmpty()) {
-        setWindowWidth(win.contains("width") ? win["width"].toInt(1024) : win["windowWidth"].toInt(1024));
+        setWindowWidth(win.contains("width") ? win["width"].toInt(1180) : win["windowWidth"].toInt(1180));
         setWindowHeight(win.contains("height") ? win["height"].toInt(720) : win["windowHeight"].toInt(720));
         setIsFullScreen(win.contains("fullScreen") ? win["fullScreen"].toBool(false) : win["isFullScreen"].toBool(false));
         setIsMaximized(win.contains("maximized") ? win["maximized"].toBool(false) : win.contains("isMaximized") ? win["isMaximized"].toBool(false) : false);

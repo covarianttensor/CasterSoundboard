@@ -183,7 +183,7 @@ private:
     bool m_isDirty{false};
 
     // Workspace settings
-    int m_windowWidth{1024};
+    int m_windowWidth{1180};
     int m_windowHeight{720};
     bool m_isFullScreen{false};
     bool m_isMaximized{false};
