@@ -498,7 +498,7 @@ Item {
                                 anchors.left: parent.left
                                 anchors.top: parent.top
                                 anchors.bottom: parent.bottom
-                                width: flowGrid.width * 0.38
+                                width: Math.min(460, Math.max(310, (flowGrid.width - 150) * 0.5))
                                 spacing: 18
 
                                 // Mic Card
@@ -532,17 +532,23 @@ Item {
 
                                         RowLayout {
                                             Layout.fillWidth: true
+                                            spacing: 8
+
                                             Text {
                                                 text: "🎤 " + qsTr("Physical Microphone")
                                                 color: (cardMic.isRouting || cardMic.isHoveredOrFocused) ? "#93C5FD" : "#6B7280"
                                                 font.bold: true
                                                 font.pointSize: 10.5
+                                                Layout.fillWidth: true
+                                                elide: Text.ElideRight
                                                 Behavior on color { ColorAnimation { duration: 180 } }
                                             }
-                                            Item { Layout.fillWidth: true }
                                             Rectangle {
-                                                width: micBadgeTxt.implicitWidth + 10
-                                                height: 18
+                                                Layout.alignment: Qt.AlignVCenter
+                                                Layout.preferredWidth: micBadgeTxt.implicitWidth + 12
+                                                Layout.preferredHeight: 18
+                                                implicitWidth: Layout.preferredWidth
+                                                implicitHeight: 18
                                                 radius: 4
                                                 color: (cardMic.isRouting || cardMic.isHoveredOrFocused) ? "#17253D" : "#161B22"
                                                 border.color: (cardMic.isRouting || cardMic.isHoveredOrFocused) ? "#2563EB" : "#2E3642"
@@ -565,6 +571,8 @@ Item {
                                             text: qsTr("Select your hardware voice microphone:")
                                             color: "#888888"
                                             font.pointSize: 8.5
+                                            Layout.fillWidth: true
+                                            wrapMode: Text.WordWrap
                                         }
 
                                         DarkComboBox {
@@ -638,16 +646,22 @@ Item {
 
                                         RowLayout {
                                             Layout.fillWidth: true
+                                            spacing: 8
+
                                             Text {
                                                 text: "🔊 " + qsTr("Caster Soundboard Audio")
                                                 color: "#D8B4FE"
                                                 font.bold: true
                                                 font.pointSize: 10.5
+                                                Layout.fillWidth: true
+                                                elide: Text.ElideRight
                                             }
-                                            Item { Layout.fillWidth: true }
                                             Rectangle {
-                                                width: sbBadgeTxt.implicitWidth + 10
-                                                height: 18
+                                                Layout.alignment: Qt.AlignVCenter
+                                                Layout.preferredWidth: sbBadgeTxt.implicitWidth + 12
+                                                Layout.preferredHeight: 18
+                                                implicitWidth: Layout.preferredWidth
+                                                implicitHeight: 18
                                                 radius: 4
                                                 color: "#2C1B3B"
                                                 border.color: "#7E22CE"
@@ -667,10 +681,13 @@ Item {
                                             text: qsTr("Audio clips, music, and effects triggered on soundboard tiles:")
                                             color: "#888888"
                                             font.pointSize: 8.5
+                                            Layout.fillWidth: true
+                                            wrapMode: Text.WordWrap
                                         }
 
                                         Rectangle {
                                             Layout.fillWidth: true
+                                            implicitHeight: 32
                                             height: 32
                                             radius: 6
                                             color: "#14171A"
@@ -684,14 +701,16 @@ Item {
                                                     text: qsTr("Master Output Level:")
                                                     color: "#94A3B8"
                                                     font.pointSize: 9
+                                                    Layout.fillWidth: true
+                                                    elide: Text.ElideRight
                                                 }
-                                                Item { Layout.fillWidth: true }
                                                 Text {
                                                     text: "100% (0 dB)"
                                                     color: "#C084FC"
                                                     font.bold: true
                                                     font.pointSize: 9
                                                     font.family: "Monospace"
+                                                    Layout.alignment: Qt.AlignRight
                                                 }
                                             }
                                         }
@@ -720,7 +739,7 @@ Item {
                                 anchors.right: parent.right
                                 anchors.top: parent.top
                                 anchors.bottom: parent.bottom
-                                width: flowGrid.width * 0.38
+                                width: Math.min(460, Math.max(310, (flowGrid.width - 150) * 0.5))
                                 spacing: 18
 
                                 // Virtual Mic Card
@@ -753,17 +772,23 @@ Item {
 
                                         RowLayout {
                                             Layout.fillWidth: true
+                                            spacing: 8
+
                                             Text {
                                                 text: "🎙️ " + qsTr("Virtual Microphone")
                                                 color: (cardVirt.isRouting || cardVirt.isHoveredOrFocused) ? "#6EE7B7" : "#6B7280"
                                                 font.bold: true
                                                 font.pointSize: 10.5
+                                                Layout.fillWidth: true
+                                                elide: Text.ElideRight
                                                 Behavior on color { ColorAnimation { duration: 180 } }
                                             }
-                                            Item { Layout.fillWidth: true }
                                             Rectangle {
-                                                width: virtBadgeTxt.implicitWidth + 10
-                                                height: 18
+                                                Layout.alignment: Qt.AlignVCenter
+                                                Layout.preferredWidth: virtBadgeTxt.implicitWidth + 12
+                                                Layout.preferredHeight: 18
+                                                implicitWidth: Layout.preferredWidth
+                                                implicitHeight: 18
                                                 radius: 4
                                                 color: (cardVirt.isRouting || cardVirt.isHoveredOrFocused) ? "#163125" : "#161B22"
                                                 border.color: (cardVirt.isRouting || cardVirt.isHoveredOrFocused) ? "#059669" : "#22352B"
@@ -786,6 +811,8 @@ Item {
                                             text: qsTr("In receiving app (Discord, OBS, Zoom), set Input Device to:")
                                             color: "#888888"
                                             font.pointSize: 8.5
+                                            Layout.fillWidth: true
+                                            wrapMode: Text.WordWrap
                                         }
 
                                         RowLayout {
@@ -888,17 +915,23 @@ Item {
 
                                         RowLayout {
                                             Layout.fillWidth: true
+                                            spacing: 8
+
                                             Text {
                                                 text: "🔈 " + qsTr("Direct Playback Output")
                                                 color: (!cardDir.isRouting || cardDir.isHoveredOrFocused) ? "#D8B4FE" : "#7E6E8E"
                                                 font.bold: true
                                                 font.pointSize: 10.5
+                                                Layout.fillWidth: true
+                                                elide: Text.ElideRight
                                                 Behavior on color { ColorAnimation { duration: 180 } }
                                             }
-                                            Item { Layout.fillWidth: true }
                                             Rectangle {
-                                                width: dirBadgeTxt.implicitWidth + 10
-                                                height: 18
+                                                Layout.alignment: Qt.AlignVCenter
+                                                Layout.preferredWidth: dirBadgeTxt.implicitWidth + 12
+                                                Layout.preferredHeight: 18
+                                                implicitWidth: Layout.preferredWidth
+                                                implicitHeight: 18
                                                 radius: 4
                                                 color: (!cardDir.isRouting || cardDir.isHoveredOrFocused) ? "#2C1B3B" : "#1E1825"
                                                 border.color: (!cardDir.isRouting || cardDir.isHoveredOrFocused) ? "#7E22CE" : "#362646"
@@ -921,6 +954,8 @@ Item {
                                             text: qsTr("Where soundboard plays directly when virtual routing is off:")
                                             color: "#888888"
                                             font.pointSize: 8.5
+                                            Layout.fillWidth: true
+                                            wrapMode: Text.WordWrap
                                         }
 
                                         DarkComboBox {
@@ -997,17 +1032,23 @@ Item {
 
                                         RowLayout {
                                             Layout.fillWidth: true
+                                            spacing: 8
+
                                             Text {
                                                 text: "🎧 " + qsTr("Headphones Monitor Output")
                                                 color: (cardMon.isRouting || cardMon.isHoveredOrFocused) ? "#FCD34D" : "#8A795D"
                                                 font.bold: true
                                                 font.pointSize: 10.5
+                                                Layout.fillWidth: true
+                                                elide: Text.ElideRight
                                                 Behavior on color { ColorAnimation { duration: 180 } }
                                             }
-                                            Item { Layout.fillWidth: true }
                                             Rectangle {
-                                                width: monBadgeTxt.implicitWidth + 10
-                                                height: 18
+                                                Layout.alignment: Qt.AlignVCenter
+                                                Layout.preferredWidth: monBadgeTxt.implicitWidth + 12
+                                                Layout.preferredHeight: 18
+                                                implicitWidth: Layout.preferredWidth
+                                                implicitHeight: 18
                                                 radius: 4
                                                 color: (cardMon.isRouting || cardMon.isHoveredOrFocused) ? "#342211" : "#1E1A16"
                                                 border.color: (cardMon.isRouting || cardMon.isHoveredOrFocused) ? "#B45309" : "#362C1E"
@@ -1030,6 +1071,8 @@ Item {
                                             text: qsTr("Plays soundboard clips into your ears. Your live voice is excluded.")
                                             color: "#888888"
                                             font.pointSize: 8.5
+                                            Layout.fillWidth: true
+                                            wrapMode: Text.WordWrap
                                         }
 
                                         DarkComboBox {

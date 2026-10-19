@@ -744,11 +744,12 @@ Item {
         anchors.centerIn: parent
         modal: true
         closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
-        implicitWidth: 460
+        implicitWidth: 520
+        width: Math.min(520, parent ? parent.width - 40 : 520)
         topPadding: 16
         bottomPadding: 16
-        leftPadding: 20
-        rightPadding: 20
+        leftPadding: 24
+        rightPadding: 24
 
         property int targetIndex: -1
         property string tabName: ""
@@ -771,15 +772,32 @@ Item {
         background: Rectangle {
             color: "#202327"
             radius: 10
-            border.color: "#343940"
+            border.color: "#3B424D"
             border.width: 1
         }
 
         header: Rectangle {
-            implicitHeight: 46
-            height: 46
+            implicitHeight: 48
             color: "#181A1D"
             radius: 10
+            border.color: "#3B424D"
+            border.width: 1
+
+            // Flatten bottom corners to seamlessly merge with dialog body
+            Rectangle {
+                anchors.bottom: parent.bottom
+                width: parent.width
+                height: 10
+                color: "#181A1D"
+            }
+
+            // Bottom border divider
+            Rectangle {
+                anchors.bottom: parent.bottom
+                width: parent.width
+                height: 1
+                color: "#2E333B"
+            }
 
             RowLayout {
                 anchors.fill: parent
@@ -806,8 +824,8 @@ Item {
 
         contentItem: Item {
             id: tabCaptureArea
-            implicitWidth: 420
-            implicitHeight: 145
+            implicitWidth: 472
+            implicitHeight: tabCol.implicitHeight
             focus: true
 
             Keys.priority: Keys.BeforeItem
@@ -859,8 +877,9 @@ Item {
             }
 
             ColumnLayout {
+                id: tabCol
                 anchors.fill: parent
-                spacing: 10
+                spacing: 12
 
                 Text {
                     text: qsTr("Press the key combination you wish to use to switch to this soundboard tab:")
@@ -923,15 +942,32 @@ Item {
         }
 
         footer: Rectangle {
-            implicitHeight: 52
-            height: 52
+            implicitHeight: 54
             color: "#181A1D"
             radius: 10
+            border.color: "#3B424D"
+            border.width: 1
+
+            // Flatten top corners to seamlessly merge with dialog body
+            Rectangle {
+                anchors.top: parent.top
+                width: parent.width
+                height: 10
+                color: "#181A1D"
+            }
+
+            // Top border divider
+            Rectangle {
+                anchors.top: parent.top
+                width: parent.width
+                height: 1
+                color: "#2E333B"
+            }
 
             RowLayout {
                 anchors.fill: parent
-                anchors.leftMargin: 14
-                anchors.rightMargin: 14
+                anchors.leftMargin: 16
+                anchors.rightMargin: 16
                 spacing: 10
 
                 Button {

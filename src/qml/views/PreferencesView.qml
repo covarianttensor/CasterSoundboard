@@ -339,11 +339,15 @@ Item {
                                 color: "#FFFFFF"
                                 font.bold: true
                                 font.pointSize: 10
+                                Layout.fillWidth: true
+                                elide: Text.ElideRight
                             }
                             Text {
                                 text: sr.subtitle
                                 color: "#888888"
                                 font.pointSize: 8.5
+                                Layout.fillWidth: true
+                                wrapMode: Text.WordWrap
                             }
                         }
 
