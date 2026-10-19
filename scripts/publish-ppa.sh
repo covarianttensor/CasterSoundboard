@@ -80,14 +80,19 @@ EOF
 SOURCE_FLAG="-sa"
 if [ "${REVISION}" -gt 1 ] 2>/dev/null; then
     SOURCE_FLAG="-sd"
+    echo "Resetting non-debian files to match upstream tag v${DEB_UPSTREAM_VER}..."
+    if git rev-parse -q --verify "v${DEB_UPSTREAM_VER}" >/dev/null; then
+        git checkout "v${DEB_UPSTREAM_VER}" -- . ':!debian' || true
+    fi
 fi
 
 # Build signed source package (-d skips build-deps check for source-only package)
 echo "Building and signing source package..."
+DEBUILD_FLAGS=("-S" "${SOURCE_FLAG}" "-d" "-k${GPG_KEY_ID}" "-i^(\.git|\.github|scripts|build.*)")
 if [ -n "${GPG_PASSPHRASE:-}" ]; then
-    debuild -S ${SOURCE_FLAG} -d "-k${GPG_KEY_ID}" -p"gpg --batch --no-tty --passphrase ${GPG_PASSPHRASE} --pinentry-mode loopback"
+    debuild "${DEBUILD_FLAGS[@]}" -p"gpg --batch --no-tty --passphrase ${GPG_PASSPHRASE} --pinentry-mode loopback"
 else
-    debuild -S ${SOURCE_FLAG} -d "-k${GPG_KEY_ID}"
+    debuild "${DEBUILD_FLAGS[@]}"
 fi
 
 # Upload to Launchpad
