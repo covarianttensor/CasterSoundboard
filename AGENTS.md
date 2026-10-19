@@ -29,7 +29,13 @@ CasterSoundboard/
 ├── default.nix & flake.nix    # NixOS package derivation & flake
 ├── io.github.covarianttensor.CasterSoundboard.yml # Flatpak manifest
 ├── dist/linux/                # AppStream metainfo, .desktop file, and 256x256 & scalable SVG app icons
-├── docs/ & examples/          # Sample .caster profiles and documentation
+├── docs/                      # Project documentation and architectural guides
+│   └── agents/                # AI agent architectural knowledge base
+│       ├── INDEX.md           # Master directory of technical guides & investigations
+│       ├── flatpak-pipewire-routing.md
+│       ├── qml-combobox-and-desktop-styling.md
+│       └── audio-device-fallbacks.md
+├── examples/                  # Sample .caster show profiles and project files
 ├── TouchOSC-Layouts/          # TouchOSC layout templates
 ├── scripts/
 │   ├── build-appimage.sh      # Standalone AppImage compilation script
@@ -191,13 +197,19 @@ Any modification must preserve functionality across all four distribution format
 * **Flatpak**: Manifest `io.github.covarianttensor.CasterSoundboard.yml` must use `buildsystem: cmake-ninja`.
 * **NixOS**: Maintained in `default.nix` and `flake.nix` using `qt6.wrapQtAppsHook`.
 
+### 🧠 AI Agent Knowledge Base & Deep Dives
+For architectural investigations, subsystem post-mortems, and complex platform edge cases, consult the dedicated guides indexed in [`docs/agents/INDEX.md`](docs/agents/INDEX.md):
+* [**Flatpak PipeWire & PulseAudio Routing**](docs/agents/flatpak-pipewire-routing.md) — WirePlumber sandboxing permissions, `media.category=Manager`, and virtual sink routing.
+* [**QML ComboBox Dropdowns & Desktop Theme Isolation**](docs/agents/qml-combobox-and-desktop-styling.md) — Overcoming KDE/Plasma desktop style hijacking, `delegateModel` bugs, and pure QML delegates.
+* [**Audio Device Naming & Fallbacks**](docs/agents/audio-device-fallbacks.md) — Handling blank/whitespace hardware descriptions, ALSA fallback waterfalls, and PipeWire `SUSPENDED` idle states.
+
 ---
 
 ## 5. Agent Verification Checklist
 
 Before concluding your task, verify the following:
 * [ ] The project builds with zero compilation errors (`cmake --build build-cmake`).
-* [ ] All 10 unit tests pass (`ctest --test-dir build-cmake`).
+* [ ] All 11 unit tests pass (`ctest --test-dir build-cmake`).
 * [ ] Web Remote changes verified with headless browser touch automation (`node scripts/test-web-remote.js`).
 * [ ] No existing comments or docstrings were unnecessarily removed.
 * [ ] Changes are committed to `main` (or a task branch off `main`), never `legacy-v1`.
