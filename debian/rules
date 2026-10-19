@@ -1,5 +1,9 @@
 #!/usr/bin/make -f
 export DH_VERBOSE = 1
+export QT_QPA_PLATFORM = offscreen
 
 %:
 	dh $@ --buildsystem=cmake+ninja
+
+override_dh_auto_test:
+	QT_QPA_PLATFORM=offscreen dh_auto_test

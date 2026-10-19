@@ -10,6 +10,10 @@ on:
         description: 'Ubuntu distribution suite (e.g. noble, oracular)'
         required: true
         default: 'noble'
+      revision:
+        description: 'PPA revision number (e.g. 1, 2)'
+        required: false
+        default: '1'
 
 jobs:
   publish-ppa:
@@ -40,6 +44,7 @@ jobs:
         env:
           GPG_PASSPHRASE: ${{ secrets.LAUNCHPAD_GPG_PASSPHRASE }}
           DISTRO: ${{ inputs.distro || 'noble' }}
+          REVISION: ${{ inputs.revision || '1' }}
         run: |
           chmod +x scripts/publish-ppa.sh
-          ./scripts/publish-ppa.sh "${DISTRO}"
+          ./scripts/publish-ppa.sh "${DISTRO}" "${REVISION}"

@@ -3,6 +3,7 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 DISTRO="${1:-noble}"
+REVISION="${2:-1}"
 GPG_KEY_ID="${GPG_KEY_ID:-94D7A09D038C770677F7610930187CC970FC46B8}"
 PPA_TARGET="${PPA_TARGET:-ppa:covarianttensor/castersoundboard}"
 
@@ -23,13 +24,14 @@ if [ -z "${VERSION}" ]; then
 fi
 # Clean numeric version for debian upstream (e.g. 2.1.2)
 DEB_UPSTREAM_VER="$(echo "${VERSION}" | sed -E 's/^([0-9]+\.[0-9]+\.[0-9]+).*/\1/')"
-DEB_VERSION="${DEB_UPSTREAM_VER}-0ubuntu1~${DISTRO}1"
+DEB_VERSION="${DEB_UPSTREAM_VER}-0ubuntu1~${DISTRO}${REVISION}"
 
 echo "=========================================="
 echo "Publishing to Ubuntu PPA: ${PPA_TARGET}"
 echo "Upstream Version: ${DEB_UPSTREAM_VER}"
 echo "Debian Version:   ${DEB_VERSION}"
 echo "Target Suite:     ${DISTRO}"
+echo "Revision:         ${REVISION}"
 echo "GPG Key:          ${GPG_KEY_ID}"
 echo "=========================================="
 
@@ -52,12 +54,18 @@ castersoundboard (${DEB_VERSION}) ${DISTRO}; urgency=medium
  -- ${DEBFULLNAME} <${DEBEMAIL}>  $(date -R)
 EOF
 
+# For revision 1, include orig tarball (-sa); for subsequent revisions, omit orig tarball (-sd)
+SOURCE_FLAG="-sa"
+if [ "${REVISION}" -gt 1 ] 2>/dev/null; then
+    SOURCE_FLAG="-sd"
+fi
+
 # Build signed source package (-d skips build-deps check for source-only package)
 echo "Building and signing source package..."
 if [ -n "${GPG_PASSPHRASE:-}" ]; then
-    debuild -S -sa -d "-k${GPG_KEY_ID}" -p"gpg --batch --no-tty --passphrase ${GPG_PASSPHRASE} --pinentry-mode loopback"
+    debuild -S ${SOURCE_FLAG} -d "-k${GPG_KEY_ID}" -p"gpg --batch --no-tty --passphrase ${GPG_PASSPHRASE} --pinentry-mode loopback"
 else
-    debuild -S -sa -d "-k${GPG_KEY_ID}"
+    debuild -S ${SOURCE_FLAG} -d "-k${GPG_KEY_ID}"
 fi
 
 # Upload to Launchpad
