@@ -11,8 +11,9 @@ finish-args:
   - --socket=fallback-x11
   # Hardware-accelerated graphics for Qt Quick
   - --device=dri
-  # PulseAudio and PipeWire Pulse compatibility socket
+  # PulseAudio and PipeWire Pulse compatibility socket & manager privileges
   - --socket=pulseaudio
+  - --env=PULSE_PROP=media.category=Manager
   # PipeWire direct socket
   - --filesystem=xdg-run/pipewire-0:ro
   # Web Remote HTTP server (port 5052), MCP AI bridge (port 5055) & OSC (UDP)

@@ -308,14 +308,61 @@ Dialog {
                             border.color: orderCombo.activeFocus ? "#8E2DE2" : "#3A3E42"
                             border.width: 1
                         }
+                        indicator: Text {
+                            x: orderCombo.width - width - 10
+                            y: orderCombo.topPadding + (orderCombo.availableHeight - height) / 2
+                            text: "▾"
+                            color: orderCombo.enabled ? (orderCombo.hovered ? "#FFFFFF" : "#AAAAAA") : "#555555"
+                            font.pixelSize: 13
+                        }
                         contentItem: Text {
                             text: orderCombo.displayText
                             color: recursiveCheck.checked ? "#FFFFFF" : "#777777"
                             font.pointSize: 9
                             verticalAlignment: Text.AlignVCenter
                             leftPadding: 8
-                            rightPadding: 20
+                            rightPadding: 24
                             elide: Text.ElideRight
+                        }
+                        delegate: ItemDelegate {
+                            id: ordDel
+                            width: ListView.view ? ListView.view.width : orderCombo.width
+                            implicitHeight: 32
+                            highlighted: orderCombo.highlightedIndex === index
+                            hoverEnabled: true
+
+                            contentItem: Text {
+                                text: (typeof orderCombo.textAt === "function" ? orderCombo.textAt(index) : "") || (typeof modelData === "string" ? modelData : "")
+                                color: ordDel.highlighted ? "#FFFFFF" : "#CCCCCC"
+                                font.pointSize: 9
+                                verticalAlignment: Text.AlignVCenter
+                                leftPadding: 8
+                                rightPadding: 8
+                                elide: Text.ElideRight
+                            }
+                            background: Rectangle {
+                                color: ordDel.highlighted ? "#8E2DE2" : (ordDel.hovered ? "#2D3238" : "transparent")
+                                radius: 4
+                            }
+                        }
+                        popup: Popup {
+                            y: orderCombo.height + 2
+                            width: orderCombo.width
+                            implicitHeight: Math.min(200, contentItem.implicitHeight + 10)
+                            padding: 4
+                            contentItem: ListView {
+                                clip: true
+                                implicitHeight: contentHeight
+                                model: orderCombo.popup.visible ? orderCombo.delegateModel : null
+                                currentIndex: orderCombo.highlightedIndex
+                                ScrollIndicator.vertical: ScrollIndicator { }
+                            }
+                            background: Rectangle {
+                                color: "#202428"
+                                radius: 6
+                                border.color: "#454B54"
+                                border.width: 1
+                            }
                         }
                     }
                 }
@@ -350,14 +397,61 @@ Dialog {
                             border.color: namingCombo.activeFocus ? "#8E2DE2" : "#3A3E42"
                             border.width: 1
                         }
+                        indicator: Text {
+                            x: namingCombo.width - width - 10
+                            y: namingCombo.topPadding + (namingCombo.availableHeight - height) / 2
+                            text: "▾"
+                            color: namingCombo.enabled ? (namingCombo.hovered ? "#FFFFFF" : "#AAAAAA") : "#555555"
+                            font.pixelSize: 13
+                        }
                         contentItem: Text {
                             text: namingCombo.displayText
                             color: recursiveCheck.checked ? "#FFFFFF" : "#777777"
                             font.pointSize: 9
                             verticalAlignment: Text.AlignVCenter
                             leftPadding: 8
-                            rightPadding: 20
+                            rightPadding: 24
                             elide: Text.ElideRight
+                        }
+                        delegate: ItemDelegate {
+                            id: namDel
+                            width: ListView.view ? ListView.view.width : namingCombo.width
+                            implicitHeight: 32
+                            highlighted: namingCombo.highlightedIndex === index
+                            hoverEnabled: true
+
+                            contentItem: Text {
+                                text: (typeof namingCombo.textAt === "function" ? namingCombo.textAt(index) : "") || (typeof modelData === "string" ? modelData : "")
+                                color: namDel.highlighted ? "#FFFFFF" : "#CCCCCC"
+                                font.pointSize: 9
+                                verticalAlignment: Text.AlignVCenter
+                                leftPadding: 8
+                                rightPadding: 8
+                                elide: Text.ElideRight
+                            }
+                            background: Rectangle {
+                                color: namDel.highlighted ? "#8E2DE2" : (namDel.hovered ? "#2D3238" : "transparent")
+                                radius: 4
+                            }
+                        }
+                        popup: Popup {
+                            y: namingCombo.height + 2
+                            width: namingCombo.width
+                            implicitHeight: Math.min(200, contentItem.implicitHeight + 10)
+                            padding: 4
+                            contentItem: ListView {
+                                clip: true
+                                implicitHeight: contentHeight
+                                model: namingCombo.popup.visible ? namingCombo.delegateModel : null
+                                currentIndex: namingCombo.highlightedIndex
+                                ScrollIndicator.vertical: ScrollIndicator { }
+                            }
+                            background: Rectangle {
+                                color: "#202428"
+                                radius: 6
+                                border.color: "#454B54"
+                                border.width: 1
+                            }
                         }
                     }
                 }

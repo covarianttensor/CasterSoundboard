@@ -29,7 +29,18 @@ void CasterPlaybackRouter::setEnabled(bool value) {
                     args.prepend("--host");
                 }
             }
-            if (!path.isEmpty()) events.start(path, args);
+            if (!path.isEmpty()) {
+                auto env = QProcessEnvironment::systemEnvironment();
+                QString pulseProp = env.value("PULSE_PROP");
+                if (pulseProp.isEmpty()) {
+                    pulseProp = "media.category=Manager";
+                } else if (!pulseProp.contains("media.category")) {
+                    pulseProp += " media.category=Manager";
+                }
+                env.insert("PULSE_PROP", pulseProp);
+                events.setProcessEnvironment(env);
+                events.start(path, args);
+            }
         }
         emit streamsChanged();
     } else {

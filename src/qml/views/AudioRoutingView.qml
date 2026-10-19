@@ -25,12 +25,19 @@ Item {
         implicitHeight: 40
         contentItem: Text {
             leftPadding: 10
-            rightPadding: dcb.indicator.width + 8
+            rightPadding: 28
             text: dcb.displayText
             font.pointSize: 9.5
             color: dcb.enabled ? "#FFFFFF" : "#888888"
             verticalAlignment: Text.AlignVCenter
             elide: Text.ElideRight
+        }
+        indicator: Text {
+            x: dcb.width - width - 12
+            y: dcb.topPadding + (dcb.availableHeight - height) / 2
+            text: "▾"
+            color: dcb.enabled ? (dcb.hovered ? "#FFFFFF" : "#AAAAAA") : "#555555"
+            font.pixelSize: 14
         }
         background: Rectangle {
             color: (dcb.activeFocus || dcb.popup.visible) ? "#1E2228" : (dcb.hovered ? "#1B1E22" : "#16191D")
@@ -39,6 +46,28 @@ Item {
             border.width: (dcb.activeFocus || dcb.popup.visible) ? 2 : 1
             Behavior on color { ColorAnimation { duration: 150 } }
             Behavior on border.color { ColorAnimation { duration: 150 } }
+        }
+        delegate: ItemDelegate {
+            id: itemDel
+            width: ListView.view ? ListView.view.width : dcb.width
+            implicitHeight: 36
+            highlighted: dcb.highlightedIndex === index
+            hoverEnabled: true
+
+            contentItem: Text {
+                text: (typeof dcb.textAt === "function" ? dcb.textAt(index) : "") || (typeof modelData === "string" ? modelData : "")
+                color: itemDel.highlighted ? "#FFFFFF" : "#CCCCCC"
+                font.pointSize: 9.5
+                verticalAlignment: Text.AlignVCenter
+                leftPadding: 8
+                rightPadding: 8
+                elide: Text.ElideRight
+            }
+            background: Rectangle {
+                color: itemDel.highlighted ? "#8E2DE2" : (itemDel.hovered ? "#2D3238" : "transparent")
+                radius: 4
+                Behavior on color { ColorAnimation { duration: 100 } }
+            }
         }
         popup: Popup {
             y: dcb.height + 2

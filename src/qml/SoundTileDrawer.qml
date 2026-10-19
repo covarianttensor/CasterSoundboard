@@ -955,11 +955,60 @@ Dialog {
                         border.color: parent.activeFocus ? "#8E2DE2" : "#454B54"
                         border.width: 1
                     }
+                    indicator: Text {
+                        x: triggerCombo.width - width - 12
+                        y: triggerCombo.topPadding + (triggerCombo.availableHeight - height) / 2
+                        text: "▾"
+                        color: triggerCombo.enabled ? (triggerCombo.hovered ? "#FFFFFF" : "#AAAAAA") : "#555555"
+                        font.pixelSize: 14
+                    }
                     contentItem: Text {
                         leftPadding: 10
+                        rightPadding: 28
                         text: triggerCombo.displayText
                         color: "#FFFFFF"
                         verticalAlignment: Text.AlignVCenter
+                        elide: Text.ElideRight
+                    }
+                    delegate: ItemDelegate {
+                        id: trigDel
+                        width: ListView.view ? ListView.view.width : triggerCombo.width
+                        implicitHeight: 36
+                        highlighted: triggerCombo.highlightedIndex === index
+                        hoverEnabled: true
+
+                        contentItem: Text {
+                            text: (typeof triggerCombo.textAt === "function" ? triggerCombo.textAt(index) : "") || (typeof modelData === "string" ? modelData : "")
+                            color: trigDel.highlighted ? "#FFFFFF" : "#CCCCCC"
+                            font.pointSize: 9.5
+                            verticalAlignment: Text.AlignVCenter
+                            leftPadding: 8
+                            rightPadding: 8
+                            elide: Text.ElideRight
+                        }
+                        background: Rectangle {
+                            color: trigDel.highlighted ? "#8E2DE2" : (trigDel.hovered ? "#2D3238" : "transparent")
+                            radius: 4
+                        }
+                    }
+                    popup: Popup {
+                        y: triggerCombo.height + 2
+                        width: triggerCombo.width
+                        implicitHeight: Math.min(240, contentItem.implicitHeight + 10)
+                        padding: 4
+                        contentItem: ListView {
+                            clip: true
+                            implicitHeight: contentHeight
+                            model: triggerCombo.popup.visible ? triggerCombo.delegateModel : null
+                            currentIndex: triggerCombo.highlightedIndex
+                            ScrollIndicator.vertical: ScrollIndicator { }
+                        }
+                        background: Rectangle {
+                            color: "#202428"
+                            radius: 6
+                            border.color: "#454B54"
+                            border.width: 1
+                        }
                     }
                 }
             }

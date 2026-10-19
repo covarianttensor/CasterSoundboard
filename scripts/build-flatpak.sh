@@ -49,7 +49,17 @@ if [ "${1:-}" = "--local" ] || [ "${CASTER_FLATPAK_LOCAL:-0}" = "1" ]; then
     MANIFEST="${LOCAL_MANIFEST}"
 fi
 
-flatpak-builder --force-clean --repo="${REPO_DIR}" "${BUILD_DIR}/build" "${MANIFEST}"
+BUILDER_BIN="flatpak-builder"
+if ! command -v flatpak-builder >/dev/null 2>&1; then
+    if flatpak info org.flatpak.Builder >/dev/null 2>&1; then
+        BUILDER_BIN="flatpak run org.flatpak.Builder"
+    else
+        echo "Error: flatpak-builder is not installed. Install via: sudo pacman -S flatpak-builder" >&2
+        exit 1
+    fi
+fi
+
+${BUILDER_BIN} --force-clean --repo="${REPO_DIR}" "${BUILD_DIR}/build" "${MANIFEST}"
 flatpak build-bundle "${REPO_DIR}" "${BUNDLE_FILE}" "${APP_ID}"
 cp -f "${BUNDLE_FILE}" "${DEFAULT_BUNDLE}"
 

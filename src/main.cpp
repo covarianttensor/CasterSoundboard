@@ -118,6 +118,17 @@ int main(int argc, char *argv[])
         headless = true;
     }
 
+    // Ensure WirePlumber and PipeWire grant audio manager permissions (essential for Flatpak sandbox)
+    if (qEnvironmentVariableIsEmpty("PULSE_PROP")) {
+        qputenv("PULSE_PROP", "media.category=Manager");
+    } else {
+        QByteArray prop = qgetenv("PULSE_PROP");
+        if (!prop.contains("media.category")) {
+            prop += " media.category=Manager";
+            qputenv("PULSE_PROP", prop);
+        }
+    }
+
     signal(SIGINT, handleSigInt);
     signal(SIGTERM, handleSigInt);
 

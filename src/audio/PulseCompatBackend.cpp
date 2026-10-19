@@ -79,7 +79,16 @@ PulseCompatBackend::PulseCompatBackend(CommandRunner r, std::function<void(unsig
         }
         if (executable.isEmpty()) return CommandResult{false, {}, "pactl is missing. Install pulseaudio-utils."};
         QProcess p;
-        auto env = QProcessEnvironment::systemEnvironment(); env.insert("LC_ALL", "C"); p.setProcessEnvironment(env);
+        auto env = QProcessEnvironment::systemEnvironment();
+        env.insert("LC_ALL", "C");
+        QString pulseProp = env.value("PULSE_PROP");
+        if (pulseProp.isEmpty()) {
+            pulseProp = "media.category=Manager";
+        } else if (!pulseProp.contains("media.category")) {
+            pulseProp += " media.category=Manager";
+        }
+        env.insert("PULSE_PROP", pulseProp);
+        p.setProcessEnvironment(env);
         p.start(executable, cmdArgs);
         if (!p.waitForStarted(2000)) return CommandResult{false, {}, p.errorString()};
         if (!p.waitForFinished(4000)) { p.kill(); p.waitForFinished(1000); return CommandResult{false, {}, "Audio server command timed out."}; }
