@@ -79,18 +79,21 @@ pushd "${REPO_ROOT}" >/dev/null
 rm -f "${APPDIR}/usr/plugins/multimedia/libgstreamermediaplugin.so"
 rm -f "${APPDIR}/usr/lib/libgst"*
 
-# Generate final AppImage
+# Generate final AppImage (ignore non-fatal appstream warning exit code 2 from linuxdeploy)
 "${LINUXDEPLOY}" \
     --appdir "${APPDIR}" \
-    --output appimage
+    --output appimage || true
 
 # Normalize output filename
-GENERATED_APPIMAGE=$(ls -t CasterSoundboard*.AppImage 2>/dev/null | head -n 1)
+GENERATED_APPIMAGE=$(ls -t Caster*Soundboard*.AppImage CasterSoundboard*.AppImage 2>/dev/null | head -n 1)
 if [ -n "${GENERATED_APPIMAGE}" ]; then
     TARGET_APPIMAGE="CasterSoundboard-${VERSION}-x86_64.AppImage"
     if [ "${GENERATED_APPIMAGE}" != "${TARGET_APPIMAGE}" ]; then
         mv -f "${GENERATED_APPIMAGE}" "${TARGET_APPIMAGE}"
     fi
     echo "AppImage created: ${TARGET_APPIMAGE}"
+else
+    echo "Error: AppImage file was not generated" >&2
+    exit 1
 fi
 popd >/dev/null
