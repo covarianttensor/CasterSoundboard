@@ -324,51 +324,58 @@ Dialog {
                             rightPadding: 24
                             elide: Text.ElideRight
                         }
-                        delegate: ItemDelegate {
-                            id: ordDel
-                            required property var model
-                            required property int index
-
-                            width: ListView.view ? ListView.view.width : orderCombo.width
-                            implicitHeight: 32
-                            highlighted: orderCombo.highlightedIndex === index
-                            hoverEnabled: true
-                            text: {
-                                if (orderCombo.textRole && model && model[orderCombo.textRole] !== undefined)
-                                    return model[orderCombo.textRole];
-                                if (typeof model === "string")
-                                    return model;
-                                if (model && model.display !== undefined)
-                                    return model.display;
-                                if (typeof modelData === "string")
-                                    return modelData;
-                                return orderCombo.textAt(index);
-                            }
-
-                            contentItem: Text {
-                                text: ordDel.text
-                                color: ordDel.highlighted ? "#FFFFFF" : "#CCCCCC"
-                                font.pointSize: 9
-                                verticalAlignment: Text.AlignVCenter
-                                leftPadding: 8
-                                rightPadding: 8
-                                elide: Text.ElideRight
-                            }
-                            background: Rectangle {
-                                color: ordDel.highlighted ? "#8E2DE2" : (ordDel.hovered ? "#2D3238" : "transparent")
-                                radius: 4
-                            }
-                        }
                         popup: Popup {
+                            id: ordPopup
                             y: orderCombo.height + 2
                             width: orderCombo.width
-                            implicitHeight: Math.min(200, contentItem.implicitHeight + 10)
+                            implicitHeight: Math.min(200, ordList.contentHeight + 10)
                             padding: 4
                             contentItem: ListView {
+                                id: ordList
                                 clip: true
                                 implicitHeight: contentHeight
-                                model: orderCombo.delegateModel
-                                currentIndex: orderCombo.highlightedIndex
+                                model: orderCombo.model
+                                currentIndex: orderCombo.currentIndex
+                                delegate: Rectangle {
+                                    id: ordDel
+                                    required property var modelData
+                                    required property int index
+
+                                    readonly property bool isCurrent: orderCombo.currentIndex === index
+                                    readonly property bool isHighlighted: orderCombo.highlightedIndex === index || (orderCombo.highlightedIndex < 0 && isCurrent)
+                                    readonly property bool isHovered: ordHover.hovered
+
+                                    width: ListView.view ? ListView.view.width : orderCombo.width
+                                    implicitHeight: 32
+                                    radius: 4
+                                    color: isHighlighted ? "#8E2DE2" : (isHovered ? "#2D3238" : "transparent")
+                                    Behavior on color { ColorAnimation { duration: 100 } }
+
+                                    HoverHandler {
+                                        id: ordHover
+                                        cursorShape: Qt.PointingHandCursor
+                                    }
+
+                                    TapHandler {
+                                        cursorShape: Qt.PointingHandCursor
+                                        onTapped: {
+                                            orderCombo.currentIndex = index;
+                                            orderCombo.popup.close();
+                                            orderCombo.activated(index);
+                                        }
+                                    }
+
+                                    Text {
+                                        anchors.fill: parent
+                                        leftPadding: 8
+                                        rightPadding: 8
+                                        text: typeof modelData === "string" ? modelData : ""
+                                        color: (ordDel.isHighlighted || ordDel.isHovered) ? "#FFFFFF" : "#CCCCCC"
+                                        font.pointSize: 9
+                                        verticalAlignment: Text.AlignVCenter
+                                        elide: Text.ElideRight
+                                    }
+                                }
                                 ScrollIndicator.vertical: ScrollIndicator { }
                             }
                             background: Rectangle {
@@ -427,51 +434,58 @@ Dialog {
                             rightPadding: 24
                             elide: Text.ElideRight
                         }
-                        delegate: ItemDelegate {
-                            id: namDel
-                            required property var model
-                            required property int index
-
-                            width: ListView.view ? ListView.view.width : namingCombo.width
-                            implicitHeight: 32
-                            highlighted: namingCombo.highlightedIndex === index
-                            hoverEnabled: true
-                            text: {
-                                if (namingCombo.textRole && model && model[namingCombo.textRole] !== undefined)
-                                    return model[namingCombo.textRole];
-                                if (typeof model === "string")
-                                    return model;
-                                if (model && model.display !== undefined)
-                                    return model.display;
-                                if (typeof modelData === "string")
-                                    return modelData;
-                                return namingCombo.textAt(index);
-                            }
-
-                            contentItem: Text {
-                                text: namDel.text
-                                color: namDel.highlighted ? "#FFFFFF" : "#CCCCCC"
-                                font.pointSize: 9
-                                verticalAlignment: Text.AlignVCenter
-                                leftPadding: 8
-                                rightPadding: 8
-                                elide: Text.ElideRight
-                            }
-                            background: Rectangle {
-                                color: namDel.highlighted ? "#8E2DE2" : (namDel.hovered ? "#2D3238" : "transparent")
-                                radius: 4
-                            }
-                        }
                         popup: Popup {
+                            id: namPopup
                             y: namingCombo.height + 2
                             width: namingCombo.width
-                            implicitHeight: Math.min(200, contentItem.implicitHeight + 10)
+                            implicitHeight: Math.min(200, namList.contentHeight + 10)
                             padding: 4
                             contentItem: ListView {
+                                id: namList
                                 clip: true
                                 implicitHeight: contentHeight
-                                model: namingCombo.delegateModel
-                                currentIndex: namingCombo.highlightedIndex
+                                model: namingCombo.model
+                                currentIndex: namingCombo.currentIndex
+                                delegate: Rectangle {
+                                    id: namDel
+                                    required property var modelData
+                                    required property int index
+
+                                    readonly property bool isCurrent: namingCombo.currentIndex === index
+                                    readonly property bool isHighlighted: namingCombo.highlightedIndex === index || (namingCombo.highlightedIndex < 0 && isCurrent)
+                                    readonly property bool isHovered: namHover.hovered
+
+                                    width: ListView.view ? ListView.view.width : namingCombo.width
+                                    implicitHeight: 32
+                                    radius: 4
+                                    color: isHighlighted ? "#8E2DE2" : (isHovered ? "#2D3238" : "transparent")
+                                    Behavior on color { ColorAnimation { duration: 100 } }
+
+                                    HoverHandler {
+                                        id: namHover
+                                        cursorShape: Qt.PointingHandCursor
+                                    }
+
+                                    TapHandler {
+                                        cursorShape: Qt.PointingHandCursor
+                                        onTapped: {
+                                            namingCombo.currentIndex = index;
+                                            namingCombo.popup.close();
+                                            namingCombo.activated(index);
+                                        }
+                                    }
+
+                                    Text {
+                                        anchors.fill: parent
+                                        leftPadding: 8
+                                        rightPadding: 8
+                                        text: typeof modelData === "string" ? modelData : ""
+                                        color: (namDel.isHighlighted || namDel.isHovered) ? "#FFFFFF" : "#CCCCCC"
+                                        font.pointSize: 9
+                                        verticalAlignment: Text.AlignVCenter
+                                        elide: Text.ElideRight
+                                    }
+                                }
                                 ScrollIndicator.vertical: ScrollIndicator { }
                             }
                             background: Rectangle {

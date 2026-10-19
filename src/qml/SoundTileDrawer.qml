@@ -970,51 +970,57 @@ Dialog {
                         verticalAlignment: Text.AlignVCenter
                         elide: Text.ElideRight
                     }
-                    delegate: ItemDelegate {
-                        id: trigDel
-                        required property var model
-                        required property int index
-
-                        width: ListView.view ? ListView.view.width : triggerCombo.width
-                        implicitHeight: 36
-                        highlighted: triggerCombo.highlightedIndex === index
-                        hoverEnabled: true
-                        text: {
-                            if (triggerCombo.textRole && model && model[triggerCombo.textRole] !== undefined)
-                                return model[triggerCombo.textRole];
-                            if (typeof model === "string")
-                                return model;
-                            if (model && model.display !== undefined)
-                                return model.display;
-                            if (typeof modelData === "string")
-                                return modelData;
-                            return triggerCombo.textAt(index);
-                        }
-
-                        contentItem: Text {
-                            text: trigDel.text
-                            color: trigDel.highlighted ? "#FFFFFF" : "#CCCCCC"
-                            font.pointSize: 9.5
-                            verticalAlignment: Text.AlignVCenter
-                            leftPadding: 8
-                            rightPadding: 8
-                            elide: Text.ElideRight
-                        }
-                        background: Rectangle {
-                            color: trigDel.highlighted ? "#8E2DE2" : (trigDel.hovered ? "#2D3238" : "transparent")
-                            radius: 4
-                        }
-                    }
                     popup: Popup {
                         y: triggerCombo.height + 2
                         width: triggerCombo.width
-                        implicitHeight: Math.min(240, contentItem.implicitHeight + 10)
+                        implicitHeight: Math.min(240, trigList.contentHeight + 10)
                         padding: 4
                         contentItem: ListView {
+                            id: trigList
                             clip: true
                             implicitHeight: contentHeight
-                            model: triggerCombo.delegateModel
-                            currentIndex: triggerCombo.highlightedIndex
+                            model: triggerCombo.model
+                            currentIndex: triggerCombo.currentIndex
+                            delegate: Rectangle {
+                                id: trigDel
+                                required property var modelData
+                                required property int index
+
+                                readonly property bool isCurrent: triggerCombo.currentIndex === index
+                                readonly property bool isHighlighted: triggerCombo.highlightedIndex === index || (triggerCombo.highlightedIndex < 0 && isCurrent)
+                                readonly property bool isHovered: trigHover.hovered
+
+                                width: ListView.view ? ListView.view.width : triggerCombo.width
+                                implicitHeight: 36
+                                radius: 4
+                                color: isHighlighted ? "#8E2DE2" : (isHovered ? "#2D3238" : "transparent")
+                                Behavior on color { ColorAnimation { duration: 100 } }
+
+                                HoverHandler {
+                                    id: trigHover
+                                    cursorShape: Qt.PointingHandCursor
+                                }
+
+                                TapHandler {
+                                    cursorShape: Qt.PointingHandCursor
+                                    onTapped: {
+                                        triggerCombo.currentIndex = index;
+                                        triggerCombo.popup.close();
+                                        triggerCombo.activated(index);
+                                    }
+                                }
+
+                                Text {
+                                    anchors.fill: parent
+                                    leftPadding: 8
+                                    rightPadding: 8
+                                    text: typeof modelData === "string" ? modelData : ""
+                                    color: (trigDel.isHighlighted || trigDel.isHovered) ? "#FFFFFF" : "#CCCCCC"
+                                    font.pointSize: 9.5
+                                    verticalAlignment: Text.AlignVCenter
+                                    elide: Text.ElideRight
+                                }
+                            }
                             ScrollIndicator.vertical: ScrollIndicator { }
                         }
                         background: Rectangle {

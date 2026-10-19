@@ -202,7 +202,14 @@ QVector<Endpoint> PulseCompatBackend::decodeDevices(const QJsonArray &cards, con
                 if (recoveryProfiles.isEmpty()) continue;
                 Endpoint e; e.input = input; e.available = available(port.value("availability"));
                 e.id = card + "|" + (input ? "input|" : "output|") + p.key();
-                e.label = c.value("properties").toObject().value("device.description").toString(card) + " — " + port.value("description").toString(p.key());
+                auto cProps = c.value("properties").toObject();
+                QString cardDesc = cProps.value("device.description").toString().trimmed();
+                if (cardDesc.isEmpty()) cardDesc = cProps.value("device.vendor.name").toString().trimmed();
+                if (cardDesc.isEmpty()) cardDesc = cProps.value("alsa.card_name").toString().trimmed();
+                if (cardDesc.isEmpty()) cardDesc = card;
+                QString portDesc = port.value("description").toString(p.key()).trimmed();
+                if (portDesc.isEmpty()) portDesc = p.key();
+                e.label = cardDesc + " — " + portDesc;
                 e.recoverySupported = !recoveryProfiles.isEmpty();
                 e.metadata = {{"card", card}, {"port", portless ? QString() : p.key()}, {"profiles", compatible}, {"recoveryProfiles", recoveryProfiles}};
                 bool realized = false;

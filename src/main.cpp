@@ -9,6 +9,7 @@
 #include <QQuickWindow>
 #include <QTimer>
 #include <QDebug>
+#include <QQuickStyle>
 #include <csignal>
 
 #include "SoundboardProjectController.h"
@@ -131,6 +132,12 @@ int main(int argc, char *argv[])
 
     signal(SIGINT, handleSigInt);
     signal(SIGTERM, handleSigInt);
+
+    // Enforce cross-platform "Basic" style so desktop style plugins (e.g. KDE org.kde.desktop / breeze)
+    // do not override custom dark QML delegates, popups, and components.
+    if (qEnvironmentVariableIsEmpty("QT_QUICK_CONTROLS_STYLE")) {
+        QQuickStyle::setStyle("Basic");
+    }
 
     QGuiApplication app(argc, argv);
     app.setApplicationName("CasterSoundboard");

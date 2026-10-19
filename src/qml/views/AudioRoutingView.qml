@@ -47,52 +47,60 @@ Item {
             Behavior on color { ColorAnimation { duration: 150 } }
             Behavior on border.color { ColorAnimation { duration: 150 } }
         }
-        delegate: ItemDelegate {
-            id: itemDel
-            required property var model
-            required property int index
-
-            width: ListView.view ? ListView.view.width : dcb.width
-            implicitHeight: 36
-            highlighted: dcb.highlightedIndex === index
-            hoverEnabled: true
-            text: {
-                if (dcb.textRole && model && model[dcb.textRole] !== undefined)
-                    return model[dcb.textRole];
-                if (typeof model === "string")
-                    return model;
-                if (model && model.display !== undefined)
-                    return model.display;
-                if (typeof modelData === "string")
-                    return modelData;
-                return dcb.textAt(index);
-            }
-
-            contentItem: Text {
-                text: itemDel.text
-                color: itemDel.highlighted ? "#FFFFFF" : "#CCCCCC"
-                font.pointSize: 9.5
-                verticalAlignment: Text.AlignVCenter
-                leftPadding: 8
-                rightPadding: 8
-                elide: Text.ElideRight
-            }
-            background: Rectangle {
-                color: itemDel.highlighted ? "#8E2DE2" : (itemDel.hovered ? "#2D3238" : "transparent")
-                radius: 4
-                Behavior on color { ColorAnimation { duration: 100 } }
-            }
-        }
         popup: Popup {
+            id: comboPopup
             y: dcb.height + 2
             width: dcb.width
-            implicitHeight: Math.min(280, contentItem.implicitHeight + 10)
+            implicitHeight: Math.min(280, comboList.contentHeight + 10)
             padding: 4
             contentItem: ListView {
+                id: comboList
                 clip: true
                 implicitHeight: contentHeight
-                model: dcb.delegateModel
-                currentIndex: dcb.highlightedIndex
+                model: dcb.model
+                currentIndex: dcb.currentIndex
+                delegate: Rectangle {
+                    id: itemDel
+                    required property var modelData
+                    required property int index
+
+                    readonly property bool isCurrent: dcb.currentIndex === index
+                    readonly property bool isHighlighted: dcb.highlightedIndex === index || (dcb.highlightedIndex < 0 && isCurrent)
+                    readonly property bool isHovered: itemHover.hovered
+
+                    width: ListView.view ? ListView.view.width : dcb.width
+                    implicitHeight: 36
+                    radius: 4
+                    color: isHighlighted ? "#8E2DE2" : (isHovered ? "#2D3238" : "transparent")
+                    Behavior on color { ColorAnimation { duration: 100 } }
+
+                    HoverHandler {
+                        id: itemHover
+                        cursorShape: Qt.PointingHandCursor
+                    }
+
+                    TapHandler {
+                        cursorShape: Qt.PointingHandCursor
+                        onTapped: {
+                            dcb.currentIndex = index;
+                            dcb.popup.close();
+                            dcb.activated(index);
+                        }
+                    }
+
+                    Text {
+                        anchors.fill: parent
+                        leftPadding: 8
+                        rightPadding: 8
+                        text: (dcb.textRole && modelData && modelData[dcb.textRole] !== undefined)
+                              ? modelData[dcb.textRole]
+                              : ((typeof modelData === "string") ? modelData : (modelData && modelData.name !== undefined ? modelData.name : ""))
+                        color: (itemDel.isHighlighted || itemDel.isHovered) ? "#FFFFFF" : "#CCCCCC"
+                        font.pointSize: 9.5
+                        verticalAlignment: Text.AlignVCenter
+                        elide: Text.ElideRight
+                    }
+                }
                 ScrollIndicator.vertical: ScrollIndicator { }
             }
             background: Rectangle {

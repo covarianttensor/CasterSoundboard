@@ -229,53 +229,66 @@ Dialog {
                     rightPadding: 24
                     elide: Text.ElideRight
                 }
-                delegate: ItemDelegate {
-                    id: profDel
-                    required property var model
-                    required property int index
-
-                    width: profileCombo.width
-                    implicitHeight: 34
-                    highlighted: profileCombo.highlightedIndex === index
-                    hoverEnabled: true
-                    text: {
-                        if (profileCombo.textRole && model && model[profileCombo.textRole] !== undefined)
-                            return model[profileCombo.textRole];
-                        if (typeof model === "string")
-                            return model;
-                        if (model && model.name !== undefined)
-                            return model.name;
-                        if (model && model.display !== undefined)
-                            return model.display;
-                        if (typeof modelData === "string")
-                            return modelData;
-                        return profileCombo.textAt(index);
-                    }
-
-                    contentItem: Text {
-                        text: profDel.text
-                        color: profDel.highlighted ? "#FFFFFF" : "#CCCCCC"
-                        font.pointSize: 9.5
-                        verticalAlignment: Text.AlignVCenter
-                        leftPadding: 8
-                        rightPadding: 8
-                        elide: Text.ElideRight
-                    }
-                    background: Rectangle {
-                        color: profDel.highlighted ? "#8E2DE2" : (profDel.hovered ? "#2D3238" : "transparent")
-                        radius: 4
-                    }
-                }
                 popup: Popup {
+                    id: profPopup
                     y: profileCombo.height + 2
                     width: profileCombo.width
-                    implicitHeight: Math.min(240, contentItem.implicitHeight + 10)
+                    implicitHeight: Math.min(240, profList.contentHeight + 10)
                     padding: 4
                     contentItem: ListView {
+                        id: profList
                         clip: true
                         implicitHeight: contentHeight
-                        model: profileCombo.delegateModel
-                        currentIndex: profileCombo.highlightedIndex
+                        model: profileCombo.model
+                        currentIndex: profileCombo.currentIndex
+                        delegate: Rectangle {
+                            id: profDel
+                            required property var modelData
+                            required property int index
+
+                            readonly property bool isCurrent: profileCombo.currentIndex === index
+                            readonly property bool isHighlighted: profileCombo.highlightedIndex === index || (profileCombo.highlightedIndex < 0 && isCurrent)
+                            readonly property bool isHovered: profHover.hovered
+
+                            width: ListView.view ? ListView.view.width : profileCombo.width
+                            implicitHeight: 34
+                            radius: 4
+                            color: isHighlighted ? "#8E2DE2" : (isHovered ? "#2D3238" : "transparent")
+                            Behavior on color { ColorAnimation { duration: 100 } }
+
+                            HoverHandler {
+                                id: profHover
+                                cursorShape: Qt.PointingHandCursor
+                            }
+
+                            TapHandler {
+                                cursorShape: Qt.PointingHandCursor
+                                onTapped: {
+                                    profileCombo.currentIndex = index;
+                                    profileCombo.popup.close();
+                                    profileCombo.activated(index);
+                                }
+                            }
+
+                            Text {
+                                anchors.fill: parent
+                                leftPadding: 8
+                                rightPadding: 8
+                                text: {
+                                    if (profileCombo.textRole && modelData && modelData[profileCombo.textRole] !== undefined)
+                                        return modelData[profileCombo.textRole];
+                                    if (typeof modelData === "string")
+                                        return modelData;
+                                    if (modelData && modelData.name !== undefined)
+                                        return modelData.name;
+                                    return "";
+                                }
+                                color: (profDel.isHighlighted || profDel.isHovered) ? "#FFFFFF" : "#CCCCCC"
+                                font.pointSize: 9.5
+                                verticalAlignment: Text.AlignVCenter
+                                elide: Text.ElideRight
+                            }
+                        }
                         ScrollIndicator.vertical: ScrollIndicator { }
                     }
                     background: Rectangle {
@@ -407,51 +420,58 @@ Dialog {
                             rightPadding: 24
                             elide: Text.ElideRight
                         }
-                        delegate: ItemDelegate {
-                            id: tabDel
-                            required property var model
-                            required property int index
-
-                            width: tabCombo.width
-                            implicitHeight: 34
-                            highlighted: tabCombo.highlightedIndex === index
-                            hoverEnabled: true
-                            text: {
-                                if (tabCombo.textRole && model && model[tabCombo.textRole] !== undefined)
-                                    return model[tabCombo.textRole];
-                                if (typeof model === "string")
-                                    return model;
-                                if (model && model.display !== undefined)
-                                    return model.display;
-                                if (typeof modelData === "string")
-                                    return modelData;
-                                return tabCombo.textAt(index);
-                            }
-
-                            contentItem: Text {
-                                text: tabDel.text
-                                color: tabDel.highlighted ? "#FFFFFF" : "#CCCCCC"
-                                font.pointSize: 9.5
-                                verticalAlignment: Text.AlignVCenter
-                                leftPadding: 8
-                                rightPadding: 8
-                                elide: Text.ElideRight
-                            }
-                            background: Rectangle {
-                                color: tabDel.highlighted ? "#8E2DE2" : (tabDel.hovered ? "#2D3238" : "transparent")
-                                radius: 4
-                            }
-                        }
                         popup: Popup {
+                            id: tabPopup
                             y: tabCombo.height + 2
                             width: tabCombo.width
-                            implicitHeight: Math.min(240, contentItem.implicitHeight + 10)
+                            implicitHeight: Math.min(240, tabList.contentHeight + 10)
                             padding: 4
                             contentItem: ListView {
+                                id: tabList
                                 clip: true
                                 implicitHeight: contentHeight
-                                model: tabCombo.delegateModel
-                                currentIndex: tabCombo.highlightedIndex
+                                model: tabCombo.model
+                                currentIndex: tabCombo.currentIndex
+                                delegate: Rectangle {
+                                    id: tabDel
+                                    required property var modelData
+                                    required property int index
+
+                                    readonly property bool isCurrent: tabCombo.currentIndex === index
+                                    readonly property bool isHighlighted: tabCombo.highlightedIndex === index || (tabCombo.highlightedIndex < 0 && isCurrent)
+                                    readonly property bool isHovered: tabHover.hovered
+
+                                    width: ListView.view ? ListView.view.width : tabCombo.width
+                                    implicitHeight: 34
+                                    radius: 4
+                                    color: isHighlighted ? "#8E2DE2" : (isHovered ? "#2D3238" : "transparent")
+                                    Behavior on color { ColorAnimation { duration: 100 } }
+
+                                    HoverHandler {
+                                        id: tabHover
+                                        cursorShape: Qt.PointingHandCursor
+                                    }
+
+                                    TapHandler {
+                                        cursorShape: Qt.PointingHandCursor
+                                        onTapped: {
+                                            tabCombo.currentIndex = index;
+                                            tabCombo.popup.close();
+                                            tabCombo.activated(index);
+                                        }
+                                    }
+
+                                    Text {
+                                        anchors.fill: parent
+                                        leftPadding: 8
+                                        rightPadding: 8
+                                        text: typeof modelData === "string" ? modelData : ""
+                                        color: (tabDel.isHighlighted || tabDel.isHovered) ? "#FFFFFF" : "#CCCCCC"
+                                        font.pointSize: 9.5
+                                        verticalAlignment: Text.AlignVCenter
+                                        elide: Text.ElideRight
+                                    }
+                                }
                                 ScrollIndicator.vertical: ScrollIndicator { }
                             }
                             background: Rectangle {
