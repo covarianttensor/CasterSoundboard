@@ -52,12 +52,12 @@ castersoundboard (${DEB_VERSION}) ${DISTRO}; urgency=medium
  -- ${DEBFULLNAME} <${DEBEMAIL}>  $(date -R)
 EOF
 
-# Build signed source package
+# Build signed source package (-d skips build-deps check for source-only package)
 echo "Building and signing source package..."
 if [ -n "${GPG_PASSPHRASE:-}" ]; then
-    debuild -S -sa "-k${GPG_KEY_ID}" -p"gpg --batch --no-tty --passphrase ${GPG_PASSPHRASE} --pinentry-mode loopback"
+    debuild -S -sa -d "-k${GPG_KEY_ID}" -p"gpg --batch --no-tty --passphrase ${GPG_PASSPHRASE} --pinentry-mode loopback"
 else
-    debuild -S -sa "-k${GPG_KEY_ID}"
+    debuild -S -sa -d "-k${GPG_KEY_ID}"
 fi
 
 # Upload to Launchpad
