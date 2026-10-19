@@ -2,12 +2,8 @@ name: Build Packages & Release
 
 on:
   push:
-    branches:
-      - master
-      - main
     tags:
       - 'v*'
-  pull_request:
   workflow_dispatch:
 
 jobs:
