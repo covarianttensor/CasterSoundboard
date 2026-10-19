@@ -40,10 +40,32 @@ export DEBFULLNAME="Oscar Cerna-Mandujano"
 
 cd "${REPO_ROOT}"
 
-# Create upstream source tarball in parent directory
+# Obtain upstream orig tarball:
+# For revisions > 1, download the exact orig.tar.gz from Launchpad to guarantee matching checksum.
+# For revision 1, generate from the upstream git tag (or HEAD fallback).
 ORIG_TARBALL="../castersoundboard_${DEB_UPSTREAM_VER}.orig.tar.gz"
-echo "Creating upstream source tarball: ${ORIG_TARBALL}..."
-git archive --format=tar.gz --prefix="castersoundboard-${DEB_UPSTREAM_VER}/" HEAD -o "${ORIG_TARBALL}"
+PPA_ORIG_URL="https://launchpad.net/~covarianttensor/+archive/ubuntu/castersoundboard/+sourcefiles/castersoundboard/${DEB_UPSTREAM_VER}-0ubuntu1~${DISTRO}1/castersoundboard_${DEB_UPSTREAM_VER}.orig.tar.gz"
+
+if [ "${REVISION}" -gt 1 ] 2>/dev/null; then
+    echo "Revision > 1 detected. Downloading matching orig tarball from Launchpad PPA..."
+    if curl -sLf -o "${ORIG_TARBALL}" "${PPA_ORIG_URL}"; then
+        echo "Successfully downloaded matching orig tarball from Launchpad."
+    else
+        echo "Warning: Could not download orig tarball from Launchpad, falling back to git archive."
+        TAG_REF="v${DEB_UPSTREAM_VER}"
+        if ! git rev-parse -q --verify "${TAG_REF}" >/dev/null; then
+            TAG_REF="HEAD"
+        fi
+        git archive --format=tar.gz --prefix="castersoundboard-${DEB_UPSTREAM_VER}/" "${TAG_REF}" -o "${ORIG_TARBALL}"
+    fi
+else
+    echo "Creating upstream source tarball from tag v${DEB_UPSTREAM_VER}..."
+    TAG_REF="v${DEB_UPSTREAM_VER}"
+    if ! git rev-parse -q --verify "${TAG_REF}" >/dev/null; then
+        TAG_REF="HEAD"
+    fi
+    git archive --format=tar.gz --prefix="castersoundboard-${DEB_UPSTREAM_VER}/" "${TAG_REF}" -o "${ORIG_TARBALL}"
+fi
 
 # Update changelog
 cat <<EOF > debian/changelog
