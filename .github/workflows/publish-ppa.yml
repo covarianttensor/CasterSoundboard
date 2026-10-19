@@ -1,0 +1,45 @@
+name: Publish to Ubuntu PPA
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      distro:
+        description: 'Ubuntu distribution suite (e.g. noble, oracular)'
+        required: true
+        default: 'noble'
+
+jobs:
+  publish-ppa:
+    name: Build & Upload to Launchpad PPA
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install Debian packaging & upload tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y devscripts debhelper dpkg-dev dput gnupg
+
+      - name: Import GPG Key
+        env:
+          GPG_KEY: ${{ secrets.LAUNCHPAD_GPG_KEY }}
+        run: |
+          if [ -z "${GPG_KEY}" ]; then
+            echo "Error: LAUNCHPAD_GPG_KEY secret is not configured in repository secrets!" >&2
+            exit 1
+          fi
+          echo "${GPG_KEY}" | gpg --batch --import
+
+      - name: Build and Upload Source Package to PPA
+        env:
+          GPG_PASSPHRASE: ${{ secrets.LAUNCHPAD_GPG_PASSPHRASE }}
+          DISTRO: ${{ inputs.distro || 'noble' }}
+        run: |
+          chmod +x scripts/publish-ppa.sh
+          ./scripts/publish-ppa.sh "${DISTRO}"

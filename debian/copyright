@@ -1,0 +1,17 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: CasterSoundboard
+Upstream-Contact: Oscar Cerna-Mandujano <covarianttensor@gmail.com>
+Source: https://github.com/covarianttensor/CasterSoundboard
+
+Files: *
+Copyright: 2024-2026 Oscar Cerna-Mandujano <covarianttensor@gmail.com>
+License: LGPL-3.0+
+
+License: LGPL-3.0+
+ This program is free software: you can redistribute it and/or modify
+ it under the terms of the GNU Lesser General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+ .
+ On Debian systems, the complete text of the GNU Lesser General
+ Public License version 3 can be found in `/usr/share/common-licenses/LGPL-3'.

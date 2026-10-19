@@ -41,6 +41,7 @@ CasterSoundboard/
 │   ├── build-appimage.sh      # Standalone AppImage compilation script
 │   ├── build-flatpak.sh       # Flatpak bundle compilation script
 │   ├── build-deb.sh           # Standalone Debian (.deb) CPack packaging script
+│   ├── publish-ppa.sh         # Launchpad Debian source package build and upload script
 │   ├── test-web-remote.js     # Headless Chromium E2E touch interaction test suite
 │   └── caster-mcp.js          # Stdio-to-HTTP/SSE bridge for Model Context Protocol (MCP)
 ├── src/

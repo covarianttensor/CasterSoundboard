@@ -115,8 +115,17 @@ Or build from source using `flatpak-builder`:
 ./scripts/build-flatpak.sh
 ```
 
-### 3. Debian / Ubuntu (.deb)
-Download the `.deb` package from [GitHub Releases](https://github.com/covarianttensor/CasterSoundboard/releases/latest) and install via `apt`:
+### 3. Debian / Ubuntu (.deb & PPA)
+
+#### Option A: Ubuntu PPA (Automatic updates on Ubuntu 24.04 LTS+)
+```bash
+sudo add-apt-repository ppa:covarianttensor/castersoundboard
+sudo apt update
+sudo apt install castersoundboard
+```
+
+#### Option B: Standalone `.deb` Package
+Download the pre-built `.deb` package from [GitHub Releases](https://github.com/covarianttensor/CasterSoundboard/releases/latest) and install via `apt`:
 ```bash
 sudo apt install ./castersoundboard_*.deb
 ```

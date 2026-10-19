@@ -1,0 +1,38 @@
+Source: castersoundboard
+Section: sound
+Priority: optional
+Maintainer: Oscar Cerna-Mandujano <covarianttensor@gmail.com>
+Build-Depends: debhelper-compat (= 13),
+               cmake (>= 3.16),
+               ninja-build,
+               pkgconf,
+               libgl1-mesa-dev,
+               libxkbcommon-dev,
+               qt6-base-dev,
+               qt6-declarative-dev,
+               qt6-multimedia-dev
+Standards-Version: 4.6.2
+Homepage: https://github.com/covarianttensor/CasterSoundboard
+Vcs-Browser: https://github.com/covarianttensor/CasterSoundboard
+Vcs-Git: https://github.com/covarianttensor/CasterSoundboard.git
+
+Package: castersoundboard
+Architecture: any
+Depends: ${shlibs:Depends},
+         ${misc:Depends},
+         qml6-module-qtquick,
+         qml6-module-qtquick-controls,
+         qml6-module-qtquick-layouts,
+         qml6-module-qtquick-dialogs,
+         qml6-module-qtquick-templates,
+         qml6-module-qtmultimedia,
+         ffmpeg,
+         pulseaudio-utils | pipewire-pulse
+Description: Touch-first live soundboard and audio routing tool for Linux
+ Caster Soundboard is a high-performance audio playback and virtual
+ microphone routing application designed for podcasters, streamers,
+ and live audio broadcasting.
+ .
+ Features include a touch-first QML interface, PipeWire/PulseAudio virtual
+ microphone routing, real-time waveform sweeper, audio ducking,
+ kernel-level Push-to-Talk (PTT), local Web Remote, and MCP AI integration.
