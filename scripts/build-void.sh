@@ -59,6 +59,13 @@ TAR_SHA256="$(sha256sum "${TARBALL_PATH}" | awk '{print $1}')"
 sed -i -e "s/^version=.*/version=${VOID_VERSION}/" srcpkgs/castersoundboard/template
 sed -i -e "s/^checksum=.*/checksum=${TAR_SHA256}/" srcpkgs/castersoundboard/template
 
+# Configure xbps-src for container execution without namespaces
+mkdir -p etc
+cat << 'EOF' >> etc/conf
+XBPS_CHROOT_CMD=ethereal
+XBPS_ALLOW_CHROOT_BREAKOUT=yes
+EOF
+
 echo "Initializing xbps-src binary-bootstrap..."
 ./xbps-src binary-bootstrap
 
