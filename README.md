@@ -135,11 +135,27 @@ To compile and package a `.deb` locally with CPack:
 ./scripts/build-deb.sh
 ```
 
-### 4. NixOS / Nix Flakes
+### 4. Fedora / openSUSE / RHEL (.rpm)
+Download the pre-built `.rpm` package from [GitHub Releases](https://github.com/covarianttensor/CasterSoundboard/releases/latest) and install via `dnf` or `zypper`:
+```bash
+# Fedora / RHEL
+sudo dnf install ./castersoundboard-*.rpm
+
+# openSUSE
+sudo zypper install ./castersoundboard-*.rpm
+```
+
+To compile and package an `.rpm` locally with CPack:
+```bash
+./scripts/build-rpm.sh
+```
+
+### 5. NixOS / Nix Flakes
 Run directly via Nix Flakes:
 ```bash
 nix run github:covarianttensor/CasterSoundboard
 ```
+
 
 Or build locally with `default.nix`:
 ```bash
@@ -147,7 +163,7 @@ nix-build
 ./result/bin/CasterSoundboard
 ```
 
-### 5. Native Build (CMake)
+### 6. Native Build (CMake)
 Build and install natively on any Linux distribution (Ubuntu, Debian, Fedora, Arch):
 
 #### Prerequisites

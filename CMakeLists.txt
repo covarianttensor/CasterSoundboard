@@ -251,7 +251,7 @@ install(FILES dist/linux/io.github.covarianttensor.CasterSoundboard.svg
 )
 
 # -------------------------------------------------------------
-# CPack Packaging (.deb)
+# CPack Packaging (.deb & .rpm)
 # -------------------------------------------------------------
 set(CPACK_PACKAGE_NAME "castersoundboard")
 set(CPACK_PACKAGE_VENDOR "Covariant Tensor")
@@ -260,8 +260,7 @@ set(CPACK_PACKAGE_HOMEPAGE_URL "https://github.com/covarianttensor/CasterSoundbo
 set(CPACK_PACKAGE_CONTACT "https://github.com/covarianttensor/CasterSoundboard/issues")
 set(CPACK_PACKAGE_VERSION "${PROJECT_VERSION}")
 
-# Debian generator settings
-set(CPACK_GENERATOR "DEB")
+# Debian generator settings (.deb)
 set(CPACK_DEBIAN_PACKAGE_MAINTAINER "Oscar <https://github.com/covarianttensor>")
 set(CPACK_DEBIAN_PACKAGE_SECTION "sound")
 set(CPACK_DEBIAN_PACKAGE_PRIORITY "optional")
@@ -287,5 +286,25 @@ endif()
 # Explicitly declare runtime QML modules and CLI utilities that shlibdeps cannot detect
 set(CPACK_DEBIAN_PACKAGE_DEPENDS "qml6-module-qtquick, qml6-module-qtquick-controls, qml6-module-qtquick-layouts, qml6-module-qtquick-templates, qml6-module-qtmultimedia, ffmpeg, pulseaudio-utils | pipewire-pulse")
 
+# RPM generator settings (.rpm for Fedora, RHEL & openSUSE)
+set(CPACK_RPM_PACKAGE_LICENSE "LGPL-3.0-or-later")
+set(CPACK_RPM_PACKAGE_GROUP "Applications/Multimedia")
+set(CPACK_RPM_PACKAGE_DESCRIPTION "Touch-first live soundboard and audio routing tool for Linux")
+set(CPACK_RPM_PACKAGE_AUTOREQPROV ON)
+set(CPACK_RPM_PACKAGE_REQUIRES "qt6-qtdeclarative, qt6-qtmultimedia, ffmpeg, (pulseaudio-utils or pipewire-pulseaudio)")
+set(CPACK_RPM_PACKAGE_RELEASE "1")
+set(CPACK_RPM_FILE_NAME "RPM-DEFAULT")
+set(CPACK_RPM_EXCLUDE_FROM_AUTO_FILELIST_ADDITION
+    "/usr/share/applications"
+    "/usr/share/metainfo"
+    "/usr/share/icons"
+    "/usr/share/icons/hicolor"
+    "/usr/share/icons/hicolor/256x256"
+    "/usr/share/icons/hicolor/256x256/apps"
+    "/usr/share/icons/hicolor/scalable"
+    "/usr/share/icons/hicolor/scalable/apps"
+)
+
 include(CPack)
+
 

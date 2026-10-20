@@ -230,7 +230,10 @@ private slots:
             QVERIFY(!controller.isTransmitting());
             QCOMPARE(endSpy.count(), 1);
         } else {
-            // In headless/unprivileged environment, ready callback triggers gracefully
+            // In headless/unprivileged environment, ready callback triggers after lead-in buffer
+            QVERIFY(QTest::qWaitFor([&readyCalled]() {
+                return readyCalled;
+            }, 300));
             QVERIFY(readyCalled);
         }
     }

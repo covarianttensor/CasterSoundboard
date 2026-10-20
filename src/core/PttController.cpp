@@ -102,7 +102,7 @@ bool PttController::isTransmittingKey(const QString &key) const
 
 void PttController::testTriggerKey(const QString &keyName, int durationMs)
 {
-    if (keyName.isEmpty() || !m_uinput || !m_uinput->isAvailable())
+    if (keyName.isEmpty())
         return;
 
     if (m_testTimer) {
@@ -110,20 +110,26 @@ void PttController::testTriggerKey(const QString &keyName, int durationMs)
         m_testTimer->deleteLater();
         m_testTimer = nullptr;
         if (!m_testKeyName.isEmpty()) {
-            m_uinput->sendKeyUp(m_testKeyName);
+            if (m_uinput && m_uinput->isAvailable()) {
+                m_uinput->sendKeyUp(m_testKeyName);
+            }
             m_testKeyName.clear();
         }
     }
 
     m_testKeyName = keyName;
-    m_uinput->sendKeyDown(keyName);
+    if (m_uinput && m_uinput->isAvailable()) {
+        m_uinput->sendKeyDown(keyName);
+    }
     emit transmissionChanged();
 
     m_testTimer = new QTimer(this);
     m_testTimer->setSingleShot(true);
     connect(m_testTimer, &QTimer::timeout, this, [this]() {
-        if (!m_testKeyName.isEmpty() && m_uinput) {
-            m_uinput->sendKeyUp(m_testKeyName);
+        if (!m_testKeyName.isEmpty()) {
+            if (m_uinput && m_uinput->isAvailable()) {
+                m_uinput->sendKeyUp(m_testKeyName);
+            }
             m_testKeyName.clear();
         }
         if (m_testTimer) {

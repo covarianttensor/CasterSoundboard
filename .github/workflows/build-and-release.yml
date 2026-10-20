@@ -135,10 +135,51 @@ jobs:
           name: deb-bundle
           path: castersoundboard_*.deb
 
+  rpm:
+    name: Build RPM Package
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            cmake \
+            ninja-build \
+            file \
+            rpm \
+            libgl1-mesa-dev \
+            libxkbcommon-dev \
+            qt6-base-dev \
+            qt6-declarative-dev \
+            qml6-module-qtquick \
+            qml6-module-qtquick-controls \
+            qml6-module-qtquick-layouts \
+            qml6-module-qtquick-dialogs \
+            qml6-module-qtquick-templates \
+            qml6-module-qtmultimedia \
+            qt6-multimedia-dev
+
+      - name: Build RPM Package
+        run: |
+          chmod +x scripts/build-rpm.sh
+          ./scripts/build-rpm.sh
+
+      - name: Upload RPM Package artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: rpm-bundle
+          path: castersoundboard-*.rpm
+
   release:
     name: Publish GitHub Release
     if: startsWith(github.ref, 'refs/tags/v')
-    needs: [appimage, flatpak, deb]
+    needs: [appimage, flatpak, deb, rpm]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -161,6 +202,12 @@ jobs:
           name: deb-bundle
           path: release-assets
 
+      - name: Download RPM artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: rpm-bundle
+          path: release-assets
+
       - name: List Release Assets
         run: ls -la release-assets
 
@@ -169,3 +216,4 @@ jobs:
         with:
           files: release-assets/*
           generate_release_notes: true
+
