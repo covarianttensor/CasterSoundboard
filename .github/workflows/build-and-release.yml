@@ -247,7 +247,7 @@ jobs:
           docker run --privileged --rm -v "${PWD}:/workspace" -w /workspace ghcr.io/void-linux/void-glibc-full sh -c "
             xbps-install -Sy -y xbps && \
             xbps-install -Syu -y && \
-            xbps-install -y git base-devel curl bash tar gzip base-chroot && \
+            xbps-install -y git base-devel curl bash && \
             xbps-uhelper arch > /.xbps_chroot_init && \
             chmod 644 /.xbps_chroot_init && \
             useradd -m -s /bin/bash builder && \
