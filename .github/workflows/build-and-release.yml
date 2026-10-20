@@ -244,11 +244,11 @@ jobs:
 
       - name: Build Void Linux Package in Docker
         run: |
-          docker run --privileged --rm -v "${PWD}:/workspace" -w /workspace ghcr.io/void-linux/void-glibc-full bash -c "
-            xbps-install -Syu && \
+          docker run --privileged --rm -v "${PWD}:/workspace" -w /workspace ghcr.io/void-linux/void-glibc-full sh -c "
+            xbps-install -Sy -y xbps && \
+            xbps-install -Syu -y && \
             xbps-install -y git base-devel curl bash tar gzip && \
             useradd -m -s /bin/bash builder && \
-            echo 'builder ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers && \
             chown -R builder:builder /workspace && \
             su builder -c 'git config --global --add safe.directory /workspace && ./scripts/build-void.sh'
           "
