@@ -66,6 +66,8 @@ cat << 'EOF' >> etc/conf
 XBPS_CHROOT_CMD=ethereal
 XBPS_ALLOW_CHROOT_BREAKOUT=yes
 EOF
+export XBPS_CHROOT_CMD=ethereal
+export XBPS_ALLOW_CHROOT_BREAKOUT=yes
 
 # Setup ethereal masterdir symlink and init token
 ln -sfn / masterdir
@@ -80,6 +82,7 @@ if [ ${#xbps_files[@]} -gt 0 ]; then
     for pkg in "${xbps_files[@]}"; do
         dest="${REPO_ROOT}/$(basename "${pkg}")"
         cp -f "${pkg}" "${dest}"
+        chmod 644 "${dest}" 2>/dev/null || true
         echo "XBPS package generated: ${dest}"
     done
 else

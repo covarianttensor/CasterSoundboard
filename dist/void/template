@@ -4,7 +4,8 @@ version=2.1.2
 revision=1
 build_style=cmake
 configure_args="-DBUILD_TESTING=OFF"
-hostmakedepends="pkg-config qt6-base qt6-declarative-devel"
+wrksrc="CasterSoundboard-${version}"
+hostmakedepends="pkg-config qt6-base-devel qt6-declarative-devel"
 makedepends="qt6-base-devel qt6-declarative-devel qt6-multimedia-devel"
 depends="qt6-declarative qt6-multimedia ffmpeg pulseaudio-utils"
 short_desc="Touch-first live soundboard and audio routing tool for Linux"
