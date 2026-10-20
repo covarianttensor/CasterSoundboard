@@ -179,10 +179,29 @@ jobs:
             castersoundboard-*.rpm
             castersoundboard-*.src.rpm
 
+  snap:
+    name: Build Snap Package
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Build Snap Package
+        uses: snapcore/action-build@v1
+        id: snapcraft
+
+      - name: Upload Snap Package artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: snap-bundle
+          path: ${{ steps.snapcraft.outputs.snap }}
+
   release:
     name: Publish GitHub Release
     if: startsWith(github.ref, 'refs/tags/v')
-    needs: [appimage, flatpak, deb, rpm]
+    needs: [appimage, flatpak, deb, rpm, snap]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -211,6 +230,12 @@ jobs:
           name: rpm-bundle
           path: release-assets
 
+      - name: Download Snap artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: snap-bundle
+          path: release-assets
+
       - name: List Release Assets
         run: ls -la release-assets
 
@@ -219,4 +244,5 @@ jobs:
         with:
           files: release-assets/*
           generate_release_notes: true
+
 

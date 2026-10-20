@@ -161,14 +161,25 @@ To compile and package an `.rpm` or Source RPM (`.src.rpm`) locally:
 ./scripts/build-srpm.sh
 ```
 
-### 5. Arch Linux / Manjaro / CachyOS
+### 5. Snap (Universal Linux / Ubuntu App Center)
+Download the pre-built `.snap` package from [GitHub Releases](https://github.com/covarianttensor/CasterSoundboard/releases/latest) and install via `snap`:
+```bash
+sudo snap install --dangerous castersoundboard_*.snap
+```
+
+To compile a Snap package locally with Snapcraft:
+```bash
+./scripts/build-snap.sh
+```
+
+### 6. Arch Linux / Manjaro / CachyOS
 Install using the prepared PKGBUILD in `dist/aur/`:
 ```bash
 cd dist/aur
 makepkg -si
 ```
 
-### 6. NixOS / Nix Flakes
+### 7. NixOS / Nix Flakes
 Run directly via Nix Flakes:
 ```bash
 nix run github:covarianttensor/CasterSoundboard

@@ -1,0 +1,59 @@
+name: castersoundboard
+base: core24
+adopt-info: castersoundboard
+summary: Touch-first live soundboard and audio routing tool for Linux
+description: |
+  Caster Soundboard is a high-performance, touch-first soundboard and live audio
+  routing tool for Linux (Wayland and X11). Built with Qt 6 and C++17, it features
+  real-time waveform visualization, PipeWire and PulseAudio virtual routing,
+  Web Remote, OSC support, and Push-to-Talk ducking.
+
+grade: stable
+confinement: strict
+icon: dist/linux/io.github.covarianttensor.CasterSoundboard.png
+
+apps:
+  castersoundboard:
+    command: usr/bin/CasterSoundboard
+    extensions: [kde-neon-6]
+    desktop: usr/share/applications/io.github.covarianttensor.CasterSoundboard.desktop
+    common-id: io.github.covarianttensor.CasterSoundboard
+    plugs:
+      - desktop
+      - desktop-legacy
+      - wayland
+      - x11
+      - audio-playback
+      - audio-record
+      - pulseaudio
+      - network
+      - network-bind
+      - home
+      - removable-media
+
+parts:
+  castersoundboard:
+    plugin: cmake
+    source: .
+    source-type: local
+    build-snaps:
+      - kde-qt6-core24-sdk/latest/stable
+      - kf6-core24-sdk/latest/stable
+    build-packages:
+      - ffmpeg
+      - libgl1-mesa-dev
+      - libxkbcommon-dev
+    stage-packages:
+      - ffmpeg
+      - pulseaudio-utils
+    cmake-parameters:
+      - -DCMAKE_INSTALL_PREFIX=/usr
+      - -DCMAKE_BUILD_TYPE=Release
+      - -DBUILD_TESTING=OFF
+    override-pull: |
+      craftctl default
+      if [ -f VERSION ]; then
+        craftctl set version="$(cat VERSION | tr -d '[:space:]')"
+      else
+        craftctl set version="2.1.2"
+      fi
