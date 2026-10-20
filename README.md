@@ -195,22 +195,43 @@ makepkg -si
 ### 7. Void Linux (XBPS)
 
 #### Option A: Pre-built Native Package
-Download the pre-built `.xbps` package from [GitHub Releases](https://github.com/covarianttensor/CasterSoundboard/releases/latest) and install via `xbps-install`:
+Download the pre-built `.xbps` package (`castersoundboard-*.xbps`) from [GitHub Releases](https://github.com/covarianttensor/CasterSoundboard/releases/latest).
+
+**Using `xbps-rindex` (Standard):**
 ```bash
+# Index the directory containing the downloaded package:
+xbps-rindex -a castersoundboard-*.xbps
+
+# Install from the local directory repository:
 sudo xbps-install -R . castersoundboard
+```
+
+**Or using `xdowngrade` (from `xtools`):**
+```bash
+sudo xdowngrade castersoundboard-*.xbps
 ```
 
 #### Option B: Build via xbps-src
 ```bash
+# Automated local build:
 ./scripts/build-void.sh
+xbps-rindex -a castersoundboard-*.xbps
 sudo xbps-install -R . castersoundboard
 ```
 
 Or using an existing `void-packages` tree:
 ```bash
+# 1. Copy the template into your void-packages clone:
 mkdir -p srcpkgs/castersoundboard
 cp dist/void/template srcpkgs/castersoundboard/
+
+# 2. Build the binary package:
 ./xbps-src pkg castersoundboard
+
+# 3. Install the generated package:
+sudo xbps-install -R hostdir/binpkgs castersoundboard
+# Or using the xbps-src shortcut:
+./xbps-src xi castersoundboard
 ```
 
 ### 8. NixOS / Nix Flakes
