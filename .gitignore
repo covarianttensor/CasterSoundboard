@@ -15,6 +15,7 @@ moc_*
 qrc_*
 Makefile
 Makefile.*
+!.copr/Makefile
 tests/cues/cue-tests
 tests/metadata/metadata-tests
 tests/metadata/metadata-application-tests
