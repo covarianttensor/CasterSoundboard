@@ -38,8 +38,26 @@ cd void-packages
 mkdir -p srcpkgs/castersoundboard
 cp -f "${TEMPLATE_FILE}" srcpkgs/castersoundboard/template
 
-# Update template version if building custom release
+# Pre-generate source tarball so xbps-src can build from local checkout or unreleased commits
+SOURCE_DIR="hostdir/sources/castersoundboard-${VOID_VERSION}"
+mkdir -p "${SOURCE_DIR}"
+TARBALL_PATH="${SOURCE_DIR}/v${VOID_VERSION}.tar.gz"
+
+echo "Creating source archive: ${TARBALL_PATH}..."
+if command -v git >/dev/null 2>&1 && [ -d "${REPO_ROOT}/.git" ]; then
+    git -C "${REPO_ROOT}" archive --format=tar.gz --prefix="CasterSoundboard-${VOID_VERSION}/" -o "${BUILD_DIR}/void-packages/${TARBALL_PATH}" HEAD
+else
+    tar --exclude-vcs --exclude='./build*' --exclude='./result' \
+        -czf "${BUILD_DIR}/void-packages/${TARBALL_PATH}" \
+        -C "${REPO_ROOT}" \
+        --transform "s,^\.,CasterSoundboard-${VOID_VERSION}," .
+fi
+
+TAR_SHA256="$(sha256sum "${TARBALL_PATH}" | awk '{print $1}')"
+
+# Update template version and checksum dynamically
 sed -i -e "s/^version=.*/version=${VOID_VERSION}/" srcpkgs/castersoundboard/template
+sed -i -e "s/^checksum=.*/checksum=${TAR_SHA256}/" srcpkgs/castersoundboard/template
 
 echo "Initializing xbps-src binary-bootstrap..."
 ./xbps-src binary-bootstrap

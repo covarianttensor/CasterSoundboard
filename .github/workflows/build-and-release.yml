@@ -242,10 +242,16 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Build Void Linux Package
+      - name: Build Void Linux Package in Docker
         run: |
-          chmod +x scripts/build-void.sh
-          ./scripts/build-void.sh
+          docker run --privileged --rm -v "${PWD}:/workspace" -w /workspace ghcr.io/void-linux/void-glibc-full bash -c "
+            xbps-install -Syu && \
+            xbps-install -y git base-devel curl bash tar gzip && \
+            useradd -m -s /bin/bash builder && \
+            echo 'builder ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers && \
+            chown -R builder:builder /workspace && \
+            su builder -c 'git config --global --add safe.directory /workspace && ./scripts/build-void.sh'
+          "
 
       - name: Upload Void Linux Package artifacts
         uses: actions/upload-artifact@v4
