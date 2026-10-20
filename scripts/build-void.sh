@@ -19,8 +19,8 @@ if [ -z "${VERSION}" ]; then
             VERSION="${FALLBACK_VER}"
         fi
     fi
-fi
-VOID_VERSION="$(echo "${VERSION}" | tr '-' '_')"
+# Void Linux xbps-src versions can only contain digits, dots, and letters (no hyphens or underscores)
+VOID_VERSION="$(echo "${VERSION}" | sed 's/[-_].*//')"
 
 echo "Building CasterSoundboard Void Linux (XBPS) package version: ${VOID_VERSION}"
 
