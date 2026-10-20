@@ -165,16 +165,19 @@ jobs:
             qml6-module-qtmultimedia \
             qt6-multimedia-dev
 
-      - name: Build RPM Package
+      - name: Build RPM & SRPM Packages
         run: |
-          chmod +x scripts/build-rpm.sh
+          chmod +x scripts/build-rpm.sh scripts/build-srpm.sh
           ./scripts/build-rpm.sh
+          ./scripts/build-srpm.sh
 
       - name: Upload RPM Package artifacts
         uses: actions/upload-artifact@v4
         with:
           name: rpm-bundle
-          path: castersoundboard-*.rpm
+          path: |
+            castersoundboard-*.rpm
+            castersoundboard-*.src.rpm
 
   release:
     name: Publish GitHub Release

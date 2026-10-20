@@ -135,7 +135,15 @@ To compile and package a `.deb` locally with CPack:
 ./scripts/build-deb.sh
 ```
 
-### 4. Fedora / openSUSE / RHEL (.rpm)
+### 4. Fedora / RHEL / openSUSE (.rpm & COPR)
+
+#### Option A: Fedora COPR (Automatic updates on Fedora 40+)
+```bash
+sudo dnf copr enable covarianttensor/castersoundboard
+sudo dnf install castersoundboard
+```
+
+#### Option B: Standalone `.rpm` Package
 Download the pre-built `.rpm` package from [GitHub Releases](https://github.com/covarianttensor/CasterSoundboard/releases/latest) and install via `dnf` or `zypper`:
 ```bash
 # Fedora / RHEL
@@ -145,9 +153,10 @@ sudo dnf install ./castersoundboard-*.rpm
 sudo zypper install ./castersoundboard-*.rpm
 ```
 
-To compile and package an `.rpm` locally with CPack:
+To compile and package an `.rpm` or Source RPM (`.src.rpm`) locally:
 ```bash
 ./scripts/build-rpm.sh
+./scripts/build-srpm.sh
 ```
 
 ### 5. NixOS / Nix Flakes

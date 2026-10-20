@@ -42,6 +42,7 @@ CasterSoundboard/
 │   ├── build-flatpak.sh       # Flatpak bundle compilation script
 │   ├── build-deb.sh           # Standalone Debian (.deb) CPack packaging script
 │   ├── build-rpm.sh           # Standalone RPM (.rpm) CPack packaging script
+│   ├── build-srpm.sh          # Source RPM (.src.rpm) compilation script for Fedora COPR
 │   ├── publish-ppa.sh         # Launchpad Debian source package build and upload script
 │   ├── test-web-remote.js     # Headless Chromium E2E touch interaction test suite
 │   └── caster-mcp.js          # Stdio-to-HTTP/SSE bridge for Model Context Protocol (MCP)
