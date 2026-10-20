@@ -172,8 +172,21 @@ To compile a Snap package locally with Snapcraft:
 ./scripts/build-snap.sh
 ```
 
-### 6. Arch Linux / Manjaro / CachyOS
-Install using the prepared PKGBUILD in `dist/aur/`:
+### 6. Arch Linux / Manjaro / CachyOS (.pkg.tar.zst)
+
+#### Option A: Pre-built Native Package
+Download the pre-built `.pkg.tar.zst` package from [GitHub Releases](https://github.com/covarianttensor/CasterSoundboard/releases/latest) and install via `pacman`:
+```bash
+sudo pacman -U castersoundboard-*.pkg.tar.zst
+```
+
+#### Option B: Build and install locally
+```bash
+./scripts/build-arch.sh
+sudo pacman -U castersoundboard-*.pkg.tar.zst
+```
+
+Or build via `dist/aur/PKGBUILD`:
 ```bash
 cd dist/aur
 makepkg -si

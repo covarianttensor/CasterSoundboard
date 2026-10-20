@@ -46,6 +46,7 @@ CasterSoundboard/
 │   ├── build-rpm.sh           # Standalone RPM (.rpm) CPack packaging script
 │   ├── build-srpm.sh          # Source RPM (.src.rpm) compilation script for Fedora COPR
 │   ├── build-snap.sh          # Standalone Snapcraft compilation script
+│   ├── build-arch.sh          # Standalone Arch Linux (.pkg.tar.zst) packaging script
 │   ├── publish-ppa.sh         # Launchpad Debian source package build and upload script
 │   ├── test-web-remote.js     # Headless Chromium E2E touch interaction test suite
 │   └── caster-mcp.js          # Stdio-to-HTTP/SSE bridge for Model Context Protocol (MCP)
@@ -205,6 +206,7 @@ Any modification must preserve functionality across all distribution formats:
 * **Debian (.deb)**: Built via `scripts/build-deb.sh` or `cpack -G DEB` using CMake's CPack generator.
 * **RPM (.rpm)**: Built via `scripts/build-rpm.sh` or `cpack -G RPM` using CMake's CPack generator for Fedora, RHEL, and openSUSE.
 * **Snap**: Built via `scripts/build-snap.sh` or `snapcraft` with `snap/snapcraft.yaml` (`core24` + `kde-neon-6`).
+* **Arch Linux (.pkg.tar.zst)**: Built via `scripts/build-arch.sh` or `makepkg` with `dist/aur/PKGBUILD`.
 * **NixOS**: Maintained in `default.nix` and `flake.nix` using `qt6.wrapQtAppsHook`.
 
 ### 🧠 AI Agent Knowledge Base & Deep Dives
