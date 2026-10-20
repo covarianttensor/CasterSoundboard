@@ -24,10 +24,19 @@ RPM_VERSION="$(echo "${VERSION}" | tr '-' '_')"
 
 echo "Building CasterSoundboard Source RPM (SRPM) version: ${RPM_VERSION}"
 
-mkdir -p "${BUILD_DIR}/SOURCES" "${BUILD_DIR}/SPECS" "${BUILD_DIR}/SRPMS"
+OUT_DIR="${1:-${REPO_ROOT}}"
 
-# Create source tarball
-git -C "${REPO_ROOT}" archive --format=tar.gz --prefix="CasterSoundboard-${RPM_VERSION}/" -o "${BUILD_DIR}/SOURCES/CasterSoundboard-${RPM_VERSION}.tar.gz" HEAD
+mkdir -p "${BUILD_DIR}/SOURCES" "${BUILD_DIR}/SPECS" "${BUILD_DIR}/SRPMS" "${OUT_DIR}"
+
+# Create source tarball (use git archive if git is available, otherwise tar fallback)
+if command -v git >/dev/null 2>&1 && [ -d "${REPO_ROOT}/.git" ]; then
+    git -C "${REPO_ROOT}" archive --format=tar.gz --prefix="CasterSoundboard-${RPM_VERSION}/" -o "${BUILD_DIR}/SOURCES/CasterSoundboard-${RPM_VERSION}.tar.gz" HEAD
+else
+    tar --exclude-vcs --exclude='./build*' --exclude='./result' \
+        -czf "${BUILD_DIR}/SOURCES/CasterSoundboard-${RPM_VERSION}.tar.gz" \
+        -C "${REPO_ROOT}" \
+        --transform "s,^\.,CasterSoundboard-${RPM_VERSION}," .
+fi
 
 # Copy and update spec file version
 sed -e "s/^Version:.*/Version:        ${RPM_VERSION}/" "${SPEC_FILE}" > "${BUILD_DIR}/SPECS/castersoundboard.spec"
@@ -40,8 +49,8 @@ shopt -s nullglob
 srpm_files=( "${BUILD_DIR}/SRPMS"/*.src.rpm )
 if [ ${#srpm_files[@]} -gt 0 ]; then
     for srpm in "${srpm_files[@]}"; do
-        dest="${REPO_ROOT}/$(basename "${srpm}")"
-        mv -f "${srpm}" "${dest}"
+        dest="${OUT_DIR}/$(basename "${srpm}")"
+        cp -f "${srpm}" "${dest}"
         echo "Source RPM generated: ${dest}"
     done
 else
