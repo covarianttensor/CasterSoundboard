@@ -67,8 +67,9 @@ XBPS_CHROOT_CMD=ethereal
 XBPS_ALLOW_CHROOT_BREAKOUT=yes
 EOF
 
-echo "Initializing xbps-src binary-bootstrap..."
-./xbps-src binary-bootstrap
+# Setup ethereal masterdir symlink and init token
+ln -sfn / masterdir
+xbps-uhelper arch > /.xbps_chroot_init 2>/dev/null || true
 
 echo "Building castersoundboard package via xbps-src..."
 ./xbps-src pkg castersoundboard
