@@ -233,10 +233,30 @@ jobs:
           name: arch-bundle
           path: castersoundboard-*.pkg.tar.zst
 
+  void:
+    name: Build Void Linux (XBPS) Package
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Build Void Linux Package
+        run: |
+          chmod +x scripts/build-void.sh
+          ./scripts/build-void.sh
+
+      - name: Upload Void Linux Package artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: void-bundle
+          path: castersoundboard-*.xbps
+
   release:
     name: Publish GitHub Release
     if: startsWith(github.ref, 'refs/tags/v')
-    needs: [appimage, flatpak, deb, rpm, snap, arch]
+    needs: [appimage, flatpak, deb, rpm, snap, arch, void]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -275,6 +295,12 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: arch-bundle
+          path: release-assets
+
+      - name: Download Void Linux artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: void-bundle
           path: release-assets
 
       - name: List Release Assets

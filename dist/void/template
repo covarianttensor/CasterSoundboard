@@ -1,0 +1,15 @@
+# Template file for 'castersoundboard'
+pkgname=castersoundboard
+version=2.1.2
+revision=1
+build_style=cmake
+configure_args="-DBUILD_TESTING=OFF"
+hostmakedepends="pkg-config qt6-base qt6-declarative-devel"
+makedepends="qt6-base-devel qt6-declarative-devel qt6-multimedia-devel"
+depends="qt6-declarative qt6-multimedia ffmpeg pulseaudio-utils"
+short_desc="Touch-first live soundboard and audio routing tool for Linux"
+maintainer="Oscar Cerna <covarianttensor@gmail.com>"
+license="LGPL-3.0-or-later"
+homepage="https://github.com/covarianttensor/CasterSoundboard"
+distfiles="https://github.com/covarianttensor/CasterSoundboard/archive/refs/tags/v${version}.tar.gz"
+checksum=2acbe1ba62e010bdb97ea8dc5257971a91ac2af491157e0dbb9a26ef245aff25

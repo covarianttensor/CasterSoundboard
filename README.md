@@ -192,7 +192,28 @@ cd dist/aur
 makepkg -si
 ```
 
-### 7. NixOS / Nix Flakes
+### 7. Void Linux (XBPS)
+
+#### Option A: Pre-built Native Package
+Download the pre-built `.xbps` package from [GitHub Releases](https://github.com/covarianttensor/CasterSoundboard/releases/latest) and install via `xbps-install`:
+```bash
+sudo xbps-install -R . castersoundboard
+```
+
+#### Option B: Build via xbps-src
+```bash
+./scripts/build-void.sh
+sudo xbps-install -R . castersoundboard
+```
+
+Or using an existing `void-packages` tree:
+```bash
+mkdir -p srcpkgs/castersoundboard
+cp dist/void/template srcpkgs/castersoundboard/
+./xbps-src pkg castersoundboard
+```
+
+### 8. NixOS / Nix Flakes
 Run directly via Nix Flakes:
 ```bash
 nix run github:covarianttensor/CasterSoundboard
@@ -204,7 +225,7 @@ nix-build
 ./result/bin/CasterSoundboard
 ```
 
-### 7. Native Build (CMake)
+### 9. Native Build from Source (CMake)
 Build and install natively on any Linux distribution (Ubuntu, Debian, Fedora, Arch):
 
 #### Prerequisites
