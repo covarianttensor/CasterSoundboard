@@ -1,0 +1,26 @@
+# Maintainer: Oscar Cerna <covarianttensor@gmail.com>
+pkgname=castersoundboard-bin
+pkgver=2.1.2
+pkgrel=1
+pkgdesc="Touch-first live soundboard and audio routing tool for Linux (PipeWire & PulseAudio)"
+arch=('x86_64')
+url="https://github.com/covarianttensor/CasterSoundboard"
+license=('LGPL-3.0-or-later')
+depends=(
+    'qt6-base'
+    'qt6-declarative'
+    'qt6-multimedia'
+    'ffmpeg'
+    'pipewire'
+)
+optdepends=(
+    'pulseaudio-utils: pactl support for virtual sink/source management'
+)
+provides=('castersoundboard')
+conflicts=('castersoundboard' 'castersoundboard-git')
+source=("https://github.com/covarianttensor/CasterSoundboard/releases/download/v${pkgver}/castersoundboard_${pkgver}_amd64.deb")
+sha256sums=('501f148d35485a4574c6e0e997268290dc0a0c987c63c5665b18511ab0563453')
+
+package() {
+    bsdtar -xf data.tar.zst -C "${pkgdir}"
+}
