@@ -15,7 +15,6 @@
   <img src="https://img.shields.io/badge/Platform-Linux%20(Wayland%20%26%20X11)-informational.svg" alt="Platform">
   <a href="https://copr.fedorainfracloud.org/coprs/covarianttensor/castersoundboard/"><img src="https://copr.fedorainfracloud.org/coprs/covarianttensor/castersoundboard/package/castersoundboard/status_image/last_build.png" alt="Fedora COPR"></a>
   <a href="https://launchpad.net/~covarianttensor/+archive/ubuntu/castersoundboard"><img src="https://img.shields.io/badge/Ubuntu%20PPA-noble%20%7C%20active-E95420.svg?logo=ubuntu&logoColor=white" alt="Ubuntu PPA"></a>
-  <a href="https://aur.archlinux.org/packages/castersoundboard-bin"><img src="https://img.shields.io/badge/AUR-castersoundboard--bin-1793D1.svg?logo=arch-linux&logoColor=white" alt="AUR"></a>
 </p>
 
 ---
@@ -162,12 +161,11 @@ To compile and package an `.rpm` or Source RPM (`.src.rpm`) locally:
 ./scripts/build-srpm.sh
 ```
 
-### 5. Arch Linux / Manjaro / CachyOS (AUR)
-Install from the Arch User Repository using `yay` or `paru`:
+### 5. Arch Linux / Manjaro / CachyOS
+Install using the prepared PKGBUILD in `dist/aur/`:
 ```bash
-yay -S castersoundboard-bin
-# or
-paru -S castersoundboard-bin
+cd dist/aur
+makepkg -si
 ```
 
 ### 6. NixOS / Nix Flakes
